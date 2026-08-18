@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { forgotPasswordSchema } from "../../schema/auth.schema";
-import { useForgotPasswordMutation } from "../../services/baseApi";
+import { useForgotPasswordMutation } from "../../services/authApi";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();

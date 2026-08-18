@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPasswordSchema } from "../../schema/auth.schema";
-import { useResetPasswordMutation } from "../../services/baseApi";
+import { useResetPasswordMutation } from "../../services/authApi";
 
 export default function ResetPassword() {
   const navigate = useNavigate();

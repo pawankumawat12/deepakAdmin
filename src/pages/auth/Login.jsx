@@ -8,16 +8,16 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useResendOtpMutation,
-  useSendOtpMutation,
+  useAdminLoginMutation,
   useVerifyOtpMutation,
-} from "../../services/baseApi";
+} from "../../services/authApi";
 
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { otpSent, pendingEmail } = useSelector((state) => state.auth);
-  const [sendOtp, { isLoading: sendingOtp }] = useSendOtpMutation();
+  const [adminLogin, { isLoading: sendingOtp }] = useAdminLoginMutation();
   const [resendOtp, { isLoading: resendingOtp }] = useResendOtpMutation();
   const [verifyOtp, { isLoading: verifyingOtp }] = useVerifyOtpMutation();
   const [apiError, setApiError] = useState("");
@@ -42,16 +42,21 @@ export default function Login() {
   });
 
   const handleRequestOtp = async (data) => {
+    console.log("test")
     try {
+      console.log("test")
+
       setApiError("");
-      await sendOtp(data.email).unwrap();
-      dispatch(
-        requestOtp({
-          email: data.email,
-          password: data.password,
-          rememberMe: data.rememberMe,
-        })
-      );
+     const dataLOG =  await adminLogin({ email: data.email, password: data.password }).unwrap();
+    console.log(dataLOG, 
+      "logdata"
+    )
+      // dispatch(
+      //   requestOtp({
+      //     email: data.email,
+      //     password: data.password,
+      //   })
+      // );
     } catch (error) {
       setApiError(
         error?.data?.message || "Unable to send OTP. Please try again."
@@ -92,7 +97,7 @@ export default function Login() {
   };
   const useAnotherEmail = () => {
     otpForm.reset({ otp: "" });
-    emailForm.reset({ email: "", password: "", rememberMe: false });
+    emailForm.reset({ email: "", password: "" });
     setOtpDigits(["", "", "", ""]);
     dispatch(resetOtp());
   };

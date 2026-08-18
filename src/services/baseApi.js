@@ -1,65 +1,35 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1",
+  credentials: "include",
+  prepareHeaders: (headers) => {
+    headers.set("content-type", "application/json");
+    return headers;
+  },
+});
+
+const baseQueryWithReauth = async (args, api, extraOptions) => {
+  let result = await rawBaseQuery(args, api, extraOptions);
+
+  if (result.error?.status === 401 && args?.url !== "/auth/refresh-token") {
+    const refreshResult = await rawBaseQuery(
+      { url: "/auth/refresh-token", method: "POST" },
+      api,
+      extraOptions,
+    );
+
+    if (!refreshResult.error) {
+      result = await rawBaseQuery(args, api, extraOptions);
+    }
+  }
+
+  return result;
+};
+
 export const baseApi = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({
-    baseUrl:
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1",
-    credentials: "include",
-    prepareHeaders: (headers) => {
-      headers.set("content-type", "application/json");
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
   tagTypes: ["Auth", "Product", "Category"],
   endpoints: () => ({}),
 });
-
-export const authApi = baseApi.injectEndpoints({
-  endpoints: (build) => ({
-    sendOtp: build.mutation({
-      query: (email) => ({
-        url: "/auth/send-otp",
-        method: "POST",
-        body: { email },
-      }),
-    }),
-    resendOtp: build.mutation({
-      query: (email) => ({
-        url: "/auth/resend-otp",
-        method: "POST",
-        body: { email },
-      }),
-    }),
-    verifyOtp: build.mutation({
-      query: (payload) => ({
-        url: "/auth/verify-otp",
-        method: "POST",
-        body: payload,
-      }),
-      invalidatesTags: ["Auth"],
-    }),
-    forgotPassword: build.mutation({
-      query: (email) => ({
-        url: "/auth/forgot-password",
-        method: "POST",
-        body: { email },
-      }),
-    }),
-    resetPassword: build.mutation({
-      query: ({ accessToken, password }) => ({
-        url: `/auth/reset-password/${accessToken}`,
-        method: "POST",
-        body: { password },
-      }),
-    }),
-  }),
-});
-
-export const {
-  useSendOtpMutation,
-  useResendOtpMutation,
-  useVerifyOtpMutation,
-  useForgotPasswordMutation,
-  useResetPasswordMutation,
-} = authApi;
