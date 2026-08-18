@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "../context/authSlice";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import {
   Bell,
   ChevronDown,
@@ -37,6 +38,7 @@ const navigation = [
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showSignOut, setShowSignOut] = useState(false);
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -46,6 +48,7 @@ export default function AdminLayout() {
     "Admin panel";
   const logout = () => {
     dispatch(signOut());
+    setShowSignOut(false);
     navigate("/login");
   };
   return (
@@ -115,7 +118,7 @@ export default function AdminLayout() {
                   <button onClick={() => navigate("/settings")}>
                     <Settings size={16} /> Account settings
                   </button>
-                  <button onClick={logout}>
+                  <button onClick={() => setShowSignOut(true)}>
                     <LogOut size={16} /> Sign out
                   </button>
                 </div>
@@ -127,6 +130,7 @@ export default function AdminLayout() {
           <Outlet />
         </main>
       </div>
+      {showSignOut && <ConfirmDialog title="Sign out?" message="Are you sure you want to sign out of the admin panel?" confirmLabel="Sign out" onConfirm={logout} onClose={() => setShowSignOut(false)} />}
     </div>
   );
 }

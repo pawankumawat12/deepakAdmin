@@ -26,7 +26,12 @@ export const emailSchema = z.object({
 export const otpSchema = z.object({
   otp: z
     .string()
-    .length(6, "OTP must be 6 digits")
-    .regex(/^\d{6}$/, "OTP must contain only numbers")
-    .regex(/^123456$/, "Use the demo code: 123456"),
+    .length(4, "OTP must be 4 digits")
+    .regex(/^\d{4}$/, "OTP must contain only numbers")
 });
+export const forgotPasswordSchema = z.object({ email: z.string().email("Enter a valid email") });
+export const resetPasswordSchema = z.object({
+  otp: z.string().length(6, "OTP must be 6 digits").regex(/^\d{6}$/, "OTP must contain only numbers"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" });

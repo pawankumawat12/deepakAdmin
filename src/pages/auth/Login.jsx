@@ -2,15 +2,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { emailSchema, otpSchema } from "../../schema/auth.schema";
 import { useDispatch, useSelector } from "react-redux";
-import { requestOtp, signIn } from "../../context/authSlice";
-import {
-  ArrowLeft,
-  LockKeyhole,
-  ShieldCheck,
-  Eye,
-  EyeOff,
-} from "lucide-react";
-import { useState } from "react";
+import { requestOtp, resetOtp, signIn } from "../../context/authSlice";
+import { ArrowLeft, LockKeyhole, Eye, EyeOff } from "lucide-react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
@@ -20,13 +14,14 @@ export default function Login() {
   const { otpSent, pendingEmail } = useSelector((state) => state.auth);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [otpDigits, setOtpDigits] = useState(["", "", "", ""]);
+  const otpRefs = useRef([]);
 
   const emailForm = useForm({
     resolver: zodResolver(emailSchema),
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false,
     },
   });
 
@@ -48,21 +43,30 @@ export default function Login() {
   };
 
   const handleSignIn = async (data) => {
-    try {
-      const result = await dispatch(
-        signIn({
-          email: pendingEmail,
-          otp: data.otp,
-        })
-      );
+    dispatch(signIn({ email: pendingEmail, otp: data.otp }));
+    navigate("/", { replace: true });
+  };
 
-      // RTK createAsyncThunk successful response
-      if (signIn.fulfilled.match(result)) {
-        navigate("/", { replace: true });
-      }
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
+  const updateOtp = (index, value) => {
+    const next = [...otpDigits];
+    next[index] = value.replace(/\D/g, "").slice(-1);
+    setOtpDigits(next);
+    otpForm.setValue("otp", next.join(""), { shouldValidate: true });
+    if (next[index] && index < 3) otpRefs.current[index + 1]?.focus();
+  };
+  const pasteOtp = (event) => {
+    event.preventDefault();
+    const value = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    const next = ["", "", "", ""];
+    value.split("").forEach((digit, index) => { next[index] = digit; });
+    setOtpDigits(next);
+    otpForm.setValue("otp", next.join(""), { shouldValidate: true });
+  };
+  const useAnotherEmail = () => {
+    otpForm.reset({ otp: "" });
+    emailForm.reset({ email: "", password: "", rememberMe: false });
+    setOtpDigits(["", "", "", ""]);
+    dispatch(resetOtp());
   };
 
   return (
@@ -92,8 +96,8 @@ export default function Login() {
                 type="email"
                 autoComplete="email"
                 placeholder="admin@deepakfoods.com"
-                className="w-100"
                 {...emailForm.register("email")}
+              className="input-wrapper"
               />
 
               {emailForm.formState.errors.email && (
@@ -121,11 +125,7 @@ export default function Login() {
                   className="password-toggle"
                   onClick={() => setShowPassword((prev) => !prev)}
                 >
-                  {showPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
-                    <Eye size={18} />
-                  )}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
 
@@ -139,10 +139,7 @@ export default function Login() {
             {/* REMEMBER ME */}
             <div className="remember-row">
               <label className="remember-label">
-                <input
-                  type="checkbox"
-                  {...emailForm.register("rememberMe")}
-                />
+                <input type="checkbox" />
 
                 <span>Remember me</span>
               </label>
@@ -152,30 +149,24 @@ export default function Login() {
               <LockKeyhole size={18} />
               Send OTP
             </button>
+            <button type="button" className="text-btn" onClick={() => navigate("/forgot-password")}>Forgot password?</button>
           </form>
         ) : (
           <form
             onSubmit={otpForm.handleSubmit(handleSignIn)}
             className="login-form"
           >
-            {/* DEMO OTP */}
-            <div className="demo-code">
-              <ShieldCheck size={18} />
-              Demo OTP: <strong>123456</strong>
-            </div>
-
+           
             {/* OTP */}
             <div>
               <label htmlFor="otp">One-time password</label>
 
-              <input
-                id="otp"
-                autoFocus
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="Enter 6-digit code"
-                {...otpForm.register("otp")}
-              />
+              <input type="hidden" {...otpForm.register("otp")} />
+              <div className="otp-inputs">
+                {otpDigits.map((digit, index) => (
+                  <input key={index} ref={(element) => { otpRefs.current[index] = element; }} autoFocus={index === 0} inputMode="numeric" maxLength={1} value={digit} aria-label={`OTP digit ${index + 1}`} onChange={(event) => updateOtp(index, event.target.value)} onPaste={pasteOtp} onKeyDown={(event) => { if (event.key === "Backspace" && !digit && index > 0) otpRefs.current[index - 1]?.focus(); }} />
+                ))}
+              </div>
 
               {otpForm.formState.errors.otp && (
                 <small className="error">
@@ -188,14 +179,12 @@ export default function Login() {
               Verify & sign in
             </button>
 
+            <button type="button" className="text-btn" onClick={() => { otpForm.reset({ otp: "" }); setOtpDigits(["", "", "", ""]); dispatch(requestOtp({ email: pendingEmail })); }}>Resend OTP</button>
+
             <button
               type="button"
               className="text-btn"
-              onClick={() => {
-                otpForm.reset();
-                emailForm.reset();
-                dispatch(requestOtp(""));
-              }}
+              onClick={useAnotherEmail}
             >
               <ArrowLeft size={16} />
               Use another email

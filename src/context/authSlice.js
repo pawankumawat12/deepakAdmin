@@ -8,13 +8,17 @@ const authSlice = createSlice({
   initialState: { user: storedUser, pendingEmail: "", otpSent: false },
   reducers: {
     requestOtp: (state, action) => {
-      state.pendingEmail = action.payload;
+      state.pendingEmail = action.payload?.email || action.payload || "";
       state.otpSent = true;
+    },
+    resetOtp: (state) => {
+      state.pendingEmail = "";
+      state.otpSent = false;
     },
     signIn: (state, action) => {
       state.user = {
         name: "Deepak Admin",
-        email: action.payload,
+        email: action.payload.email || action.payload,
         role: "Super Admin",
       };
       state.otpSent = false;
@@ -27,5 +31,5 @@ const authSlice = createSlice({
     },
   },
 });
-export const { requestOtp, signIn, signOut } = authSlice.actions;
+export const { requestOtp, resetOtp, signIn, signOut } = authSlice.actions;
 export default authSlice.reducer;
