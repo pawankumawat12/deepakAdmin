@@ -6,12 +6,21 @@ import { requestOtp, resetOtp, signIn } from "../../context/authSlice";
 import { ArrowLeft, LockKeyhole, Eye, EyeOff } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  useResendOtpMutation,
+  useSendOtpMutation,
+  useVerifyOtpMutation,
+} from "../../services/baseApi";
 
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { otpSent, pendingEmail } = useSelector((state) => state.auth);
+  const [sendOtp, { isLoading: sendingOtp }] = useSendOtpMutation();
+  const [resendOtp, { isLoading: resendingOtp }] = useResendOtpMutation();
+  const [verifyOtp, { isLoading: verifyingOtp }] = useVerifyOtpMutation();
+  const [apiError, setApiError] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [otpDigits, setOtpDigits] = useState(["", "", "", ""]);
@@ -32,19 +41,33 @@ export default function Login() {
     },
   });
 
-  const handleRequestOtp = (data) => {
-    dispatch(
-      requestOtp({
-        email: data.email,
-        password: data.password,
-        rememberMe: data.rememberMe,
-      })
-    );
+  const handleRequestOtp = async (data) => {
+    try {
+      setApiError("");
+      await sendOtp(data.email).unwrap();
+      dispatch(
+        requestOtp({
+          email: data.email,
+          password: data.password,
+          rememberMe: data.rememberMe,
+        })
+      );
+    } catch (error) {
+      setApiError(
+        error?.data?.message || "Unable to send OTP. Please try again."
+      );
+    }
   };
 
   const handleSignIn = async (data) => {
-    dispatch(signIn({ email: pendingEmail, otp: data.otp }));
-    navigate("/", { replace: true });
+    try {
+      setApiError("");
+      await verifyOtp({ email: pendingEmail, otp: data.otp }).unwrap();
+      dispatch(signIn({ email: pendingEmail, otp: data.otp }));
+      navigate("/", { replace: true });
+    } catch (error) {
+      setApiError(error?.data?.message || "Invalid or expired OTP.");
+    }
   };
 
   const updateOtp = (index, value) => {
@@ -56,9 +79,14 @@ export default function Login() {
   };
   const pasteOtp = (event) => {
     event.preventDefault();
-    const value = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    const value = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 4);
     const next = ["", "", "", ""];
-    value.split("").forEach((digit, index) => { next[index] = digit; });
+    value.split("").forEach((digit, index) => {
+      next[index] = digit;
+    });
     setOtpDigits(next);
     otpForm.setValue("otp", next.join(""), { shouldValidate: true });
   };
@@ -81,6 +109,7 @@ export default function Login() {
             ? `We sent a one-time code to ${pendingEmail}`
             : "Sign in to manage your storefront."}
         </p>
+        {apiError && <small className="error">{apiError}</small>}
 
         {!otpSent ? (
           <form
@@ -97,7 +126,7 @@ export default function Login() {
                 autoComplete="email"
                 placeholder="admin@deepakfoods.com"
                 {...emailForm.register("email")}
-              className="input-wrapper"
+                className="input-wrapper"
               />
 
               {emailForm.formState.errors.email && (
@@ -147,16 +176,21 @@ export default function Login() {
 
             <button className="primary-btn" type="submit">
               <LockKeyhole size={18} />
-              Send OTP
+              {sendingOtp ? "Sending..." : "Send OTP"}
             </button>
-            <button type="button" className="text-btn" onClick={() => navigate("/forgot-password")}>Forgot password?</button>
+            <button
+              type="button"
+              className="text-btn"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Forgot password?
+            </button>
           </form>
         ) : (
           <form
             onSubmit={otpForm.handleSubmit(handleSignIn)}
             className="login-form"
           >
-           
             {/* OTP */}
             <div>
               <label htmlFor="otp">One-time password</label>
@@ -164,7 +198,23 @@ export default function Login() {
               <input type="hidden" {...otpForm.register("otp")} />
               <div className="otp-inputs">
                 {otpDigits.map((digit, index) => (
-                  <input key={index} ref={(element) => { otpRefs.current[index] = element; }} autoFocus={index === 0} inputMode="numeric" maxLength={1} value={digit} aria-label={`OTP digit ${index + 1}`} onChange={(event) => updateOtp(index, event.target.value)} onPaste={pasteOtp} onKeyDown={(event) => { if (event.key === "Backspace" && !digit && index > 0) otpRefs.current[index - 1]?.focus(); }} />
+                  <input
+                    key={index}
+                    ref={(element) => {
+                      otpRefs.current[index] = element;
+                    }}
+                    autoFocus={index === 0}
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    aria-label={`OTP digit ${index + 1}`}
+                    onChange={(event) => updateOtp(index, event.target.value)}
+                    onPaste={pasteOtp}
+                    onKeyDown={(event) => {
+                      if (event.key === "Backspace" && !digit && index > 0)
+                        otpRefs.current[index - 1]?.focus();
+                    }}
+                  />
                 ))}
               </div>
 
@@ -176,10 +226,23 @@ export default function Login() {
             </div>
 
             <button className="primary-btn" type="submit">
-              Verify & sign in
+              {verifyingOtp ? "Verifying..." : "Verify & sign in"}
             </button>
-
-            <button type="button" className="text-btn" onClick={() => { otpForm.reset({ otp: "" }); setOtpDigits(["", "", "", ""]); dispatch(requestOtp({ email: pendingEmail })); }}>Resend OTP</button>
+            <button
+              type="button"
+              className="text-btn"
+              disabled={resendingOtp}
+              onClick={async () => {
+                try {
+                  setApiError("");
+                  await resendOtp(pendingEmail).unwrap();
+                } catch (error) {
+                  setApiError(error?.data?.message || "Unable to resend OTP.");
+                }
+              }}
+            >
+              {resendingOtp ? "Resending..." : "Resend OTP"}
+            </button>
 
             <button
               type="button"
