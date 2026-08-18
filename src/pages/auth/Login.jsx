@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { emailSchema, otpSchema } from "../../schema/auth.schema";
-import { useDispatch, useSelector } from "react-redux";
-import { requestOtp, resetOtp, signIn } from "../../context/authSlice";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../context/authSlice";
 import { ArrowLeft, LockKeyhole, Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,7 @@ import {
   useSendOtpMutation,
   useAdminLoginMutation,
   useVerifyOtpMutation,
+  useLazyGetMeQuery,
 } from "../../services/authApi";
 
 export default function Login() {
@@ -18,10 +19,12 @@ export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { otpSent, pendingEmail } = useSelector((state) => state.auth);
+  const [otpSent, setOtpSent] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
   const [adminLogin, { isLoading: sendingOtp }] = useAdminLoginMutation();
   const [sendOtp, { isLoading: resendingOtp }] = useSendOtpMutation();
   const [verifyOtp, { isLoading: verifyingOtp }] = useVerifyOtpMutation();
+  const [getMe] = useLazyGetMeQuery();
   const [apiError, setApiError] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
@@ -57,7 +60,8 @@ export default function Login() {
     try {
       setApiError("");
       await adminLogin({ email: data.email, password: data.password }).unwrap();
-      dispatch(requestOtp({ email: data.email }));
+      setPendingEmail(data.email);
+      setOtpSent(true);
       setResendCount(0);
       setResendTimer(RESEND_COOLDOWN_SECONDS);
     } catch (error) {
@@ -71,7 +75,7 @@ export default function Login() {
     try {
       setApiError("");
       await verifyOtp({ email: pendingEmail, otp: data.otp }).unwrap();
-      dispatch(signIn({ email: pendingEmail, otp: data.otp }));
+      dispatch(setUser(await getMe().unwrap()));
       navigate("/", { replace: true });
     } catch (error) {
       setApiError(error?.data?.message || "Invalid or expired OTP.");
@@ -104,7 +108,8 @@ export default function Login() {
     setOtpDigits(["", "", "", ""]);
     setResendTimer(0);
     setResendCount(0);
-    dispatch(resetOtp());
+    setPendingEmail("");
+    setOtpSent(false);
   };
 
   return (

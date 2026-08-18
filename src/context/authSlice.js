@@ -1,35 +1,16 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const storedUser = JSON.parse(
-  localStorage.getItem("deepak-admin-user") || "null"
-);
 const authSlice = createSlice({
   name: "auth",
-  initialState: { user: storedUser, pendingEmail: "", otpSent: false },
+  initialState: { user: null },
   reducers: {
-    requestOtp: (state, action) => {
-      state.pendingEmail = action.payload?.email || action.payload || "";
-      state.otpSent = true;
-    },
-    resetOtp: (state) => {
-      state.pendingEmail = "";
-      state.otpSent = false;
-    },
-    signIn: (state, action) => {
-      state.user = {
-        name: "Deepak Admin",
-        email: action.payload.email || action.payload,
-        role: "Super Admin",
-      };
-      state.otpSent = false;
-      localStorage.setItem("deepak-admin-user", JSON.stringify(state.user));
+    setUser: (state, action) => {
+      state.user = action.payload.user;
     },
     signOut: (state) => {
       state.user = null;
-      state.pendingEmail = "";
-      localStorage.removeItem("deepak-admin-user");
     },
   },
 });
-export const { requestOtp, resetOtp, signIn, signOut } = authSlice.actions;
+export const { setUser, signOut } = authSlice.actions;
 export default authSlice.reducer;

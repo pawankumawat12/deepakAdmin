@@ -27,6 +27,13 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Auth"],
     }),
+    getMe: build.query({
+      query: () => ({ url: "/auth/me" }),
+      providesTags: ["Auth"],
+    }),
+    logout: build.mutation({
+      query: () => ({ url: "/auth/logout", method: "POST" }),
+    }),
     forgotPassword: build.mutation({
       query: (email) => ({
         url: "/auth/forgot-password",
@@ -48,6 +55,9 @@ export const {
   useAdminLoginMutation,
   useSendOtpMutation,
   useVerifyOtpMutation,
+  useGetMeQuery,
+  useLazyGetMeQuery,
+  useLogoutMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
 } = authApi;
