@@ -18,6 +18,7 @@ import ReviewList from "../pages/reviews/ReviewList";
 import MessageList from "../pages/messages/MessageList";
 import FavouriteList from "../pages/favourites/FavouriteList";
 import Settings from "../pages/settings/Settings";
+import Profile from "../pages/profile/Profile";
 
 export default function AppRoutes() {
   return (
@@ -41,6 +42,7 @@ export default function AppRoutes() {
           <Route path="messages" element={<MessageList />} />
           <Route path="favourites" element={<FavouriteList />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
