@@ -19,13 +19,6 @@ export const authApi = baseApi.injectEndpoints({
         body: { email },
       }),
     }),
-    resendOtp: build.mutation({
-      query: (email) => ({
-        url: "/auth/resend-otp",
-        method: "POST",
-        body: { email },
-      }),
-    }),
     verifyOtp: build.mutation({
       query: (payload) => ({
         url: "/auth/verify-otp",
@@ -54,7 +47,6 @@ export const authApi = baseApi.injectEndpoints({
 export const {
   useAdminLoginMutation,
   useSendOtpMutation,
-  useResendOtpMutation,
   useVerifyOtpMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,

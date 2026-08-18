@@ -4,26 +4,30 @@ import { emailSchema, otpSchema } from "../../schema/auth.schema";
 import { useDispatch, useSelector } from "react-redux";
 import { requestOtp, resetOtp, signIn } from "../../context/authSlice";
 import { ArrowLeft, LockKeyhole, Eye, EyeOff } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  useResendOtpMutation,
+  useSendOtpMutation,
   useAdminLoginMutation,
   useVerifyOtpMutation,
 } from "../../services/authApi";
 
 export default function Login() {
+  const RESEND_COOLDOWN_SECONDS = 30;
+  const RESEND_LIMIT = 4;
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { otpSent, pendingEmail } = useSelector((state) => state.auth);
   const [adminLogin, { isLoading: sendingOtp }] = useAdminLoginMutation();
-  const [resendOtp, { isLoading: resendingOtp }] = useResendOtpMutation();
+  const [sendOtp, { isLoading: resendingOtp }] = useSendOtpMutation();
   const [verifyOtp, { isLoading: verifyingOtp }] = useVerifyOtpMutation();
   const [apiError, setApiError] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [otpDigits, setOtpDigits] = useState(["", "", "", ""]);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [resendCount, setResendCount] = useState(0);
   const otpRefs = useRef([]);
 
   const emailForm = useForm({
@@ -41,22 +45,21 @@ export default function Login() {
     },
   });
 
-  const handleRequestOtp = async (data) => {
-    console.log("test")
-    try {
-      console.log("test")
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const timer = window.setInterval(() => {
+      setResendTimer((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendTimer]);
 
+  const handleRequestOtp = async (data) => {
+    try {
       setApiError("");
-     const dataLOG =  await adminLogin({ email: data.email, password: data.password }).unwrap();
-    console.log(dataLOG, 
-      "logdata"
-    )
-      // dispatch(
-      //   requestOtp({
-      //     email: data.email,
-      //     password: data.password,
-      //   })
-      // );
+      await adminLogin({ email: data.email, password: data.password }).unwrap();
+      dispatch(requestOtp({ email: data.email }));
+      setResendCount(0);
+      setResendTimer(RESEND_COOLDOWN_SECONDS);
     } catch (error) {
       setApiError(
         error?.data?.message || "Unable to send OTP. Please try again."
@@ -99,6 +102,8 @@ export default function Login() {
     otpForm.reset({ otp: "" });
     emailForm.reset({ email: "", password: "" });
     setOtpDigits(["", "", "", ""]);
+    setResendTimer(0);
+    setResendCount(0);
     dispatch(resetOtp());
   };
 
@@ -179,7 +184,7 @@ export default function Login() {
               </label>
             </div>
 
-            <button className="primary-btn" type="submit">
+            <button className="primary-btn" type="submit" disabled={sendingOtp}>
               <LockKeyhole size={18} />
               {sendingOtp ? "Sending..." : "Send OTP"}
             </button>
@@ -233,20 +238,28 @@ export default function Login() {
             <button className="primary-btn" type="submit">
               {verifyingOtp ? "Verifying..." : "Verify & sign in"}
             </button>
+            <small className="muted">
+              {resendCount >= RESEND_LIMIT
+                ? "All 4 resend attempts used. Please try again in 10 minutes."
+                : `${RESEND_LIMIT - resendCount} resend attempt${RESEND_LIMIT - resendCount === 1 ? "" : "s"} remaining`}
+            </small>
             <button
               type="button"
               className="text-btn"
-              disabled={resendingOtp}
+              disabled={resendingOtp || resendTimer > 0 || resendCount >= RESEND_LIMIT}
               onClick={async () => {
                 try {
                   setApiError("");
-                  await resendOtp(pendingEmail).unwrap();
+                  const response = await sendOtp(pendingEmail).unwrap();
+                  setResendCount(response.data?.resendCount ?? resendCount + 1);
+                  setResendTimer(response.data?.retryAfter ?? RESEND_COOLDOWN_SECONDS);
                 } catch (error) {
+                  if (error?.data?.retryAfter) setResendTimer(error.data.retryAfter);
                   setApiError(error?.data?.message || "Unable to resend OTP.");
                 }
               }}
             >
-              {resendingOtp ? "Resending..." : "Resend OTP"}
+              {resendingOtp ? "Resending..." : resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
             </button>
 
             <button
