@@ -244,7 +244,7 @@ export default function Login() {
             <Button type="submit">
               {verifyingOtp ? "Verifying..." : "Verify & sign in"}
             </Button>
-            <small className="muted">
+            <small className="muted mt-2">
               {resendCount >= RESEND_LIMIT
                 ? "All 4 resend attempts used. Please try again in 10 minutes."
                 : `${RESEND_LIMIT - resendCount} resend attempt${RESEND_LIMIT - resendCount === 1 ? "" : "s"} remaining`}
