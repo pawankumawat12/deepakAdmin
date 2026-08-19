@@ -7,4 +7,6 @@ export const categorySchema = z.object({
     .trim()
     .min(5, "Description must be at least 5 characters"),
   status: z.enum(["Active", "Inactive"]),
+  parentCategoryId: z.string().optional(),
+  imageFile: z.instanceof(File).optional(),
 });

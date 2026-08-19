@@ -1,19 +1,34 @@
-import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import CategoryForm from "../../components/forms/CategoryForm";
-import { updateCategory } from "../../context/catalogSlice";
+import Button from "../../components/ui/Button";
+import {
+  useGetCategoriesQuery,
+  useGetCategoryQuery,
+  useUpdateCategoryMutation,
+} from "../../services/categoryApi";
+
 export default function CategoryEdit() {
   const { id } = useParams();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const category = useSelector((state) =>
-    state.catalog.categories.find((item) => item.id === id)
-  );
+  const { data: categoryResponse, isLoading: categoryLoading, isError } = useGetCategoryQuery(id);
+  const { data: categoriesResponse, isLoading: categoriesLoading } = useGetCategoriesQuery({ limit: 100 });
+  const [updateCategory, { isLoading, error }] = useUpdateCategoryMutation();
+  const category = categoryResponse?.data;
+
+  if (isError) return <Navigate to="/categories" replace />;
+  if (categoryLoading || categoriesLoading) return <p>Loading category...</p>;
   if (!category) return <Navigate to="/categories" replace />;
-  const save = (data) => {
-    dispatch(updateCategory({ ...data, id }));
-    navigate("/categories");
+
+  const save = async (data) => {
+    try {
+      await updateCategory({ id, ...data }).unwrap();
+      navigate("/categories");
+    } catch {
+      // The API error is shown below.
+    }
   };
+
   return (
     <>
       <div className="section-head">
@@ -21,12 +36,24 @@ export default function CategoryEdit() {
           <h1>Edit category</h1>
           <p>Update {category.name}.</p>
         </div>
+        <Button variant="outline" onClick={() => navigate("/categories")}>
+          <ArrowLeft size={17} /> Back to categories
+        </Button>
       </div>
       <CategoryForm
-        initialValues={category}
+        categories={(categoriesResponse?.data || []).filter((item) => item.id !== category.id)}
+        initialValues={{
+          name: category.name,
+          description: category.description || "",
+          parentCategoryId: category.parent_category_id ? String(category.parent_category_id) : "",
+          status: category.is_active ? "Active" : "Inactive",
+        }}
+        existingImage={category.image}
         onSubmit={save}
         submitLabel="Save changes"
+        isSubmitting={isLoading}
       />
+      {error && <p className="error">{error.data?.message || "Unable to update category"}</p>}
     </>
   );
 }

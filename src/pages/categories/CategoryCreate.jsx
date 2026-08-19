@@ -1,16 +1,26 @@
-import { useDispatch } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
-import CategoryForm from '../../components/forms/CategoryForm'
-import { createCategory } from '../../context/catalogSlice'
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import CategoryForm from "../../components/forms/CategoryForm";
+import Button from "../../components/ui/Button";
+import {
+  useCreateCategoryMutation,
+  useGetCategoriesQuery,
+} from "../../services/categoryApi";
 
 export default function CategoryCreate() {
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { data: categoryResponse, isLoading: categoriesLoading } =
+    useGetCategoriesQuery({ limit: 100 });
+  const [createCategory, { isLoading, error }] = useCreateCategoryMutation();
 
-  const handleCreate = (category) => {
-    dispatch(createCategory(category))
-    navigate('/categories')
-  }
+  const save = async (data) => {
+    try {
+      await createCategory(data).unwrap();
+      navigate("/categories");
+    } catch {
+      // The API error is shown below.
+    }
+  };
 
   return (
     <>
@@ -19,12 +29,22 @@ export default function CategoryCreate() {
           <h1>Add category</h1>
           <p>Create a new group for your menu.</p>
         </div>
+        <Button variant="outline" onClick={() => navigate("/categories")}>
+          <ArrowLeft size={17} /> Back to categories
+        </Button>
       </div>
-      <CategoryForm
-        initialValues={{ name: '', description: '', status: 'Active' }}
-        onSubmit={handleCreate}
-        submitLabel="Create category"
-      />
+      {categoriesLoading ? <p>Loading categories...</p> : (
+        <>
+          <CategoryForm
+            categories={categoryResponse?.data || []}
+            initialValues={{ name: "", description: "", parentCategoryId: "", status: "Active" }}
+            onSubmit={save}
+            submitLabel="Create category"
+            isSubmitting={isLoading}
+          />
+          {error && <p className="error">{error.data?.message || "Unable to create category"}</p>}
+        </>
+      )}
     </>
-  )
+  );
 }
