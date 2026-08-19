@@ -1,4 +1,5 @@
 import { AlertTriangle, LoaderCircle, X } from "lucide-react";
+import Button from "./Button";
 
 export default function ConfirmDialog({
   title,
@@ -24,15 +25,15 @@ export default function ConfirmDialog({
         aria-labelledby="confirm-title"
         aria-describedby="confirm-message"
       >
-        <button
+        <Button
+          variant="plain"
           className="modal-close"
-          type="button"
           onClick={onClose}
           disabled={isLoading}
           aria-label="Close"
         >
           <X size={18} />
-        </button>
+        </Button>
         <span className={danger ? "confirm-icon danger" : "confirm-icon"}>
           <AlertTriangle size={22} />
         </span>
@@ -40,18 +41,21 @@ export default function ConfirmDialog({
         <p id="confirm-message">{message}</p>
         {error && <p className="confirm-error">{error}</p>}
         <div className="confirm-actions">
-          <button className="outline-btn" type="button" onClick={onClose} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+          >
             Cancel
-          </button>
-          <button
-            className={danger ? "danger-btn" : "primary-btn"}
-            type="button"
+          </Button>
+          <Button
+            className={danger ? "danger-btn" : ""}
             onClick={onConfirm}
             disabled={isLoading}
           >
             {isLoading && <LoaderCircle size={16} className="spin" />}
             {isLoading ? "Signing out..." : confirmLabel}
-          </button>
+          </Button>
         </div>
       </section>
     </div>

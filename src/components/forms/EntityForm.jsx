@@ -1,6 +1,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createEntitySchema } from "../../schema/entity.schema";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import Select from "../ui/Select";
 export default function EntityForm({
   fields,
   initialValues,
@@ -25,18 +28,18 @@ export default function EntityForm({
           >
             {field.label}
             {field.type === "select" ? (
-              <select {...register(field.key)}>
+              <Select {...register(field.key)}>
                 {field.options.map((option) => (
                   <option key={option}>{option}</option>
                 ))}
-              </select>
+              </Select>
             ) : field.type === "textarea" ? (
               <textarea
                 {...register(field.key)}
                 placeholder={field.placeholder}
               />
             ) : (
-              <input
+              <Input
                 type={field.type || "text"}
                 {...register(field.key)}
                 placeholder={field.placeholder}
@@ -48,9 +51,7 @@ export default function EntityForm({
           </label>
         ))}
       </div>
-      <button className="primary-btn" type="submit">
-        {submitLabel}
-      </button>
+      <Button type="submit">{submitLabel}</Button>
     </form>
   );
 }

@@ -1,0 +1,111 @@
+import { baseApi } from "./baseApi";
+
+const createProductFormData = ({ imageFiles = [], status, ...product }) => {
+  const formData = new FormData();
+  Object.entries({
+    ...product,
+    isActive: status === "Active",
+  }).forEach(([key, value]) => {
+    if (value !== undefined && value !== null)
+      formData.append(key, String(value));
+  });
+  Array.from(imageFiles).forEach((file) => formData.append("images", file));
+  return formData;
+};
+
+export const productApi = baseApi.injectEndpoints({
+  endpoints: (build) => ({
+    getProducts: build.query({
+      query: (params = {}) => ({
+        url: "/products",
+        params: { limit: 10, ...params },
+      }),
+      providesTags: (result) => [
+        "Product",
+        ...(result?.data || []).map(({ id }) => ({ type: "Product", id })),
+      ],
+    }),
+    getProduct: build.query({
+      query: (id) => `/products/${id}`,
+      providesTags: (_result, _error, id) => [{ type: "Product", id }],
+    }),
+    getProductCategories: build.query({
+      query: () => ({
+        url: "/categories",
+        params: { limit: 10, isActive: true },
+      }),
+      providesTags: ["Category"],
+    }),
+    createProduct: build.mutation({
+      query: (product) => ({
+        url: "/products",
+        method: "POST",
+        body: createProductFormData(product),
+      }),
+      invalidatesTags: ["Product"],
+    }),
+    updateProduct: build.mutation({
+      query: (data) => {
+        const formData = new FormData();
+    
+        formData.append("name", data.name);
+        formData.append(
+          "description",
+          data.description || ""
+        );
+        formData.append(
+          "categoryId",
+          data.categoryId
+        );
+        formData.append(
+          "price",
+          data.price
+        );
+        formData.append(
+          "stock",
+          data.stock
+        );
+    
+        formData.append(
+          "isActive",
+          data.status === "Active"
+        );
+    
+        // VERY IMPORTANT
+        formData.append(
+          "existingImages",
+          JSON.stringify(
+            data.existingImages || []
+          )
+        );
+    
+        // New files
+        (data.imageFiles || []).forEach((file) => {
+          formData.append("images", file);
+        });
+    
+        return {
+          url: `/products/${data.id}`,
+          method: "PUT",
+          body: formData,
+        }},
+      invalidatesTags: (_result, _error, { id }) => [
+        "Product",
+        { type: "Product", id },
+      ],
+    }),
+    deleteProduct: build.mutation({
+      query: (id) => ({ url: `/products/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Product"],
+    }),
+  }),
+});
+
+export const {
+  useGetProductsQuery,
+  useGetProductQuery,
+  useGetProductCategoriesQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+} = productApi;

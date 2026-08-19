@@ -5,6 +5,8 @@ import { ArrowLeft, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { forgotPasswordSchema } from "../../schema/auth.schema";
 import { useForgotPasswordMutation } from "../../services/authApi";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
 
 export default function ForgotPassword() {
   const [forgotPassword, { isLoading, error }] = useForgotPasswordMutation();
@@ -34,7 +36,7 @@ export default function ForgotPassword() {
         <form className="login-form" onSubmit={handleSubmit(submit)}>
           <label>
             Email
-            <input type="email" {...register("email")} />
+            <Input type="email" {...register("email")} />
           </label>
           {errors.email && (
             <small className="error">{errors.email.message}</small>
@@ -49,9 +51,9 @@ export default function ForgotPassword() {
               If that email is registered, a reset link has been sent. Check your inbox.
             </small>
           )}
-          <button className="primary-btn" type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading}>
             <Mail size={18} /> {isLoading ? "Sending..." : "Send reset link"}
-          </button>
+          </Button>
         </form>
         <Link className="text-btn" to="/login">
           <ArrowLeft size={16} /> Back to login

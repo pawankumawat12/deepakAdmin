@@ -12,6 +12,8 @@ import {
   useVerifyOtpMutation,
   useLazyGetMeQuery,
 } from "../../services/authApi";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
 
 export default function Login() {
   const RESEND_COOLDOWN_SECONDS = 30;
@@ -135,7 +137,7 @@ export default function Login() {
             <div>
               <label htmlFor="email">Email</label>
 
-              <input
+              <Input
                 id="email"
                 type="email"
                 autoComplete="email"
@@ -156,7 +158,7 @@ export default function Login() {
               <label htmlFor="password">Password</label>
 
               <div className="password-wrapper">
-                <input
+                <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
@@ -164,13 +166,13 @@ export default function Login() {
                   {...emailForm.register("password")}
                 />
 
-                <button
-                  type="button"
+                <Button
+                  variant="plain"
                   className="password-toggle"
                   onClick={() => setShowPassword((prev) => !prev)}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                </Button>
               </div>
 
               {emailForm.formState.errors.password && (
@@ -183,23 +185,22 @@ export default function Login() {
             {/* REMEMBER ME */}
             <div className="remember-row">
               <label className="remember-label">
-                <input type="checkbox" />
+                <Input type="checkbox" />
 
                 <span>Remember me</span>
               </label>
             </div>
 
-            <button className="primary-btn" type="submit" disabled={sendingOtp}>
+            <Button type="submit" disabled={sendingOtp}>
               <LockKeyhole size={18} />
               {sendingOtp ? "Sending..." : "Send OTP"}
-            </button>
-            <button
-              type="button"
-              className="text-btn"
+            </Button>
+            <Button
+              variant="text"
               onClick={() => navigate("/forgot-password")}
             >
               Forgot password?
-            </button>
+            </Button>
           </form>
         ) : (
           <form
@@ -210,10 +211,10 @@ export default function Login() {
             <div>
               <label htmlFor="otp">One-time password</label>
 
-              <input type="hidden" {...otpForm.register("otp")} />
+              <Input type="hidden" {...otpForm.register("otp")} />
               <div className="otp-inputs">
                 {otpDigits.map((digit, index) => (
-                  <input
+                  <Input
                     key={index}
                     ref={(element) => {
                       otpRefs.current[index] = element;
@@ -240,17 +241,16 @@ export default function Login() {
               )}
             </div>
 
-            <button className="primary-btn" type="submit">
+            <Button type="submit">
               {verifyingOtp ? "Verifying..." : "Verify & sign in"}
-            </button>
+            </Button>
             <small className="muted">
               {resendCount >= RESEND_LIMIT
                 ? "All 4 resend attempts used. Please try again in 10 minutes."
                 : `${RESEND_LIMIT - resendCount} resend attempt${RESEND_LIMIT - resendCount === 1 ? "" : "s"} remaining`}
             </small>
-            <button
-              type="button"
-              className="text-btn"
+            <Button
+              variant="text"
               disabled={resendingOtp || resendTimer > 0 || resendCount >= RESEND_LIMIT}
               onClick={async () => {
                 try {
@@ -265,16 +265,15 @@ export default function Login() {
               }}
             >
               {resendingOtp ? "Resending..." : resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
-            </button>
+            </Button>
 
-            <button
-              type="button"
-              className="text-btn"
+            <Button
+              variant="text"
               onClick={useAnotherEmail}
             >
               <ArrowLeft size={16} />
               Use another email
-            </button>
+            </Button>
           </form>
         )}
       </section>

@@ -3,10 +3,6 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1",
   credentials: "include",
-  prepareHeaders: (headers) => {
-    headers.set("content-type", "application/json");
-    return headers;
-  },
 });
 
 const baseQueryWithReauth = async (args, api, extraOptions) => {

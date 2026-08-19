@@ -1,6 +1,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { categorySchema } from "../../schema/category.schema";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import Select from "../ui/Select";
 export default function CategoryForm({ initialValues, onSubmit, submitLabel }) {
   const {
     register,
@@ -15,14 +18,14 @@ export default function CategoryForm({ initialValues, onSubmit, submitLabel }) {
       <div className="form-grid">
         <label>
           Category name
-          <input {...register("name")} placeholder="e.g. Starters" />
+          <Input {...register("name")} placeholder="e.g. Starters" />
         </label>
         <label>
           Status
-          <select {...register("status")}>
+          <Select {...register("status")}>
             <option>Active</option>
             <option>Inactive</option>
-          </select>
+          </Select>
         </label>
         <label className="full">
           Description
@@ -37,9 +40,7 @@ export default function CategoryForm({ initialValues, onSubmit, submitLabel }) {
           {error.message}
         </small>
       ))}
-      <button className="primary-btn" type="submit">
-        {submitLabel}
-      </button>
+      <Button type="submit">{submitLabel}</Button>
     </form>
   );
 }

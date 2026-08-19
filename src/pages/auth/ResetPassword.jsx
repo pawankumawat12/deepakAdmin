@@ -8,6 +8,8 @@ import {
   useResetPasswordMutation,
   useVerifyResetPasswordTokenMutation,
 } from "../../services/authApi";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -64,7 +66,7 @@ export default function ResetPassword() {
           <form className="login-form" onSubmit={handleSubmit(submit)}>
             <label>
               New password
-              <input
+              <Input
                 type="password"
                 autoComplete="new-password"
                 {...register("password")}
@@ -75,7 +77,7 @@ export default function ResetPassword() {
             )}
             <label>
               Confirm password
-              <input
+              <Input
                 type="password"
                 autoComplete="new-password"
                 {...register("confirmPassword")}
@@ -89,10 +91,10 @@ export default function ResetPassword() {
                 {error.data?.message || "Unable to reset password"}
               </small>
             )}
-            <button className="primary-btn" type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading}>
               <LockKeyhole size={18} />{" "}
               {isLoading ? "Resetting..." : "Reset password"}
-            </button>
+            </Button>
           </form>
         )}
         <Link className="text-btn" to="/login">

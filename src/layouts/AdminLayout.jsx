@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "../context/authSlice";
 import { useLogoutMutation } from "../services/authApi";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
+import Button from "../components/ui/Button";
+import SearchInput from "../components/ui/SearchInput";
 import {
   Bell,
   ChevronDown,
@@ -20,16 +22,15 @@ import {
   UserRound,
   LogOut,
   Menu,
-  Search,
   X,
 } from "lucide-react";
 
 const navigation = [
-  ["Overview", "/", LayoutDashboard],
-  ["Catalog", "/products", Package],
+  ["Dashboard", "/", LayoutDashboard],
+  ["Customers", "/customers", Users],
+  ["Products", "/products", Package],
   ["Categories", "/categories", Tags],
   ["Orders", "/orders", ShoppingBag],
-  ["Customers", "/customers", Users],
   ["Offers", "/offers", BadgePercent],
   ["Reviews", "/reviews", Star],
   ["Messages", "/messages", MessageSquare],
@@ -70,9 +71,9 @@ export default function AdminLayout() {
           <span>
             ADMIN
           </span>
-          <button className="close-nav" onClick={() => setOpen(false)}>
+          <Button variant="plain" className="close-nav" onClick={() => setOpen(false)}>
             <X />
-          </button>
+          </Button>
         </div>
         <nav>
           {navigation.map(([label, to, Icon]) => (
@@ -81,6 +82,7 @@ export default function AdminLayout() {
               key={to}
               to={to}
               onClick={() => setOpen(false)}
+              className="nav-link"
             >
               <Icon size={19} />
               <span>{label}</span>
@@ -91,29 +93,27 @@ export default function AdminLayout() {
         <div className="sidebar-help">
           <p>Need help?</p>
           <span>Reach your support team</span>
-          <button>Contact support</button>
+          <Button>Contact support</Button>
         </div>
       </aside>
       <div className="main-area">
         <header className="topbar">
-          <button className="mobile-menu" onClick={() => setOpen(true)}>
+          <Button variant="plain" className="mobile-menu" onClick={() => setOpen(true)}>
             <Menu />
-          </button>
+          </Button>
           <div>
             <p className="eyebrow">ADMINISTRATION</p>
             <h2>{title}</h2>
           </div>
           <div className="top-actions">
-            <label className="search">
-              <Search size={18} />
-              <input placeholder="Search anything..." />
-            </label>
-            <button className="icon-btn">
+            <SearchInput placeholder="Search anything..." />
+            <Button variant="icon">
               <Bell size={20} />
               <i />
-            </button>
+            </Button>
             <div className="profile-wrap">
-              <button
+              <Button
+                variant="plain"
                 className="profile"
                 onClick={() => setProfileOpen(!profileOpen)}
               >
@@ -123,15 +123,15 @@ export default function AdminLayout() {
                   <small>{user?.role}</small>
                 </div>
                 <ChevronDown size={16} />
-              </button>
+              </Button>
               {profileOpen && (
                 <div className="profile-menu">
-                  <button onClick={() => { setProfileOpen(false); navigate("/profile"); }}>
+                  <Button variant="plain" onClick={() => { setProfileOpen(false); navigate("/profile"); }}>
                     <UserRound size={16} /> My profile
-                  </button>
-                  <button onClick={() => { setSignOutError(""); setProfileOpen(false); setShowSignOut(true); }}>
+                  </Button>
+                  <Button variant="plain" onClick={() => { setSignOutError(""); setProfileOpen(false); setShowSignOut(true); }}>
                     <LogOut size={16} /> Sign out
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
