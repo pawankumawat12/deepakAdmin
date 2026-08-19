@@ -31,7 +31,9 @@ export const otpSchema = z.object({
 });
 export const forgotPasswordSchema = z.object({ email: z.string().email("Enter a valid email") });
 export const resetPasswordSchema = z.object({
-  otp: z.string().length(6, "OTP must be 6 digits").regex(/^\d{6}$/, "OTP must contain only numbers"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string(),
+  password: z.string().regex(
+    passwordRegex,
+    "Password must be 8+ characters with uppercase, lowercase, number and special character"
+  ),
+  confirmPassword: z.string().min(1, "Confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" });
