@@ -67,10 +67,7 @@ export default function AdminLayout() {
     <div className="app-shell">
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="sidebar-brand">
-          <span className="brand-mark small">D</span>
-          <span>
-            ADMIN
-          </span>
+       <img src="/images/logo.png"style={{width: "40px"}} />
           <Button variant="plain" className="close-nav" onClick={() => setOpen(false)}>
             <X />
           </Button>
