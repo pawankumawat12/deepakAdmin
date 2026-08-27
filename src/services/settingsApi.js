@@ -14,7 +14,38 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Settings"],
     }),
+    getFooter: build.query({
+      query: () => "/settings/footer",
+      providesTags: ["Settings"],
+    }),
+    updateFooter: build.mutation({
+      query: (body) => ({
+        url: "/settings/footer",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Settings"],
+    }),
+    getLogo: build.query({
+      query: () => "/settings/logo",
+      providesTags: ["Settings"],
+    }),
+    updateLogo: build.mutation({
+      query: (formData) => ({
+        url: "/settings/logo",
+        method: "PUT",
+        body: formData,
+      }),
+      invalidatesTags: ["Settings"],
+    }),
   }),
 });
 
-export const { useGetThemeQuery, useUpdateThemeMutation } = settingsApi;
+export const {
+  useGetThemeQuery,
+  useUpdateThemeMutation,
+  useGetFooterQuery,
+  useUpdateFooterMutation,
+  useGetLogoQuery,
+  useUpdateLogoMutation,
+} = settingsApi;

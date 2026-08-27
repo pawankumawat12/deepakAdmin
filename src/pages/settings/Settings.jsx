@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DataTable from "../../components/common/DataTable";
 import Button from "../../components/ui/Button";
 import {
   useGetThemeQuery,
   useUpdateThemeMutation,
+  useGetFooterQuery,
+  useUpdateFooterMutation,
+  useGetLogoQuery,
+  useUpdateLogoMutation,
 } from "../../services/settingsApi";
 import {
   Palette,
@@ -13,7 +17,17 @@ import {
   Sparkles,
   RefreshCw,
   Sliders,
+  Image,
+  Upload,
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
 } from "lucide-react";
+import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
+const API_ORIGIN = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1"
+).replace(/\/api\/v1$/, "");
 
 const DEFAULT_FALLBACK_COLOR_THEMES = [
   {
@@ -54,10 +68,71 @@ const generalSettings = [
     status: "Active",
   },
   { id: "se-2", setting: "Delivery radius", value: "8 km", status: "Active" },
-  { id: "se-3", setting: "Ordering mode", value: "Dine-in / Delivery", status: "Active" },
+  {
+    id: "se-3",
+    setting: "Ordering mode",
+    value: "Dine-in / Delivery",
+    status: "Active",
+  },
 ];
 
+/* ─── Reusable inline-style card ─── */
+const cardStyle = {
+  background: "#ffffff",
+  borderRadius: "16px",
+  border: "1px solid #ececf3",
+  padding: "24px",
+  marginBottom: "28px",
+  boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+};
+
+const sectionLabel = {
+  display: "block",
+  fontSize: "12px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+  color: "#52526c",
+  marginBottom: "6px",
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "10px 14px",
+  borderRadius: "10px",
+  border: "1px solid #ececf3",
+  fontSize: "14px",
+  color: "#24243b",
+  outline: "none",
+  transition: "border 0.2s",
+};
+
+function StatusBanner({ text, type }) {
+  if (!text) return null;
+  return (
+    <div
+      style={{
+        padding: "10px 16px",
+        borderRadius: "10px",
+        marginBottom: "18px",
+        fontSize: "13px",
+        fontWeight: 600,
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        backgroundColor: type === "success" ? "#ecfdf5" : "#fef2f2",
+        color: type === "success" ? "#065f46" : "#991b1b",
+        border: type === "success" ? "1px solid #a7f3d0" : "1px solid #fecaca",
+      }}
+    >
+      {type === "success" ? <Check size={16} /> : <Sliders size={16} />}
+      {text}
+    </div>
+  );
+}
+
 export default function Settings() {
+  /* ─── THEME STATE ─── */
   const { data: themeResponse, isLoading, refetch } = useGetThemeQuery();
   const [updateTheme, { isLoading: isSaving }] = useUpdateThemeMutation();
 
@@ -103,26 +178,365 @@ export default function Settings() {
     availableColorThemes[0] ||
     DEFAULT_FALLBACK_COLOR_THEMES[0];
 
+  /* ─── LOGO STATE ─── */
+  const { data: logoResponse, isLoading: logoLoading } = useGetLogoQuery();
+  const [updateLogo, { isLoading: logoSaving }] = useUpdateLogoMutation();
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoStatus, setLogoStatus] = useState({ text: "", type: "" });
+  const fileInputRef = useRef(null);
+
+  const currentLogoUrl = logoResponse?.data?.logo_url
+    ? `${API_ORIGIN}${logoResponse.data.logo_url}`
+    : null;
+
+  const handleLogoSelect = async (e) => {
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setLogoPreview(URL.createObjectURL(file));
+
+      setLogoStatus({ text: "", type: "" });
+      const formData = new FormData();
+      formData.append("logo", file);
+      await updateLogo(formData).unwrap();
+      setLogoFile(null);
+      setLogoPreview(null);
+      setLogoStatus({ text: "Logo updated successfully!", type: "success" });
+      setTimeout(() => setLogoStatus({ text: "", type: "" }), 4000);
+    } catch (err) {
+      setLogoStatus({
+        text: err?.data?.message || "Failed to update logo",
+        type: "error",
+      });
+    }
+  };
+
+  /* ─── FOOTER STATE ─── */
+  const { data: footerResponse, isLoading: footerLoading } =
+    useGetFooterQuery();
+  const [updateFooter, { isLoading: footerSaving }] = useUpdateFooterMutation();
+  const [footerForm, setFooterForm] = useState({
+    phone_number: "",
+    email: "",
+    location: "",
+    working_hours: "",
+    instagram: "",
+    facebook: "",
+    twitter: "",
+  });
+  const [footerStatus, setFooterStatus] = useState({ text: "", type: "" });
+
+  useEffect(() => {
+    if (footerResponse?.data) {
+      setFooterForm({
+        phone_number: footerResponse.data.phone_number || "",
+        email: footerResponse.data.email || "",
+        location: footerResponse.data.location || "",
+        working_hours: footerResponse.data.working_hours || "",
+        instagram: footerResponse.data.instagram || "",
+        facebook: footerResponse.data.facebook || "",
+        twitter: footerResponse.data.twitter || "",
+      });
+    }
+  }, [footerResponse]);
+
+  const handleFooterChange = (field) => (e) =>
+    setFooterForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const handleSaveFooter = async () => {
+    try {
+      setFooterStatus({ text: "", type: "" });
+      await updateFooter(footerForm).unwrap();
+      setFooterStatus({
+        text: "Footer settings saved successfully!",
+        type: "success",
+      });
+      setTimeout(() => setFooterStatus({ text: "", type: "" }), 4000);
+    } catch (err) {
+      setFooterStatus({
+        text: err?.data?.message || "Failed to update footer settings",
+        type: "error",
+      });
+    }
+  };
+
+  /* ─── Footer form field config ─── */
+  const footerFields = [
+    {
+      key: "phone_number",
+      label: "Phone Number",
+      icon: Phone,
+      placeholder: "+91 98765 43210",
+    },
+    {
+      key: "email",
+      label: "Email",
+      icon: Mail,
+      placeholder: "hello@sfccafe.com",
+    },
+    {
+      key: "location",
+      label: "Location / Address",
+      icon: MapPin,
+      placeholder: "123 Main Street, Jaipur",
+    },
+    {
+      key: "working_hours",
+      label: "Working Hours",
+      icon: Clock,
+      placeholder: "Mon-Fri: 10AM-11PM",
+    },
+    {
+      key: "instagram",
+      label: "Instagram URL",
+      icon: FaInstagram,
+      placeholder: "https://instagram.com/sfccafe",
+    },
+    {
+      key: "facebook",
+      label: "Facebook URL",
+      icon: FaFacebook,
+      placeholder: "https://facebook.com/sfccafe",
+    },
+    {
+      key: "twitter",
+      label: "Twitter / X URL",
+      icon: FaTwitter,
+      placeholder: "https://x.com/sfccafe",
+    },
+  ];
+
   return (
     <>
       <div className="section-head">
         <div>
           <h1>Settings</h1>
-          <p>Configure storefront appearance, theme palette, and preferences.</p>
+          <p>
+            Configure storefront appearance, logo, footer details, and
+            preferences.
+          </p>
         </div>
       </div>
 
-      {/* THEME MANAGEMENT CARD */}
-      <section
-        style={{
-          background: "#ffffff",
-          borderRadius: "16px",
-          border: "1px solid #ececf3",
-          padding: "24px",
-          marginBottom: "28px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
-        }}
-      >
+      <section style={cardStyle}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            borderBottom: "1px solid #f0f0f5",
+            paddingBottom: "16px",
+            marginBottom: "22px",
+          }}
+        >
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              background: "#eef2ff",
+              display: "grid",
+              placeItems: "center",
+              color: "#6366f1",
+            }}
+          >
+            <Image size={22} />
+          </div>
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "17px",
+                fontWeight: 700,
+                color: "#24243b",
+              }}
+            >
+              Site Logo
+            </h2>
+            <p style={{ margin: 0, fontSize: "12px", color: "#8b8ba0" }}>
+              Upload and manage your storefront logo image.
+            </p>
+          </div>
+        </div>
+
+        <StatusBanner text={logoStatus.text} type={logoStatus.type} />
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "24px",
+            flexWrap: "wrap",
+          }}
+        >
+          {/* Current / Preview */}
+          <div
+            style={{
+              width: "120px",
+              height: "120px",
+              borderRadius: "16px",
+              border: "2px dashed #dcdbe8",
+              display: "grid",
+              placeItems: "center",
+              overflow: "hidden",
+              background: "#fafafc",
+            }}
+          >
+            {logoPreview || currentLogoUrl ? (
+              <img
+                src={logoPreview || currentLogoUrl}
+                alt="Logo"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  padding: "8px",
+                }}
+              />
+            ) : (
+              <div style={{ textAlign: "center", color: "#8b8ba0" }}>
+                <Image size={32} />
+                <p style={{ fontSize: "11px", margin: "4px 0 0" }}>No logo</p>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleLogoSelect}
+              style={{ display: "none" }}
+            />
+            <Button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "8px",
+              }}
+            >
+              <Upload size={16} />
+              Choose Logo
+            </Button>
+            <p style={{ fontSize: "11px", color: "#8b8ba0", margin: 0 }}>
+              JPG, PNG or WEBP. Max 10 MB.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section style={cardStyle}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            borderBottom: "1px solid #f0f0f5",
+            paddingBottom: "16px",
+            marginBottom: "22px",
+          }}
+        >
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              background: "#fef3c7",
+              display: "grid",
+              placeItems: "center",
+              color: "#d97706",
+            }}
+          >
+            <MapPin size={22} />
+          </div>
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "17px",
+                fontWeight: 700,
+                color: "#24243b",
+              }}
+            >
+              Footer Details
+            </h2>
+            <p style={{ margin: 0, fontSize: "12px", color: "#8b8ba0" }}>
+              Contact info, working hours, and social links displayed in the
+              storefront footer.
+            </p>
+          </div>
+        </div>
+
+        <StatusBanner text={footerStatus.text} type={footerStatus.type} />
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "18px",
+            marginBottom: "24px",
+          }}
+        >
+          {footerFields.map(({ key, label, icon: Icon, placeholder }) => (
+            <div key={key}>
+              <label style={sectionLabel}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <Icon size={14} />
+                  {label}
+                </span>
+              </label>
+              <input
+                type="text"
+                value={footerForm[key]}
+                onChange={handleFooterChange(key)}
+                placeholder={placeholder}
+                style={inputStyle}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            type="button"
+            onClick={handleSaveFooter}
+            disabled={footerSaving || footerLoading}
+            style={{
+              minWidth: "180px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+          >
+            {footerSaving ? (
+              <>
+                <RefreshCw size={16} className="animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Check size={16} />
+                Save Footer Settings
+              </>
+            )}
+          </Button>
+        </div>
+      </section>
+
+      {/* ═══════ THEME MANAGEMENT CARD (existing) ═══════ */}
+      <section style={cardStyle}>
         <div
           style={{
             display: "flex",
@@ -161,7 +575,8 @@ export default function Settings() {
                 Storefront Theme & Color Palette
               </h2>
               <p style={{ margin: 0, fontSize: "12px", color: "#8b8ba0" }}>
-                Centrally control the visual appearance of the customer storefront.
+                Centrally control the visual appearance of the customer
+                storefront.
               </p>
             </div>
           </div>
@@ -187,51 +602,11 @@ export default function Settings() {
           </button>
         </div>
 
-        {statusMessage.text && (
-          <div
-            style={{
-              padding: "10px 16px",
-              borderRadius: "10px",
-              marginBottom: "18px",
-              fontSize: "13px",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              backgroundColor:
-                statusMessage.type === "success" ? "#ecfdf5" : "#fef2f2",
-              color:
-                statusMessage.type === "success" ? "#065f46" : "#991b1b",
-              border:
-                statusMessage.type === "success"
-                  ? "1px solid #a7f3d0"
-                  : "1px solid #fecaca",
-            }}
-          >
-            {statusMessage.type === "success" ? (
-              <Check size={16} />
-            ) : (
-              <Sliders size={16} />
-            )}
-            {statusMessage.text}
-          </div>
-        )}
+        <StatusBanner text={statusMessage.text} type={statusMessage.type} />
 
         {/* MODE SELECTOR */}
         <div style={{ marginBottom: "24px" }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: "12px",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              color: "#52526c",
-              marginBottom: "10px",
-            }}
-          >
-            Theme Mode
-          </label>
+          <label style={sectionLabel}>Theme Mode</label>
           <div
             style={{
               display: "grid",
@@ -377,19 +752,7 @@ export default function Settings() {
 
         {/* COLOR PALETTE SELECTOR */}
         <div style={{ marginBottom: "24px" }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: "12px",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              color: "#52526c",
-              marginBottom: "10px",
-            }}
-          >
-            Cafe Color Palette
-          </label>
+          <label style={sectionLabel}>Cafe Color Palette</label>
           <div
             style={{
               display: "grid",
@@ -525,7 +888,8 @@ export default function Settings() {
                   color: selectedTheme === "dark" ? "#ffffff" : "#24243b",
                 }}
               >
-                Active Preview: {currentColorObj.name} ({selectedTheme.toUpperCase()})
+                Active Preview: {currentColorObj.name} (
+                {selectedTheme.toUpperCase()})
               </p>
               <span
                 style={{
@@ -533,7 +897,8 @@ export default function Settings() {
                   color: selectedTheme === "dark" ? "#a1a1aa" : "#8b8ba0",
                 }}
               >
-                Storefront primary button & accents will render in {currentColorObj.color}
+                Storefront primary button & accents will render in{" "}
+                {currentColorObj.color}
               </span>
             </div>
           </div>
