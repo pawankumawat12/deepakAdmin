@@ -13,7 +13,7 @@ import {
   useGetProductsQuery,
 } from "../../services/productApi";
 
-const initialFilters = { categoryId: "", isActive: "" };
+const initialFilters = { categoryId: "", isActive: "", availabilityType: "" };
 
 export default function ProductList() {
   const navigate = useNavigate();
@@ -36,6 +36,7 @@ export default function ProductList() {
       ...(debouncedQuery.trim() ? { search: debouncedQuery.trim() } : {}),
       ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
       ...(filters.isActive !== "" ? { isActive: filters.isActive } : {}),
+      ...(filters.availabilityType ? { availabilityType: filters.availabilityType } : {}),
     }),
     [page, debouncedQuery, filters, sortBy, sortOrder]
   );
@@ -127,6 +128,24 @@ export default function ProductList() {
                 ))}
               </Select>
             </label>
+
+            <label>
+              Fulfillment Type
+              <Select
+                value={pendingFilters.availabilityType}
+                onChange={(event) =>
+                  setPendingFilters((value) => ({
+                    ...value,
+                    availabilityType: event.target.value,
+                  }))
+                }
+              >
+                <option value="">All fulfillment types</option>
+                <option value="IN_STOCK">In Stock</option>
+                <option value="MADE_TO_ORDER">Made to Order</option>
+              </Select>
+            </label>
+
             <label>
               Status
               <Select
@@ -143,6 +162,7 @@ export default function ProductList() {
                 <option value="false">Out of stock</option>
               </Select>
             </label>
+
             <div className="filter-actions">
               <Button variant="outline" onClick={clearFilters}>
                 Clear
@@ -179,9 +199,24 @@ export default function ProductList() {
               ),
               sortable: true,
             },
-            { key: "category", label: "CATEGORY" ,    sortable: true,},
-            { key: "price", label: "PRICE", render: (value) => `₹${value}` ,sortable: true,},
-            { key: "stock", label: "STOCK",sortable: true },
+            { key: "category", label: "CATEGORY", sortable: true },
+            { key: "price", label: "PRICE", render: (value) => `₹${value}`, sortable: true },
+            {
+              key: "availability_type",
+              label: "FULFILLMENT",
+              render: (value, item) => (
+                item.availability_type === "MADE_TO_ORDER" ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "#fef3eb", color: "#e86b1a" }}>
+                    ⚡ Made to Order
+                  </span>
+                ) : (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "#f0fdf4", color: "#16a34a" }}>
+                    📦 In Stock ({item.stock})
+                  </span>
+                )
+              ),
+              sortable: true,
+            },
             {
               key: "status",
               label: "STATUS",
@@ -189,7 +224,8 @@ export default function ProductList() {
                 <em className={value === "Active" ? "active" : "inactive"}>
                   {value}
                 </em>
-              ),sortable: true
+              ),
+              sortable: true,
             },
           ]}
           data={rows}

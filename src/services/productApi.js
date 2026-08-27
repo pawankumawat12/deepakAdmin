@@ -65,6 +65,10 @@ export const productApi = baseApi.injectEndpoints({
           "stock",
           data.stock
         );
+        formData.append(
+          "availabilityType",
+          data.availabilityType || "IN_STOCK"
+        );
     
         formData.append(
           "isActive",

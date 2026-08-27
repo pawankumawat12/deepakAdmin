@@ -45,6 +45,7 @@ export default function ProductCreate() {
               description: "",
               categoryId: "",
               price: "",
+              availability_type: "IN_STOCK",
               stock: 0,
               status: "Active",
             }}

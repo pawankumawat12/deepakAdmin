@@ -43,23 +43,17 @@ export default function ProductEdit() {
   }
 
   const save = async (data) => {
-    console.log("FORM DATA:", data);
-
     try {
       await updateProduct({
         id,
-
         name: data.name,
         description: data.description,
         categoryId: data.categoryId,
         price: data.price,
-        stock: data.stock,
+        availabilityType: data.availabilityType || data.availability_type,
+        stock: data.availabilityType === "MADE_TO_ORDER" ? 0 : data.stock,
         status: data.status,
-
-        // Existing images jo user ne keep ki hain
         existingImages: data.existingImages || [],
-
-        // Sirf newly selected File objects
         imageFiles: Array.from(data.imageFiles || []),
       }).unwrap();
 
@@ -93,6 +87,7 @@ export default function ProductEdit() {
           description: product.description || "",
           categoryId: String(product.category_id),
           price: product.price,
+          availability_type: product.availability_type || "IN_STOCK",
           stock: product.stock,
           status: product.is_active
             ? "Active"
