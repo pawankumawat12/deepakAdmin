@@ -38,6 +38,18 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Settings"],
     }),
+
+    getSettingPricing: build.query({
+      query: () => '/settings/order-pricing',
+      method: 'GET'
+    }),
+    updateSettingPricing: build.mutation({
+      query: (body) => ({
+        url: "/settings/order-pricing",
+        method: "PUT",
+        body
+      })
+    })
   }),
 });
 
@@ -48,4 +60,6 @@ export const {
   useUpdateFooterMutation,
   useGetLogoQuery,
   useUpdateLogoMutation,
+  useGetSettingPricingQuery,
+  useUpdateSettingPricingMutation
 } = settingsApi;

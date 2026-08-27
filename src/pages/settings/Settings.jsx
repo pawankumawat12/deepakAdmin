@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import DataTable from "../../components/common/DataTable";
+import { useForm } from "react-hook-form";
 import Button from "../../components/ui/Button";
 import {
   useGetThemeQuery,
@@ -8,6 +9,8 @@ import {
   useUpdateFooterMutation,
   useGetLogoQuery,
   useUpdateLogoMutation,
+  useGetSettingPricingQuery,
+  useUpdateSettingPricingMutation,
 } from "../../services/settingsApi";
 import {
   Palette,
@@ -23,6 +26,14 @@ import {
   Mail,
   MapPin,
   Clock,
+  Percent,
+  Truck,
+  ShoppingCart,
+  Package,
+  Banknote,
+  CreditCard,
+  ShoppingCartIcon,
+  Receipt,
 } from "lucide-react";
 import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 const API_ORIGIN = (
@@ -134,11 +145,32 @@ function StatusBanner({ text, type }) {
 export default function Settings() {
   /* ─── THEME STATE ─── */
   const { data: themeResponse, isLoading, refetch } = useGetThemeQuery();
+  const { data: priceSetting, isLoading: priceSettingLoading } =
+    useGetSettingPricingQuery();
+  const [updateOrderPricingSettings, { isLoading: pricingLoading }] =
+    useUpdateSettingPricingMutation();
   const [updateTheme, { isLoading: isSaving }] = useUpdateThemeMutation();
-
   const [selectedTheme, setSelectedTheme] = useState("light");
   const [selectedColor, setSelectedColor] = useState("matcha");
   const [statusMessage, setStatusMessage] = useState({ text: "", type: "" });
+
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: {
+      gst_percent: "",
+      tax_inclusive: false,
+      delivery_charge_type: "fixed",
+      delivery_charge_value: "",
+      free_delivery_threshold: "",
+      max_delivery_distance: "",
+      packaging_fee: "",
+      cod_fee: "",
+      platform_fee: "",
+      minimum_order_amount: "",
+      store_latitude: "",
+      store_longitude: "",
+      discount_percent: "",
+    },
+  });
 
   const availableColorThemes =
     themeResponse?.data?.availableColorThemes &&
@@ -146,6 +178,58 @@ export default function Settings() {
       ? themeResponse.data.availableColorThemes
       : DEFAULT_FALLBACK_COLOR_THEMES;
 
+  useEffect(() => {
+    if (priceSetting?.data) {
+      reset({
+        gst_percent: priceSetting.data.gst_percent ?? "",
+        tax_inclusive: priceSetting.data.tax_inclusive ?? false,
+        delivery_charge_type: priceSetting.data.delivery_charge_type ?? "fixed",
+        delivery_charge_value: priceSetting.data.delivery_charge_value ?? "",
+        free_delivery_threshold:
+          priceSetting.data.free_delivery_threshold ?? "",
+        max_delivery_distance: priceSetting.data.max_delivery_distance ?? "",
+        packaging_fee: priceSetting.data.packaging_fee ?? "",
+        cod_fee: priceSetting.data.cod_fee ?? "",
+        platform_fee: priceSetting.data.platform_fee ?? "",
+        minimum_order_amount: priceSetting.data.minimum_order_amount ?? "",
+        store_latitude: priceSetting.data.store_latitude ?? "",
+        store_longitude: priceSetting.data.store_longitude ?? "",
+        discount_percent: priceSetting.data.discount_percent ?? "",
+      });
+    }
+  }, [priceSetting, reset]);
+
+  const onSubmitPricing = async (data) => {
+    try {
+      const payload = {
+        gst_percent: Number(data.gst_percent),
+        tax_inclusive: Boolean(data.tax_inclusive),
+
+        delivery_charge_type: data.delivery_charge_type,
+        delivery_charge_value: Number(data.delivery_charge_value),
+
+        free_delivery_threshold: Number(data.free_delivery_threshold),
+        max_delivery_distance: Number(data.max_delivery_distance),
+
+        packaging_fee: Number(data.packaging_fee),
+        cod_fee: Number(data.cod_fee),
+        platform_fee: Number(data.platform_fee),
+
+        minimum_order_amount: Number(data.minimum_order_amount),
+
+        store_latitude: Number(data.store_latitude),
+        store_longitude: Number(data.store_longitude),
+
+        discount_percent: Number(data.discount_percent),
+      };
+
+      const response = await updateOrderPricingSettings(payload).unwrap();
+
+      console.log("Order pricing updated:", response);
+    } catch (error) {
+      console.error("Failed to update order pricing:", error);
+    }
+  };
   useEffect(() => {
     if (themeResponse?.data) {
       setSelectedTheme(themeResponse.data.theme || "light");
@@ -180,6 +264,7 @@ export default function Settings() {
 
   /* ─── LOGO STATE ─── */
   const { data: logoResponse, isLoading: logoLoading } = useGetLogoQuery();
+
   const [updateLogo, { isLoading: logoSaving }] = useUpdateLogoMutation();
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
@@ -225,6 +310,7 @@ export default function Settings() {
     facebook: "",
     twitter: "",
   });
+
   const [footerStatus, setFooterStatus] = useState({ text: "", type: "" });
 
   useEffect(() => {
@@ -305,6 +391,67 @@ export default function Settings() {
       icon: FaTwitter,
       placeholder: "https://x.com/sfccafe",
     },
+  ];
+
+  //order pricing
+  const pricingFields = [
+    {
+      key: "gst_percent",
+      label: "GST Percentage",
+      icon: Percent,
+      placeholder: "18",
+      type: "number",
+    },
+    {
+      key: "delivery_charge_value",
+      label: "Delivery Charge / KM",
+      icon: Truck,
+      placeholder: "10",
+      type: "number",
+    },
+    {
+      key: "free_delivery_threshold",
+      label: "Free Delivery Threshold",
+      icon: ShoppingCart,
+      placeholder: "500",
+      type: "number",
+    },
+    {
+      key: "max_delivery_distance",
+      label: "Maximum Delivery Distance (KM)",
+      icon: MapPin,
+      placeholder: "10",
+      type: "number",
+    },
+    {
+      key: "packaging_fee",
+      label: "Packaging Fee",
+      icon: Package,
+      placeholder: "20",
+      type: "number",
+    },
+    {
+      key: "cod_fee",
+      label: "COD Fee",
+      icon: Banknote,
+      placeholder: "30",
+      type: "number",
+    },
+    {
+      key: "platform_fee",
+      label: "Platform Fee",
+      icon: CreditCard,
+      placeholder: "10",
+      type: "number",
+    },
+    {
+      key: "minimum_order_amount",
+      label: "Minimum Order Amount",
+      icon: ShoppingCartIcon,
+      placeholder: "100",
+      type: "number",
+    },
+   
   ];
 
   return (
@@ -535,7 +682,143 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* ═══════ THEME MANAGEMENT CARD (existing) ═══════ */}
+      <form onSubmit={handleSubmit(onSubmitPricing)}>
+        <section className="card border-0 shadow-sm p-4">
+          <div className="d-flex align-items-center gap-3 border-bottom pb-3 mb-4">
+            <div
+              className="rounded-3 d-flex align-items-center justify-content-center"
+              style={{
+                width: "42px",
+                height: "42px",
+                background: "#dcfce7",
+                color: "#16a34a",
+              }}
+            >
+              <Receipt size={22} />
+            </div>
+
+            <div>
+              <h2 className="mb-0 fs-6 fw-bold text-dark">
+                Order Pricing Settings
+              </h2>
+
+              <p className="mb-0 small text-secondary">
+                Configure GST, delivery charges, fees, order limits, and cafe
+                location.
+              </p>
+            </div>
+          </div>
+
+          {/* Pricing Fields */}
+          <div className="row g-4 mb-4">
+            {pricingFields.map(
+              ({ key, label, icon: Icon, placeholder, type }) => (
+                <div className="col-12 col-md-6" key={key}>
+                  <label className="form-label fw-semibold small text-dark d-flex align-items-center gap-2">
+                    <Icon size={14} />
+                    {label}
+                  </label>
+
+                  <input
+                    type={type}
+                    placeholder={placeholder}
+                    className="form-control"
+                    {...register(key)}
+                  />
+                </div>
+              )
+            )}
+          </div>
+
+          {/* Delivery & Tax */}
+          <div className="row g-4 mb-4">
+            <div className="col-12 col-md-6">
+              <label className="form-label fw-semibold small text-dark d-flex align-items-center gap-2">
+                <Truck size={14} />
+                Delivery Charge Type
+              </label>
+
+              <select
+                className="form-select"
+                {...register("delivery_charge_type")}
+              >
+                <option value="fixed">Fixed</option>
+                <option value="per_km">Per KM</option>
+              </select>
+            </div>
+
+            <div className="col-12 col-md-6">
+              <label className="form-label fw-semibold small text-dark d-flex align-items-center gap-2">
+                <Receipt size={14} />
+                Tax Inclusive
+              </label>
+
+              <select
+                className="form-select"
+                {...register("tax_inclusive", {
+                  setValueAs: (value) => value === "true",
+                })}
+              >
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Cafe Location */}
+          <div className="border-top pt-4 mb-4">
+            <h3 className="fs-6 fw-bold text-dark mb-3">Cafe Location</h3>
+
+            <div className="row g-4">
+              <div className="col-12 col-md-6">
+                <label className="form-label fw-semibold small text-dark d-flex align-items-center gap-2">
+                  <MapPin size={14} />
+                  Store Latitude
+                </label>
+
+                <input
+                  type="number"
+                  step="any"
+                  className="form-control"
+                  placeholder="26.9124"
+                  {...register("store_latitude", {
+                    valueAsNumber: true,
+                  })}
+                />
+              </div>
+
+              <div className="col-12 col-md-6">
+                <label className="form-label fw-semibold small text-dark d-flex align-items-center gap-2">
+                  <MapPin size={14} />
+                  Store Longitude
+                </label>
+
+                <input
+                  type="number"
+                  step="any"
+                  className="form-control"
+                  placeholder="75.7873"
+                  {...register("store_longitude", {
+                    valueAsNumber: true,
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Save */}
+          <div className="d-flex justify-content-end">
+            <Button
+              type="submit"
+              className="d-flex align-items-center justify-content-center gap-2 px-4"
+            >
+              <Check size={16} />
+              Save Pricing Settings
+            </Button>
+          </div>
+        </section>
+      </form>
+
       <section style={cardStyle}>
         <div
           style={{
@@ -947,26 +1230,6 @@ export default function Settings() {
           </Button>
         </div>
       </section>
-
-      {/* GENERAL STORE SETTINGS */}
-      <h2
-        style={{
-          fontSize: "16px",
-          fontWeight: 700,
-          color: "#24243b",
-          marginBottom: "12px",
-        }}
-      >
-        General Store Configurations
-      </h2>
-      <DataTable
-        data={generalSettings}
-        columns={[
-          { key: "setting", label: "SETTING" },
-          { key: "value", label: "VALUE" },
-          { key: "status", label: "STATUS" },
-        ]}
-      />
     </>
   );
 }
