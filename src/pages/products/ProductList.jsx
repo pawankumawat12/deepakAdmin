@@ -49,7 +49,9 @@ export default function ProductList() {
   const rows = (productResponse?.data || []).map((product) => ({
     ...product,
     category: product.category_name || "—",
-    status: product.is_active ? "Active" : "Out of stock",
+    status: (product.availability_type === "MADE_TO_ORDER" || product.is_active)
+      ? "Active"
+      : "Out of stock",
   }));
   const pagination = productResponse?.pagination;
 

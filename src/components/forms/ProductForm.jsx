@@ -40,6 +40,14 @@ export default function ProductForm({
   const availabilityType = watch("availability_type") || "IN_STOCK";
   const isMadeToOrder = availabilityType === "MADE_TO_ORDER";
 
+  // Auto-set status to Active and stock to 0 when switching to Made to Order
+  useEffect(() => {
+    if (isMadeToOrder) {
+      setValue("status", "Active");
+      setValue("stock", 0);
+    }
+  }, [isMadeToOrder, setValue]);
+
   useEffect(() => {
     if (!existingImages?.length) {
       setSelectedImages([]);
@@ -202,32 +210,42 @@ export default function ProductForm({
           </Select>
         </label>
 
-        <label>
-          Available stock
-          <Input
-            type="number"
-            min="0"
-            disabled={isMadeToOrder}
-            placeholder={isMadeToOrder ? "Unlimited (Made to order)" : "0"}
-            {...register("stock")}
-          />
-          {isMadeToOrder ? (
-            <small className="muted" style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--color-primary, #7cb324)" }}>
-              <Sparkles size={13} /> Stock tracking not required. Customers can order on demand.
+        {isMadeToOrder ? (
+          <label>
+            Available stock
+            <small className="muted" style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--color-primary, #7cb324)", padding: "10px 0" }}>
+              <Sparkles size={13} /> Stock tracking not required — customers can order on demand.
             </small>
-          ) : (
+            <input type="hidden" {...register("stock")} value={0} />
+          </label>
+        ) : (
+          <label>
+            Available stock
+            <Input
+              type="number"
+              min="0"
+              placeholder="0"
+              {...register("stock")}
+            />
             <small className="muted">
               Stock quantity will automatically decrease upon successful orders.
             </small>
-          )}
-        </label>
+          </label>
+        )}
 
         <label>
           Status
-          <Select {...register("status")}>
+          <Select {...register("status")} disabled={isMadeToOrder}>
             <option value="Active">Active</option>
-            <option value="Out of stock">Out of stock</option>
+            {!isMadeToOrder && (
+              <option value="Out of stock">Out of stock</option>
+            )}
           </Select>
+          {isMadeToOrder && (
+            <small className="muted" style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--color-primary, #7cb324)" }}>
+              <Package size={13} /> Made to Order products are always Active.
+            </small>
+          )}
         </label>
 
         <label>

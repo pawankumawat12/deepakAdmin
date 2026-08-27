@@ -89,7 +89,7 @@ export default function ProductEdit() {
           price: product.price,
           availability_type: product.availability_type || "IN_STOCK",
           stock: product.stock,
-          status: product.is_active
+          status: (product.availability_type === "MADE_TO_ORDER" || product.is_active)
             ? "Active"
             : "Out of stock",
         }}

@@ -35,7 +35,7 @@ export default function OrderList() {
     }
   };
 
-  const rows = orders.map((order) => {
+    const rows = orders.map((order) => {
     const totalItems = (order.items || []).reduce((sum, it) => sum + it.quantity, 0);
     const hasMadeToOrder = (order.items || []).some(
       (it) => it.availability_type === "MADE_TO_ORDER"
@@ -43,7 +43,14 @@ export default function OrderList() {
     const pendingProductionItems = (order.items || []).filter(
       (it) => it.availability_type === "MADE_TO_ORDER" && it.production_status === "PENDING_PRODUCTION"
     );
-
+    // Determine delivery address display
+    let deliveryAddress = order.shipping_address || "";
+    if (order.delivery_address_json) {
+      try {
+        const addr = typeof order.delivery_address_json === "string" ? JSON.parse(order.delivery_address_json) : order.delivery_address_json;
+        deliveryAddress = `${addr.house_number}, ${addr.formatted_address || `${addr.city} - ${addr.pincode}`}`;
+      } catch {}
+    }
     return {
       ...order,
       orderNumber: order.order_number || `#SFC-${order.id}`,
@@ -58,6 +65,7 @@ export default function OrderList() {
       }),
       hasMadeToOrder,
       pendingProductionItems,
+      deliveryAddress,
     };
   });
 
