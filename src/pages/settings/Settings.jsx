@@ -11,6 +11,8 @@ import {
   useUpdateLogoMutation,
   useGetSettingPricingQuery,
   useUpdateSettingPricingMutation,
+  useGetPaymentQrQuery,
+  useUpdatePaymentQrMutation,
 } from "../../services/settingsApi";
 import {
   Palette,
@@ -34,6 +36,7 @@ import {
   CreditCard,
   ShoppingCartIcon,
   Receipt,
+  QrCode,
 } from "lucide-react";
 import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 const API_ORIGIN = (
@@ -153,6 +156,7 @@ export default function Settings() {
   const [selectedTheme, setSelectedTheme] = useState("light");
   const [selectedColor, setSelectedColor] = useState("matcha");
   const [statusMessage, setStatusMessage] = useState({ text: "", type: "" });
+  const [pricingStatus, setPricingStatus] = useState({ text: "", type: "" });
 
   const { register, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -201,6 +205,7 @@ export default function Settings() {
 
   const onSubmitPricing = async (data) => {
     try {
+      setPricingStatus({ text: "", type: "" });
       const payload = {
         gst_percent: Number(data.gst_percent),
         tax_inclusive: Boolean(data.tax_inclusive),
@@ -224,10 +229,18 @@ export default function Settings() {
       };
 
       const response = await updateOrderPricingSettings(payload).unwrap();
-
       console.log("Order pricing updated:", response);
+      setPricingStatus({
+        text: "Order pricing settings saved successfully! Storefront cart and checkout calculations updated.",
+        type: "success",
+      });
+      setTimeout(() => setPricingStatus({ text: "", type: "" }), 4000);
     } catch (error) {
       console.error("Failed to update order pricing:", error);
+      setPricingStatus({
+        text: error?.data?.message || "Failed to update order pricing settings",
+        type: "error",
+      });
     }
   };
   useEffect(() => {
@@ -292,6 +305,76 @@ export default function Settings() {
     } catch (err) {
       setLogoStatus({
         text: err?.data?.message || "Failed to update logo",
+        type: "error",
+      });
+    }
+  };
+
+  /* ─── PAYMENT QR STATE ─── */
+  const { data: paymentQrResponse, isLoading: paymentQrLoading } =
+    useGetPaymentQrQuery();
+  const [updatePaymentQr, { isLoading: paymentQrSaving }] =
+    useUpdatePaymentQrMutation();
+  const [paymentQrForm, setPaymentQrForm] = useState({
+    upi_id: "",
+    merchant_name: "",
+    account_name: "",
+    is_enabled: true,
+    instructions: "",
+  });
+  const [paymentQrPreview, setPaymentQrPreview] = useState(null);
+  const [paymentQrFile, setPaymentQrFile] = useState(null);
+  const [paymentQrStatus, setPaymentQrStatus] = useState({ text: "", type: "" });
+  const qrFileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (paymentQrResponse?.data) {
+      setPaymentQrForm({
+        upi_id: paymentQrResponse.data.upi_id || "",
+        merchant_name: paymentQrResponse.data.merchant_name || "",
+        account_name: paymentQrResponse.data.account_name || "",
+        is_enabled: paymentQrResponse.data.is_enabled ?? true,
+        instructions: paymentQrResponse.data.instructions || "",
+      });
+    }
+  }, [paymentQrResponse]);
+
+  const currentQrUrl = paymentQrResponse?.data?.qr_code_url
+    ? `${API_ORIGIN}${paymentQrResponse.data.qr_code_url}`
+    : null;
+
+  const handleQrFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPaymentQrFile(file);
+    setPaymentQrPreview(URL.createObjectURL(file));
+  };
+
+  const handleSavePaymentQr = async (e) => {
+    if (e) e.preventDefault();
+    try {
+      setPaymentQrStatus({ text: "", type: "" });
+      const formData = new FormData();
+      if (paymentQrFile) {
+        formData.append("qr_image", paymentQrFile);
+      }
+      formData.append("upi_id", paymentQrForm.upi_id);
+      formData.append("merchant_name", paymentQrForm.merchant_name);
+      formData.append("account_name", paymentQrForm.account_name);
+      formData.append("is_enabled", String(paymentQrForm.is_enabled));
+      formData.append("instructions", paymentQrForm.instructions);
+
+      await updatePaymentQr(formData).unwrap();
+      setPaymentQrFile(null);
+      setPaymentQrPreview(null);
+      setPaymentQrStatus({
+        text: "Online Payment & QR settings saved successfully!",
+        type: "success",
+      });
+      setTimeout(() => setPaymentQrStatus({ text: "", type: "" }), 4000);
+    } catch (err) {
+      setPaymentQrStatus({
+        text: err?.data?.message || "Failed to update payment QR settings",
         type: "error",
       });
     }
@@ -399,56 +482,48 @@ export default function Settings() {
       key: "gst_percent",
       label: "GST Percentage",
       icon: Percent,
-      placeholder: "18",
       type: "number",
     },
     {
       key: "delivery_charge_value",
       label: "Delivery Charge / KM",
       icon: Truck,
-      placeholder: "10",
       type: "number",
     },
     {
       key: "free_delivery_threshold",
       label: "Free Delivery Threshold",
       icon: ShoppingCart,
-      placeholder: "500",
       type: "number",
     },
     {
       key: "max_delivery_distance",
       label: "Maximum Delivery Distance (KM)",
       icon: MapPin,
-      placeholder: "10",
       type: "number",
     },
     {
       key: "packaging_fee",
       label: "Packaging Fee",
       icon: Package,
-      placeholder: "20",
       type: "number",
     },
     {
       key: "cod_fee",
       label: "COD Fee",
       icon: Banknote,
-      placeholder: "30",
       type: "number",
     },
     {
       key: "platform_fee",
       label: "Platform Fee",
       icon: CreditCard,
-      placeholder: "10",
       type: "number",
     },
     {
       key: "minimum_order_amount",
       label: "Minimum Order Amount",
       icon: ShoppingCartIcon,
-      placeholder: "100",
       type: "number",
     },
    
@@ -709,6 +784,8 @@ export default function Settings() {
             </div>
           </div>
 
+          <StatusBanner text={pricingStatus.text} type={pricingStatus.type} />
+
           {/* Pricing Fields */}
           <div className="row g-4 mb-4">
             {pricingFields.map(
@@ -810,14 +887,244 @@ export default function Settings() {
           <div className="d-flex justify-content-end">
             <Button
               type="submit"
+              disabled={pricingLoading}
               className="d-flex align-items-center justify-content-center gap-2 px-4"
             >
-              <Check size={16} />
-              Save Pricing Settings
+              {pricingLoading ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" />
+                  Saving Pricing...
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  Save Pricing Settings
+                </>
+              )}
             </Button>
           </div>
         </section>
       </form>
+
+      {/* ─── PAYMENT QR SCANNER SETTINGS ─── */}
+      <section className="card border-0 shadow-sm p-4 mt-4">
+        <div className="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4 flex-wrap gap-2">
+          <div className="d-flex align-items-center gap-3">
+            <div
+              className="rounded-3 d-flex align-items-center justify-content-center"
+              style={{
+                width: "42px",
+                height: "42px",
+                background: "#ede9fe",
+                color: "#7c3aed",
+              }}
+            >
+              <QrCode size={22} />
+            </div>
+
+            <div>
+              <h2 className="mb-0 fs-6 fw-bold text-dark">
+                Online Payment QR Scanner & UPI Details
+              </h2>
+              <p className="mb-0 small text-secondary">
+                Upload payment QR code image and configure UPI details displayed to customers at checkout.
+              </p>
+            </div>
+          </div>
+
+          <div className="form-check form-switch d-flex align-items-center gap-2 m-0">
+            <input
+              type="checkbox"
+              className="form-check-input"
+              id="enableOnlinePayment"
+              checked={paymentQrForm.is_enabled}
+              onChange={(e) =>
+                setPaymentQrForm((prev) => ({
+                  ...prev,
+                  is_enabled: e.target.checked,
+                }))
+              }
+              style={{ cursor: "pointer", transform: "scale(1.2)" }}
+            />
+            <label
+              htmlFor="enableOnlinePayment"
+              className="form-check-label small fw-bold text-dark"
+              style={{ cursor: "pointer" }}
+            >
+              {paymentQrForm.is_enabled ? "Online Payment Active" : "Disabled"}
+            </label>
+          </div>
+        </div>
+
+        <StatusBanner text={paymentQrStatus.text} type={paymentQrStatus.type} />
+
+        <form onSubmit={handleSavePaymentQr}>
+          <div className="row g-4 mb-4">
+            {/* QR Scanner Image Upload */}
+            <div className="col-12 col-md-5">
+              <label className="form-label fw-semibold small text-dark d-flex align-items-center gap-2">
+                <Image size={14} />
+                Payment QR Code Image
+              </label>
+              <div
+                style={{
+                  border: "2px dashed #cbd5e1",
+                  borderRadius: "16px",
+                  padding: "20px",
+                  textAlign: "center",
+                  backgroundColor: "#f8fafc",
+                }}
+              >
+                {paymentQrPreview || currentQrUrl ? (
+                  <div className="mb-3">
+                    <img
+                      src={paymentQrPreview || currentQrUrl}
+                      alt="Payment QR Code"
+                      style={{
+                        maxWidth: "180px",
+                        maxHeight: "180px",
+                        objectFit: "contain",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                        backgroundColor: "#fff",
+                        padding: "8px",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="py-4 text-secondary">
+                    <QrCode size={48} className="text-muted mb-2" />
+                    <p className="small mb-0">No QR Code uploaded yet</p>
+                  </div>
+                )}
+
+                <input
+                  type="file"
+                  ref={qrFileInputRef}
+                  onChange={handleQrFileSelect}
+                  accept="image/*"
+                  style={{ display: "none" }}
+                />
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => qrFileInputRef.current?.click()}
+                  className="btn-sm d-inline-flex align-items-center gap-2 mt-2"
+                >
+                  <Upload size={14} />
+                  {paymentQrPreview || currentQrUrl
+                    ? "Change QR Code Image"
+                    : "Upload QR Scanner"}
+                </Button>
+                <p className="text-muted mt-2 mb-0" style={{ fontSize: "11px" }}>
+                  Supports PNG, JPG, WEBP (Max 5MB)
+                </p>
+              </div>
+            </div>
+
+            {/* UPI Account Details */}
+            <div className="col-12 col-md-7">
+              <div className="row g-3">
+                <div className="col-12">
+                  <label className="form-label fw-semibold small text-dark">
+                    UPI ID (VPA)
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. yourcafe@upi or 9876543210@paytm"
+                    value={paymentQrForm.upi_id}
+                    onChange={(e) =>
+                      setPaymentQrForm((prev) => ({
+                        ...prev,
+                        upi_id: e.target.value,
+                      }))
+                    }
+                  />
+                  <small className="text-muted">
+                    Used for direct UPI intent links (GPay, PhonePe, Paytm).
+                  </small>
+                </div>
+
+                <div className="col-12 col-sm-6">
+                  <label className="form-label fw-semibold small text-dark">
+                    Merchant Name / Business Name
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. SFC Cafe"
+                    value={paymentQrForm.merchant_name}
+                    onChange={(e) =>
+                      setPaymentQrForm((prev) => ({
+                        ...prev,
+                        merchant_name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="col-12 col-sm-6">
+                  <label className="form-label fw-semibold small text-dark">
+                    Beneficiary Account Name
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. SFC Cafe Jaipur"
+                    value={paymentQrForm.account_name}
+                    onChange={(e) =>
+                      setPaymentQrForm((prev) => ({
+                        ...prev,
+                        account_name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="col-12">
+                  <label className="form-label fw-semibold small text-dark">
+                    Payment Instructions for Customer
+                  </label>
+                  <textarea
+                    rows={2}
+                    className="form-control"
+                    placeholder="e.g. Scan using any UPI App (Google Pay, PhonePe, Paytm, BHIM) and enter UTR / Transaction ID after payment."
+                    value={paymentQrForm.instructions}
+                    onChange={(e) =>
+                      setPaymentQrForm((prev) => ({
+                        ...prev,
+                        instructions: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="d-flex justify-content-end">
+            <Button
+              type="submit"
+              disabled={paymentQrSaving}
+              className="d-flex align-items-center justify-content-center gap-2 px-4"
+            >
+              {paymentQrSaving ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" />
+                  Saving Payment QR...
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  Save Payment QR & UPI Details
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </section>
 
       <section style={cardStyle}>
         <div

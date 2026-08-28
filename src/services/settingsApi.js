@@ -41,15 +41,28 @@ export const settingsApi = baseApi.injectEndpoints({
 
     getSettingPricing: build.query({
       query: () => '/settings/order-pricing',
-      method: 'GET'
+      providesTags: ["Settings"],
     }),
     updateSettingPricing: build.mutation({
       query: (body) => ({
         url: "/settings/order-pricing",
         method: "PUT",
         body
-      })
-    })
+      }),
+      invalidatesTags: ["Settings"],
+    }),
+    getPaymentQr: build.query({
+      query: () => '/settings/payment-qr',
+      providesTags: ["Settings"],
+    }),
+    updatePaymentQr: build.mutation({
+      query: (formDataOrBody) => ({
+        url: "/settings/payment-qr",
+        method: "PUT",
+        body: formDataOrBody,
+      }),
+      invalidatesTags: ["Settings"],
+    }),
   }),
 });
 
@@ -61,5 +74,7 @@ export const {
   useGetLogoQuery,
   useUpdateLogoMutation,
   useGetSettingPricingQuery,
-  useUpdateSettingPricingMutation
+  useUpdateSettingPricingMutation,
+  useGetPaymentQrQuery,
+  useUpdatePaymentQrMutation,
 } = settingsApi;

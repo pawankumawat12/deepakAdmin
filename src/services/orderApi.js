@@ -25,6 +25,30 @@ export const orderApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Order"],
     }),
+    updateOrderPaymentStatus: build.mutation({
+      query: ({ id, paymentStatus }) => ({
+        url: `/orders/${id}/payment-status`,
+        method: "PATCH",
+        body: { paymentStatus },
+      }),
+      invalidatesTags: ["Order"],
+    }),
+    acceptOrder: build.mutation({
+      query: ({ id, paymentStatus, notes }) => ({
+        url: `/orders/${id}/accept`,
+        method: "POST",
+        body: { paymentStatus, notes },
+      }),
+      invalidatesTags: ["Order"],
+    }),
+    rejectOrder: build.mutation({
+      query: ({ id, cancelReason }) => ({
+        url: `/orders/${id}/reject`,
+        method: "POST",
+        body: { cancelReason },
+      }),
+      invalidatesTags: ["Order", "Product"],
+    }),
   }),
 });
 
@@ -32,5 +56,8 @@ export const {
   useGetAdminOrdersQuery,
   useUpdateOrderStatusMutation,
   useMarkItemProducedMutation,
+  useUpdateOrderPaymentStatusMutation,
+  useAcceptOrderMutation,
+  useRejectOrderMutation,
 } = orderApi;
 
