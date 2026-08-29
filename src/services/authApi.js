@@ -55,6 +55,13 @@ export const authApi = baseApi.injectEndpoints({
         body: { password },
       }),
     }),
+    getCustomers: build.query({
+      query: (params) => ({
+        url: "/auth/customers",
+        params,
+      }),
+      providesTags: ["Auth"],
+    }),
   }),
 });
 
@@ -68,4 +75,5 @@ export const {
   useForgotPasswordMutation,
   useVerifyResetPasswordTokenMutation,
   useResetPasswordMutation,
+  useGetCustomersQuery,
 } = authApi;
