@@ -5,7 +5,8 @@ import { useDispatch } from "react-redux";
 import { setUser } from "../../context/authSlice";
 import { ArrowLeft, LockKeyhole, Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   useSendOtpMutation,
   useAdminLoginMutation,
@@ -66,10 +67,12 @@ export default function Login() {
       setOtpSent(true);
       setResendCount(0);
       setResendTimer(RESEND_COOLDOWN_SECONDS);
+      toast.success("Credentials verified! Verification OTP sent to your email.");
     } catch (error) {
-      setApiError(
-        error?.data?.message || "Unable to send OTP. Please try again."
-      );
+      const errorMsg =
+        error?.data?.message || "Unable to send OTP. Please try again.";
+      setApiError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -77,10 +80,14 @@ export default function Login() {
     try {
       setApiError("");
       await verifyOtp({ email: pendingEmail, otp: data.otp }).unwrap();
-      dispatch(setUser(await getMe().unwrap()));
+      const meResponse = await getMe().unwrap();
+      dispatch(setUser(meResponse));
+      toast.success("Welcome back! Logged in successfully.");
       navigate("/", { replace: true });
     } catch (error) {
-      setApiError(error?.data?.message || "Invalid or expired OTP.");
+      const errorMsg = error?.data?.message || "Invalid or expired OTP.";
+      setApiError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -195,12 +202,12 @@ export default function Login() {
               <LockKeyhole size={18} />
               {sendingOtp ? "Sending..." : "Send OTP"}
             </Button>
-            <Button
-              variant="text"
-              onClick={() => navigate("/forgot-password")}
+            <Link
+              to="/forgot-password"
+              className="text-btn text-center mt-2 d-inline-block text-decoration-none"
             >
               Forgot password?
-            </Button>
+            </Link>
           </form>
         ) : (
           <form
@@ -250,6 +257,7 @@ export default function Login() {
                 : `${RESEND_LIMIT - resendCount} resend attempt${RESEND_LIMIT - resendCount === 1 ? "" : "s"} remaining`}
             </small>
             <Button
+              type="button"
               variant="text"
               disabled={resendingOtp || resendTimer > 0 || resendCount >= RESEND_LIMIT}
               onClick={async () => {
@@ -258,9 +266,12 @@ export default function Login() {
                   const response = await sendOtp(pendingEmail).unwrap();
                   setResendCount(response.data?.resendCount ?? resendCount + 1);
                   setResendTimer(response.data?.retryAfter ?? RESEND_COOLDOWN_SECONDS);
+                  toast.success("A fresh OTP has been sent to your email.");
                 } catch (error) {
                   if (error?.data?.retryAfter) setResendTimer(error.data.retryAfter);
-                  setApiError(error?.data?.message || "Unable to resend OTP.");
+                  const errorMsg = error?.data?.message || "Unable to resend OTP.";
+                  setApiError(errorMsg);
+                  toast.error(errorMsg);
                 }
               }}
             >
@@ -268,6 +279,7 @@ export default function Login() {
             </Button>
 
             <Button
+              type="button"
               variant="text"
               onClick={useAnotherEmail}
             >

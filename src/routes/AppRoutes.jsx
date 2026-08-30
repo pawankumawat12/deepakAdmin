@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AdminLayout from "../layouts/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import PublicRoute from "./PublicRoute";
 import Login from "../pages/auth/Login";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
@@ -23,9 +24,14 @@ import Profile from "../pages/profile/Profile";
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+      {/* Public / Unauthenticated Routes: If already logged in, redirect to "/" (Dashboard) */}
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+      </Route>
+
+      {/* Protected Admin Routes: Must be authenticated as admin to access any internal page */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
@@ -45,6 +51,8 @@ export default function AppRoutes() {
           <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
+
+      {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

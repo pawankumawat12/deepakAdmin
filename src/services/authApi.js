@@ -3,14 +3,11 @@ import { baseApi } from "./baseApi";
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     adminLogin: build.mutation({
-      query: (payload) => (
-
-        {
+      query: (payload) => ({
         url: "/auth/admin-login",
         method: "POST",
         body: payload,
-      }
-    ),
+      }),
     }),
     sendOtp: build.mutation({
       query: (email) => ({
@@ -39,7 +36,7 @@ export const authApi = baseApi.injectEndpoints({
       query: (email) => ({
         url: "/auth/forgot-password",
         method: "POST",
-        body: { email },
+        body: { email, role: "admin" },
       }),
     }),
     verifyResetPasswordToken: build.mutation({
@@ -60,7 +57,45 @@ export const authApi = baseApi.injectEndpoints({
         url: "/auth/customers",
         params,
       }),
-      providesTags: ["Auth"],
+      providesTags: ["Customers"],
+    }),
+    editCustomer: build.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/auth/customers/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Customers"],
+    }),
+    deleteCustomer: build.mutation({
+      query: (id) => ({
+        url: `/auth/customers/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Customers"],
+    }),
+    toggleCustomerStatus: build.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/auth/customers/${id}/status`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Customers"],
+    }),
+    getBlockedSupportRequests: build.query({
+      query: (params) => ({
+        url: "/auth/blocked-support-requests",
+        params,
+      }),
+      providesTags: ["BlockedRequests"],
+    }),
+    resolveBlockedSupportRequest: build.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/auth/blocked-support-requests/${id}/resolve`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["BlockedRequests", "Customers"],
     }),
   }),
 });
@@ -76,4 +111,9 @@ export const {
   useVerifyResetPasswordTokenMutation,
   useResetPasswordMutation,
   useGetCustomersQuery,
+  useEditCustomerMutation,
+  useDeleteCustomerMutation,
+  useToggleCustomerStatusMutation,
+  useGetBlockedSupportRequestsQuery,
+  useResolveBlockedSupportRequestMutation,
 } = authApi;

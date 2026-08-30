@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { forgotPasswordSchema } from "../../schema/auth.schema";
 import { useForgotPasswordMutation } from "../../services/authApi";
 import Button from "../../components/ui/Button";
@@ -21,10 +22,12 @@ export default function ForgotPassword() {
   });
   const submit = async ({ email }) => {
     try {
-      await forgotPassword(email).unwrap();
+      const res = await forgotPassword(email).unwrap();
       setEmailSent(true);
-    } catch (error) {
-      console.error(error);
+      toast.success(res?.message || "Reset link sent! Please check your email inbox.");
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.data?.message || "Email does not exist.");
     }
   };
   return (
@@ -43,12 +46,12 @@ export default function ForgotPassword() {
           )}
           {error && (
             <small className="error">
-              {error.data?.message || "Unable to send reset link"}
+              {error.data?.message || "Email does not exist."}
             </small>
           )}
           {emailSent && (
             <small className="success">
-              If that email is registered, a reset link has been sent. Check your inbox.
+              A reset link has been sent to your email. Please check your inbox.
             </small>
           )}
           <Button type="submit" disabled={isLoading}>

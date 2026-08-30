@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import { resetPasswordSchema } from "../../schema/auth.schema";
 import {
   useResetPasswordMutation,
@@ -42,9 +43,11 @@ export default function ResetPassword() {
   const submit = async ({ password }) => {
     try {
       await resetPassword({ accessToken: token, password }).unwrap();
+      toast.success("Password reset successfully! Please sign in with your new password.");
       navigate("/login", { replace: true });
     } catch (requestError) {
       console.error(requestError);
+      toast.error(requestError?.data?.message || "Failed to reset password.");
     }
   };
 

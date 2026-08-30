@@ -5,7 +5,7 @@ import { setUser } from "../context/authSlice";
 import { useGetMeQuery } from "../services/authApi";
 import { LoaderCircle } from "lucide-react";
 
-export default function ProtectedRoute() {
+export default function PublicRoute() {
   const dispatch = useDispatch();
   const { data, isLoading } = useGetMeQuery();
 
@@ -31,9 +31,11 @@ export default function ProtectedRoute() {
     );
   }
 
-  return data?.user?.role === "admin" ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/login" replace />
-  );
+  // If already logged in as admin, redirect to Dashboard
+  if (data?.user?.role === "admin") {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Outlet />;
 }
+
