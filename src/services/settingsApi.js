@@ -51,18 +51,6 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Settings"],
     }),
-    getPaymentQr: build.query({
-      query: () => '/settings/payment-qr',
-      providesTags: ["Settings"],
-    }),
-    updatePaymentQr: build.mutation({
-      query: (formDataOrBody) => ({
-        url: "/settings/payment-qr",
-        method: "PUT",
-        body: formDataOrBody,
-      }),
-      invalidatesTags: ["Settings"],
-    }),
   }),
 });
 
@@ -75,6 +63,4 @@ export const {
   useUpdateLogoMutation,
   useGetSettingPricingQuery,
   useUpdateSettingPricingMutation,
-  useGetPaymentQrQuery,
-  useUpdatePaymentQrMutation,
 } = settingsApi;

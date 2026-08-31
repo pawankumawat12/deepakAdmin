@@ -27,7 +27,6 @@ import {
   Package,
   CreditCard,
   Banknote,
-  QrCode,
   Check,
   MessageCircle,
   Bell,
@@ -43,7 +42,6 @@ export default function OrderList() {
   const [acceptModalOrder, setAcceptModalOrder] = useState(null);
   const [rejectModalOrder, setRejectModalOrder] = useState(null);
   const [rejectReason, setRejectReason] = useState("Out of ingredients / unavailable");
-  const [acceptVerifyPayment, setAcceptVerifyPayment] = useState(true);
   const [liveAlert, setLiveAlert] = useState(null);
 
   const {
@@ -77,16 +75,6 @@ export default function OrderList() {
       refetch();
     };
 
-    const handlePaymentReceived = (data) => {
-      setLiveAlert({
-        type: "payment",
-        title: "💳 Payment Proof Submitted!",
-        message: `Order #${data.orderNumber} • ${data.customerName} submitted UTR: ${data.transactionId} (₹${data.amount})`,
-        orderId: data.orderId,
-      });
-      refetch();
-    };
-
     const handleNewMessage = (data) => {
       setLiveAlert({
         type: "message",
@@ -101,14 +89,12 @@ export default function OrderList() {
     };
 
     socket.on("admin_new_order", handleNewOrder);
-    socket.on("admin_payment_received", handlePaymentReceived);
     socket.on("admin_new_message", handleNewMessage);
     socket.on("admin_order_updated", handleOrderUpdated);
     socket.on("admin_order_cancelled", handleOrderUpdated);
 
     return () => {
       socket.off("admin_new_order", handleNewOrder);
-      socket.off("admin_payment_received", handlePaymentReceived);
       socket.off("admin_new_message", handleNewMessage);
       socket.off("admin_order_updated", handleOrderUpdated);
       socket.off("admin_order_cancelled", handleOrderUpdated);
@@ -140,16 +126,8 @@ export default function OrderList() {
   const handleAcceptOrderSubmit = async () => {
     if (!acceptModalOrder) return;
     try {
-      const isOnline =
-        acceptModalOrder.payment_method &&
-        !acceptModalOrder.payment_method.toLowerCase().includes("cash") &&
-        !acceptModalOrder.payment_method.toLowerCase().includes("cod");
-
-      const paymentStatusToSet = acceptVerifyPayment && isOnline ? "Paid" : acceptModalOrder.payment_status;
-
       await acceptOrder({
         id: acceptModalOrder.id,
-        paymentStatus: paymentStatusToSet,
       }).unwrap();
 
       setAcceptModalOrder(null);
@@ -923,11 +901,7 @@ export default function OrderList() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: "#6b7280" }}>Payment Method</span>
                   <span style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
-                    {selectedOrderDetails.payment_method?.toLowerCase().includes("online") || selectedOrderDetails.payment_method?.toLowerCase().includes("upi") ? (
-                      <QrCode size={14} color="#7c3aed" />
-                    ) : (
-                      <Banknote size={14} color="#16a34a" />
-                    )}
+                    <Banknote size={14} color="#16a34a" />
                     {selectedOrderDetails.payment_method || "Cash on Delivery"}
                   </span>
                 </div>
@@ -947,39 +921,11 @@ export default function OrderList() {
                     }}
                   >
                     <option value="Pending">Pending</option>
-                    <option value="Pending Verification">Pending Verification</option>
                     <option value="Paid">Paid</option>
                     <option value="Failed">Failed</option>
                     <option value="Refunded">Refunded</option>
                   </Select>
                 </div>
-
-                {selectedOrderDetails.transaction_id && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "#6b7280" }}>Transaction / UTR Reference</span>
-                    <span style={{ fontWeight: 700, fontFamily: "monospace", color: "#1d4ed8", backgroundColor: "#eff6ff", padding: "2px 8px", borderRadius: "6px" }}>
-                      {selectedOrderDetails.transaction_id}
-                    </span>
-                  </div>
-                )}
-
-                {selectedOrderDetails.parsedPaymentDetails?.payment_app && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "#6b7280" }}>Payment App</span>
-                    <span style={{ fontWeight: 600 }}>
-                      {selectedOrderDetails.parsedPaymentDetails.payment_app}
-                    </span>
-                  </div>
-                )}
-
-                {selectedOrderDetails.parsedPaymentDetails?.confirmed_at && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "#6b7280" }}>Customer Paid At</span>
-                    <span style={{ fontSize: "11px", color: "#4b5563" }}>
-                      {new Date(selectedOrderDetails.parsedPaymentDetails.confirmed_at).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -1087,29 +1033,9 @@ export default function OrderList() {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Payment Method</span>
-                <span style={{ fontWeight: 600 }}>{acceptModalOrder.payment_method}</span>
+                <span style={{ fontWeight: 600 }}>{acceptModalOrder.payment_method || "Cash on Delivery"}</span>
               </div>
-              {acceptModalOrder.transaction_id && (
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#6b7280" }}>UTR / Reference</span>
-                  <span style={{ fontWeight: 700, fontFamily: "monospace", color: "#1d4ed8" }}>{acceptModalOrder.transaction_id}</span>
-                </div>
-              )}
             </div>
-
-            {acceptModalOrder.payment_method &&
-              !acceptModalOrder.payment_method.toLowerCase().includes("cash") &&
-              !acceptModalOrder.payment_method.toLowerCase().includes("cod") && (
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "16px", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={acceptVerifyPayment}
-                    onChange={(e) => setAcceptVerifyPayment(e.target.checked)}
-                    style={{ width: "16px", height: "16px", accentColor: "#166534" }}
-                  />
-                  <span>Mark payment as verified & <b>Paid</b></span>
-                </label>
-              )}
 
             <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 20px 0", lineHeight: 1.5 }}>
               Accepting will notify the customer in real-time that their food preparation has started.
