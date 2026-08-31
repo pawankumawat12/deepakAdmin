@@ -27,6 +27,7 @@ import {
   Package,
   CreditCard,
   Banknote,
+  QrCode,
   Check,
   MessageCircle,
   Bell,
