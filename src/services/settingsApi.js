@@ -51,6 +51,26 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Settings"],
     }),
+
+    getSmtp: build.query({
+      query: () => "/settings/smtp",
+      providesTags: ["Settings", "SmtpSettings"],
+    }),
+    updateSmtp: build.mutation({
+      query: (body) => ({
+        url: "/settings/smtp",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Settings", "SmtpSettings"],
+    }),
+    testSmtp: build.mutation({
+      query: (body) => ({
+        url: "/settings/smtp/test",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -63,4 +83,7 @@ export const {
   useUpdateLogoMutation,
   useGetSettingPricingQuery,
   useUpdateSettingPricingMutation,
+  useGetSmtpQuery,
+  useUpdateSmtpMutation,
+  useTestSmtpMutation,
 } = settingsApi;

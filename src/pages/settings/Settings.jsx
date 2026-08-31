@@ -11,6 +11,9 @@ import {
   useUpdateLogoMutation,
   useGetSettingPricingQuery,
   useUpdateSettingPricingMutation,
+  useGetSmtpQuery,
+  useUpdateSmtpMutation,
+  useTestSmtpMutation,
 } from "../../services/settingsApi";
 import {
   Palette,
@@ -34,6 +37,16 @@ import {
   CreditCard,
   ShoppingCartIcon,
   Receipt,
+  Server,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  Send,
+  Key,
+  Lock,
+  AlertCircle,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 const API_ORIGIN = (
@@ -352,6 +365,123 @@ export default function Settings() {
     } catch (err) {
       setFooterStatus({
         text: err?.data?.message || "Failed to update footer settings",
+        type: "error",
+      });
+    }
+  };
+
+  /* ─── SMTP CONFIGURATION STATE ─── */
+  const { data: smtpResponse, isLoading: smtpLoading } = useGetSmtpQuery();
+  const [updateSmtp, { isLoading: smtpSaving }] = useUpdateSmtpMutation();
+  const [testSmtp, { isLoading: smtpTesting }] = useTestSmtpMutation();
+
+  const [smtpForm, setSmtpForm] = useState({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    user: "",
+    password: "",
+    from_email: "",
+    from_name: "SFC Cafe",
+    is_enabled: true,
+  });
+
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+  const [testEmailRecipient, setTestEmailRecipient] = useState("");
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [smtpStatus, setSmtpStatus] = useState({ text: "", type: "" });
+  const [testStatus, setTestStatus] = useState({ text: "", type: "" });
+
+  useEffect(() => {
+    if (smtpResponse?.data) {
+      setSmtpForm({
+        host: smtpResponse.data.host || "smtp.gmail.com",
+        port: smtpResponse.data.port || 587,
+        secure: Boolean(smtpResponse.data.secure),
+        user: smtpResponse.data.user || "",
+        password: smtpResponse.data.password || "",
+        from_email: smtpResponse.data.from_email || "",
+        from_name: smtpResponse.data.from_name || "SFC Cafe",
+        is_enabled: smtpResponse.data.is_enabled !== false,
+      });
+      if (!testEmailRecipient && smtpResponse.data.user) {
+        setTestEmailRecipient(smtpResponse.data.user);
+      }
+    }
+  }, [smtpResponse]);
+
+  const handleSmtpChange = (field) => (e) => {
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setSmtpForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveSmtp = async (e) => {
+    if (e) e.preventDefault();
+    try {
+      setSmtpStatus({ text: "", type: "" });
+      if (!smtpForm.host.trim()) {
+        setSmtpStatus({ text: "SMTP Host is required.", type: "error" });
+        return;
+      }
+      if (!smtpForm.user.trim()) {
+        setSmtpStatus({
+          text: "SMTP Username / Email is required.",
+          type: "error",
+        });
+        return;
+      }
+
+      await updateSmtp({
+        ...smtpForm,
+        port: Number(smtpForm.port) || 587,
+      }).unwrap();
+
+      setSmtpStatus({
+        text: "SMTP configuration saved and securely stored in database!",
+        type: "success",
+      });
+      setTimeout(() => setSmtpStatus({ text: "", type: "" }), 5000);
+    } catch (err) {
+      setSmtpStatus({
+        text: err?.data?.message || "Failed to update SMTP settings",
+        type: "error",
+      });
+    }
+  };
+
+  const handleRunTestEmail = async () => {
+    try {
+      setTestStatus({ text: "", type: "" });
+      const recipient = testEmailRecipient.trim() || smtpForm.user.trim();
+      if (!recipient) {
+        setTestStatus({
+          text: "Please enter a valid recipient email address for testing.",
+          type: "error",
+        });
+        return;
+      }
+
+      const res = await testSmtp({
+        to: recipient,
+        host: smtpForm.host,
+        port: Number(smtpForm.port) || 587,
+        secure: smtpForm.secure,
+        user: smtpForm.user,
+        password: smtpForm.password,
+        from_email: smtpForm.from_email || smtpForm.user,
+        from_name: smtpForm.from_name,
+      }).unwrap();
+
+      setTestStatus({
+        text: res?.message || `Test email successfully sent to ${recipient}!`,
+        type: "success",
+      });
+    } catch (err) {
+      setTestStatus({
+        text:
+          err?.data?.message ||
+          "SMTP connection failed. Check host, port, credentials, and SSL settings.",
         type: "error",
       });
     }
@@ -683,6 +813,476 @@ export default function Settings() {
           </Button>
         </div>
       </section>
+
+      {/* ─── SMTP EMAIL CONFIGURATION CARD ─── */}
+      <section style={cardStyle}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid #f0f0f5",
+            paddingBottom: "16px",
+            marginBottom: "22px",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "12px",
+                background: "#ede9fe",
+                display: "grid",
+                placeItems: "center",
+                color: "#7c3aed",
+              }}
+            >
+              <Server size={22} />
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "17px",
+                    fontWeight: 700,
+                    color: "#24243b",
+                  }}
+                >
+                  SMTP Email Configuration
+                </h2>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    backgroundColor: smtpForm.is_enabled ? "#dcfce7" : "#fee2e2",
+                    color: smtpForm.is_enabled ? "#166534" : "#991b1b",
+                  }}
+                >
+                  {smtpForm.is_enabled ? "Active & Enabled" : "Disabled"}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: "12px", color: "#8b8ba0" }}>
+                Outgoing mail server credentials for OTP verification, password resets, and notifications.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowTestModal(true)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 14px",
+              borderRadius: "10px",
+              border: "1px solid #ddd6fe",
+              backgroundColor: "#f5f3ff",
+              color: "#6d28d9",
+              fontSize: "12px",
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            <Send size={14} />
+            Test SMTP Connection
+          </button>
+        </div>
+
+        <StatusBanner text={smtpStatus.text} type={smtpStatus.type} />
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "18px",
+            marginBottom: "24px",
+          }}
+        >
+          {/* SMTP Host */}
+          <div>
+            <label style={sectionLabel}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Server size={14} />
+                SMTP Host / Server *
+              </span>
+            </label>
+            <input
+              type="text"
+              value={smtpForm.host}
+              onChange={handleSmtpChange("host")}
+              placeholder="e.g. smtp.gmail.com or smtp.sendgrid.net"
+              style={inputStyle}
+              required
+            />
+          </div>
+
+          {/* SMTP Port */}
+          <div>
+            <label style={sectionLabel}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Sliders size={14} />
+                SMTP Port *
+              </span>
+            </label>
+            <input
+              type="number"
+              value={smtpForm.port}
+              onChange={handleSmtpChange("port")}
+              placeholder="587 or 465"
+              style={inputStyle}
+              required
+            />
+          </div>
+
+          {/* Encryption / SSL Mode */}
+          <div>
+            <label style={sectionLabel}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <ShieldCheck size={14} />
+                Security / Encryption
+              </span>
+            </label>
+            <select
+              value={smtpForm.secure ? "true" : "false"}
+              onChange={(e) =>
+                setSmtpForm((prev) => ({
+                  ...prev,
+                  secure: e.target.value === "true",
+                  port: e.target.value === "true" ? 465 : prev.port === 465 ? 587 : prev.port,
+                }))
+              }
+              style={inputStyle}
+            >
+              <option value="false">STARTTLS / TLS (Standard - Port 587)</option>
+              <option value="true">SSL / TLS (Direct Secure - Port 465)</option>
+            </select>
+          </div>
+
+          {/* Username / Account */}
+          <div>
+            <label style={sectionLabel}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Mail size={14} />
+                SMTP Username / Email *
+              </span>
+            </label>
+            <input
+              type="text"
+              value={smtpForm.user}
+              onChange={handleSmtpChange("user")}
+              placeholder="e.g. your-email@gmail.com"
+              style={inputStyle}
+              required
+            />
+          </div>
+
+          {/* Password (with Mask & Visibility Toggle) */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <label style={sectionLabel}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <Key size={14} />
+                  SMTP Password / App Password *
+                </span>
+              </label>
+              {smtpResponse?.data?.is_password_set && (
+                <span style={{ fontSize: "10px", color: "#16a34a", fontWeight: 700 }}>
+                  ✓ Stored in Database
+                </span>
+              )}
+            </div>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showSmtpPassword ? "text" : "password"}
+                value={smtpForm.password}
+                onChange={handleSmtpChange("password")}
+                placeholder={smtpResponse?.data?.is_password_set ? "••••••••" : "Enter SMTP password"}
+                style={{ ...inputStyle, paddingRight: "40px" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSmtpPassword((prev) => !prev)}
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  border: "none",
+                  background: "transparent",
+                  color: "#9ca3af",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                {showSmtpPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <p style={{ fontSize: "10px", color: "#8b8ba0", margin: "4px 0 0" }}>
+              For Gmail, use a 16-character App Password. Stored encrypted (AES-256) in DB.
+            </p>
+          </div>
+
+          {/* From Email */}
+          <div>
+            <label style={sectionLabel}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Mail size={14} />
+                From Email Address
+              </span>
+            </label>
+            <input
+              type="email"
+              value={smtpForm.from_email}
+              onChange={handleSmtpChange("from_email")}
+              placeholder="e.g. noreply@sfccafe.com"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* From Name */}
+          <div>
+            <label style={sectionLabel}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Sparkles size={14} />
+                From Sender Name
+              </span>
+            </label>
+            <input
+              type="text"
+              value={smtpForm.from_name}
+              onChange={handleSmtpChange("from_name")}
+              placeholder="e.g. SFC Cafe"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Enable / Disable Switch */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <label style={sectionLabel}>Enable SMTP Service</label>
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                cursor: "pointer",
+                padding: "8px 0",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={smtpForm.is_enabled}
+                onChange={handleSmtpChange("is_enabled")}
+                style={{ width: "18px", height: "18px", accentColor: "#7c3aed" }}
+              />
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}>
+                Allow backend to send emails via this configuration
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+          <Button
+            type="button"
+            onClick={handleSaveSmtp}
+            disabled={smtpSaving || smtpLoading}
+            style={{
+              minWidth: "180px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              backgroundColor: "#7c3aed",
+              borderColor: "#7c3aed",
+            }}
+          >
+            {smtpSaving ? (
+              <>
+                <RefreshCw size={16} className="animate-spin" />
+                Saving to Database...
+              </>
+            ) : (
+              <>
+                <Check size={16} />
+                Save SMTP Settings
+              </>
+            )}
+          </Button>
+        </div>
+      </section>
+
+      {/* ─── TEST SMTP MODAL ─── */}
+      {showTestModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "16px",
+          }}
+          onClick={() => {
+            setShowTestModal(false);
+            setTestStatus({ text: "", type: "" });
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "20px",
+              maxWidth: "480px",
+              width: "100%",
+              padding: "24px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "16px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    padding: "8px",
+                    borderRadius: "12px",
+                    backgroundColor: "#ede9fe",
+                    color: "#7c3aed",
+                  }}
+                >
+                  <Send size={20} />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 800,
+                      margin: 0,
+                      color: "#111827",
+                    }}
+                  >
+                    Test SMTP Configuration
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#6b7280",
+                      margin: "2px 0 0 0",
+                    }}
+                  >
+                    Send a live test email to verify outgoing server settings
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTestModal(false);
+                  setTestStatus({ text: "", type: "" });
+                }}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#6b7280",
+                  cursor: "pointer",
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <StatusBanner text={testStatus.text} type={testStatus.type} />
+
+            <div style={{ marginBottom: "18px" }}>
+              <label style={sectionLabel}>Recipient Email Address</label>
+              <input
+                type="email"
+                value={testEmailRecipient}
+                onChange={(e) => setTestEmailRecipient(e.target.value)}
+                placeholder="Enter email to receive test message"
+                style={inputStyle}
+              />
+              <p
+                style={{
+                  fontSize: "11px",
+                  color: "#6b7280",
+                  margin: "6px 0 0 0",
+                }}
+              >
+                Will test connecting to <strong>{smtpForm.host}:{smtpForm.port}</strong> as <strong>{smtpForm.user || "user"}</strong>.
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTestModal(false);
+                  setTestStatus({ text: "", type: "" });
+                }}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid #e5e7eb",
+                  backgroundColor: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#374151",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+              <Button
+                type="button"
+                onClick={handleRunTestEmail}
+                disabled={smtpTesting}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  backgroundColor: "#7c3aed",
+                  borderColor: "#7c3aed",
+                }}
+              >
+                {smtpTesting ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    Connecting & Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    Send Test Email
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmitPricing)}>
         <section className="card border-0 shadow-sm p-4">
