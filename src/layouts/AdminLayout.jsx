@@ -32,7 +32,6 @@ const navigation = [
   ["Categories", "/categories", Tags],
   ["Orders", "/orders", ShoppingBag],
   ["Offers", "/offers", BadgePercent],
-  ["Reviews", "/reviews", Star],
   ["Messages", "/messages", MessageSquare],
   ["Favourites", "/favourites", Heart],
   ["Settings", "/settings", Settings],

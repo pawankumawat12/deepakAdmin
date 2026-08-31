@@ -15,7 +15,6 @@ import CategoryEdit from "../pages/categories/CategoryEdit";
 import OrderList from "../pages/orders/OrderList";
 import CustomerList from "../pages/customers/CustomerList";
 import OfferList from "../pages/offers/OfferList";
-import ReviewList from "../pages/reviews/ReviewList";
 import MessageList from "../pages/messages/MessageList";
 import FavouriteList from "../pages/favourites/FavouriteList";
 import Settings from "../pages/settings/Settings";
@@ -44,7 +43,6 @@ export default function AppRoutes() {
           <Route path="orders" element={<OrderList />} />
           <Route path="customers" element={<CustomerList />} />
           <Route path="offers" element={<OfferList />} />
-          <Route path="reviews" element={<ReviewList />} />
           <Route path="messages" element={<MessageList />} />
           <Route path="favourites" element={<FavouriteList />} />
           <Route path="settings" element={<Settings />} />
