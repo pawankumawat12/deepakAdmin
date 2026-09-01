@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import DataTable from "../../components/common/DataTable";
 import Button from "../../components/ui/Button";
 import Select from "../../components/ui/Select";
+import Pagination from "../../components/ui/Pagination";
+import SearchInput from "../../components/ui/SearchInput";
+import useDebouncedValue from "../../utils/useDebouncedValue";
 import {
   useGetAdminOrdersQuery,
   useUpdateOrderStatusMutation,
@@ -34,10 +37,15 @@ import {
   ThumbsUp,
   ThumbsDown,
   AlertTriangle,
+  Search,
 } from "lucide-react";
 
 export default function OrderList() {
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 600);
+
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [activeChatOrder, setActiveChatOrder] = useState(null);
   const [acceptModalOrder, setAcceptModalOrder] = useState(null);
@@ -50,9 +58,12 @@ export default function OrderList() {
     isLoading,
     error,
     refetch,
-  } = useGetAdminOrdersQuery(
-    statusFilter ? { status: statusFilter } : {}
-  );
+  } = useGetAdminOrdersQuery({
+    page,
+    limit: 10,
+    status: statusFilter || undefined,
+    search: debouncedSearch.trim() || undefined,
+  });
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
   const [updatePaymentStatus, { isLoading: isUpdatingPayment }] =
     useUpdateOrderPaymentStatusMutation();
@@ -61,6 +72,7 @@ export default function OrderList() {
   const [markProduced, { isLoading: isMarking }] = useMarkItemProducedMutation();
 
   const orders = orderResponse?.data || [];
+  const pagination = orderResponse?.pagination;
 
   // Socket.IO real-time event listeners for Admin
   useEffect(() => {
@@ -236,10 +248,22 @@ export default function OrderList() {
           <h1>Orders</h1>
           <p>Track and manage customer orders, payments, pricing breakdowns, and kitchen fulfillment.</p>
         </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          <SearchInput
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search by order #, customer..."
+            style={{ width: "240px" }}
+          />
           <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
             style={{ width: "160px" }}
           >
             <option value="">All Statuses</option>
@@ -353,9 +377,28 @@ export default function OrderList() {
             key: "customer",
             label: "CUSTOMER",
             render: (value, item) => (
-              <div>
-                <div style={{ fontWeight: 600 }}>{value}</div>
-                <div style={{ fontSize: "11px", color: "var(--color-text-muted)" }}>
+              <div style={{ maxWidth: "180px" }}>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={value}
+                >
+                  {value}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--color-text-muted)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={item.customer_phone || item.customer_email}
+                >
                   {item.customer_phone || item.customer_email}
                 </div>
                 {item.deliveryAddress && (
@@ -364,7 +407,6 @@ export default function OrderList() {
                       fontSize: "10px",
                       color: "#6b7280",
                       marginTop: "2px",
-                      maxWidth: "200px",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -662,6 +704,15 @@ export default function OrderList() {
           },
           { key: "createdAtFormatted", label: "TIME" },
         ]}
+      />
+
+      <Pagination
+        page={pagination?.page || page}
+        totalPages={pagination?.totalPages || 1}
+        total={pagination?.total || 0}
+        limit={10}
+        onPageChange={(p) => setPage(p)}
+        itemLabel="orders"
       />
 
       {/* PRICING & ORDER DETAILS MODAL */}

@@ -10,6 +10,8 @@ import { useGetProductsQuery } from "../../services/productApi";
 import { useGetCategoriesQuery } from "../../services/categoryApi";
 import DataTable from "../../components/common/DataTable";
 import Button from "../../components/ui/Button";
+import Pagination from "../../components/ui/Pagination";
+import useDebouncedValue from "../../utils/useDebouncedValue";
 import {
   Tag,
   Plus,
@@ -39,6 +41,8 @@ export default function OfferList() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
+
+  const debouncedSearch = useDebouncedValue(search, 600);
 
   // Modals state
   const [modalOpen, setModalOpen] = useState(false);
@@ -80,7 +84,7 @@ export default function OfferList() {
   } = useGetAdminOffersQuery({
     page,
     limit,
-    search,
+    search: debouncedSearch.trim() || undefined,
     type: typeFilter,
     status: statusFilter,
   });
@@ -94,6 +98,7 @@ export default function OfferList() {
   const [deleteOffer, { isLoading: isDeleting }] = useDeleteOfferMutation();
 
   const offers = offersData?.data?.offers || [];
+  const pagination = offersData?.data?.pagination;
   const stats = offersData?.data?.stats || {
     totalOffers: 0,
     activeOffers: 0,
@@ -286,7 +291,17 @@ export default function OfferList() {
       label: "OFFER DETAILS",
       render: (_, row) => (
         <div style={{ maxWidth: "260px" }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: "13px", color: "#1f2937" }}>
+          <p
+            style={{
+              margin: 0,
+              fontWeight: 700,
+              fontSize: "13px",
+              color: "#1f2937",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
+            }}
+            title={row.title}
+          >
             {row.title}
           </p>
           <p
@@ -298,6 +313,7 @@ export default function OfferList() {
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
+            title={row.description || "No description provided."}
           >
             {row.description || "No description provided."}
           </p>
@@ -697,7 +713,10 @@ export default function OfferList() {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search by code or title..."
               style={{
                 width: "100%",
@@ -712,7 +731,10 @@ export default function OfferList() {
 
           <select
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setPage(1);
+            }}
             style={{
               padding: "8px 12px",
               borderRadius: "10px",
@@ -733,7 +755,10 @@ export default function OfferList() {
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
             style={{
               padding: "8px 12px",
               borderRadius: "10px",
@@ -754,6 +779,15 @@ export default function OfferList() {
 
       {/* TABLE */}
       <DataTable data={offers} columns={columns} loading={isLoading || isFetching} />
+
+      <Pagination
+        page={pagination?.page || page}
+        totalPages={pagination?.totalPages || 1}
+        total={pagination?.total || offers.length}
+        limit={limit}
+        onPageChange={(p) => setPage(p)}
+        itemLabel="offers"
+      />
 
       {/* CREATE / EDIT MODAL */}
       {modalOpen && (

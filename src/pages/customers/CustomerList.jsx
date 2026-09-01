@@ -23,23 +23,38 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAdminSocket } from "../../services/socket";
+import useDebouncedValue from "../../utils/useDebouncedValue";
+import Pagination from "../../components/ui/Pagination";
 
 export default function CustomerList() {
   const [activeTab, setActiveTab] = useState("customers"); // "customers" | "requests"
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [requestPage, setRequestPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(searchTerm, 600);
 
   const {
     data: customersData,
     isLoading: loadingCustomers,
     isError: errorCustomers,
     refetch: refetchCustomers,
-  } = useGetCustomersQuery({ search: searchTerm }, { refetchOnFocus: true });
+  } = useGetCustomersQuery(
+    {
+      page,
+      limit: 10,
+      search: debouncedSearch.trim() || undefined,
+    },
+    { refetchOnFocus: true }
+  );
 
   const {
     data: requestsData,
     isLoading: loadingRequests,
     refetch: refetchRequests,
-  } = useGetBlockedSupportRequestsQuery(undefined, { refetchOnFocus: true });
+  } = useGetBlockedSupportRequestsQuery(
+    { page: requestPage, limit: 10 },
+    { refetchOnFocus: true }
+  );
 
   const [editCustomer, { isLoading: isEditing }] = useEditCustomerMutation();
   const [deleteCustomer, { isLoading: isDeleting }] = useDeleteCustomerMutation();
@@ -92,8 +107,10 @@ export default function CustomerList() {
     };
   }, [refetchCustomers, refetchRequests]);
 
-  const rawCustomers = customersData?.data || [];
-  const rawRequests = requestsData?.data || [];
+  const rawCustomers = customersData?.data || (Array.isArray(customersData) ? customersData : []);
+  const customerPagination = customersData?.pagination;
+  const rawRequests = requestsData?.data || (Array.isArray(requestsData) ? requestsData : []);
+  const requestPagination = requestsData?.pagination;
   const pendingRequests = rawRequests.filter((r) => r.status === "pending");
 
   const handleOpenEdit = (customer) => {
@@ -265,7 +282,10 @@ export default function CustomerList() {
               type="text"
               placeholder="Search by name, email, or phone..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
               style={{
                 border: "none",
                 outline: "none",
@@ -366,16 +386,35 @@ export default function CustomerList() {
                             background: isBlocked ? "#fef2f2" : "transparent",
                           }}
                         >
-                          <td style={{ padding: "12px 16px" }}>
-                            <div style={{ fontWeight: 600, color: "#111827" }}>
+                          <td style={{ padding: "12px 16px", maxWidth: "200px" }}>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                color: "#111827",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                              title={c.name || "Customer"}
+                            >
                               {c.name || "Customer"}
                             </div>
                             <div style={{ fontSize: "12px", color: "#6b7280" }}>
                               ID: #{c.id}
                             </div>
                           </td>
-                          <td style={{ padding: "12px 16px" }}>
-                            <div style={{ color: "#374151" }}>{c.email || "-"}</div>
+                          <td style={{ padding: "12px 16px", maxWidth: "220px" }}>
+                            <div
+                              style={{
+                                color: "#374151",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                              title={c.email || ""}
+                            >
+                              {c.email || "-"}
+                            </div>
                             <div style={{ fontSize: "12px", color: "#6b7280" }}>
                               {c.phone || "-"}
                             </div>
@@ -524,6 +563,14 @@ export default function CustomerList() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                page={customerPagination?.page || page}
+                totalPages={customerPagination?.totalPages || 1}
+                total={customerPagination?.total || rawCustomers.length}
+                limit={10}
+                onPageChange={(p) => setPage(p)}
+                itemLabel="customers"
+              />
             </div>
           )}
         </div>
@@ -569,161 +616,171 @@ export default function CustomerList() {
               </p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {rawRequests.map((req) => (
-                <div
-                  key={req.id}
-                  style={{
-                    background: "#fff",
-                    borderRadius: "14px",
-                    border: "1px solid #e5e7eb",
-                    padding: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                  }}
-                >
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {rawRequests.map((req) => (
                   <div
+                    key={req.id}
                     style={{
+                      background: "#fff",
+                      borderRadius: "14px",
+                      border: "1px solid #e5e7eb",
+                      padding: "16px",
                       display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
+                      flexDirection: "column",
+                      gap: "12px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                     }}
                   >
-                    <div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <h4
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <div>
+                        <div
                           style={{
-                            margin: 0,
-                            fontWeight: 700,
-                            color: "#111827",
-                            fontSize: "15px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
                           }}
                         >
-                          {req.name}
-                        </h4>
-                        <span
+                          <h4
+                            style={{
+                              margin: 0,
+                              fontWeight: 700,
+                              color: "#111827",
+                              fontSize: "15px",
+                            }}
+                          >
+                            {req.name}
+                          </h4>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              padding: "2px 8px",
+                              borderRadius: "9999px",
+                              background:
+                                req.status === "pending"
+                                  ? "#fef3c7"
+                                  : req.status === "approved"
+                                  ? "#d1fae5"
+                                  : "#fee2e2",
+                              color:
+                                req.status === "pending"
+                                  ? "#b45309"
+                                  : req.status === "approved"
+                                  ? "#065f46"
+                                  : "#b91c1c",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {req.status}
+                          </span>
+                        </div>
+                        <p
                           style={{
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            padding: "2px 8px",
-                            borderRadius: "9999px",
-                            background:
-                              req.status === "pending"
-                                ? "#fef3c7"
-                                : req.status === "approved"
-                                ? "#d1fae5"
-                                : "#fee2e2",
-                            color:
-                              req.status === "pending"
-                                ? "#b45309"
-                                : req.status === "approved"
-                                ? "#065f46"
-                                : "#b91c1c",
-                            textTransform: "uppercase",
+                            margin: "2px 0 0 0",
+                            fontSize: "12px",
+                            color: "#6b7280",
                           }}
                         >
-                          {req.status}
-                        </span>
+                          Email: <b>{req.email}</b> • Phone:{" "}
+                          <b>{req.phone || "N/A"}</b> • Received:{" "}
+                          {new Date(req.created_at).toLocaleString("en-IN")}
+                        </p>
                       </div>
-                      <p
-                        style={{
-                          margin: "2px 0 0 0",
-                          fontSize: "12px",
-                          color: "#6b7280",
-                        }}
-                      >
-                        Email: <b>{req.email}</b> • Phone:{" "}
-                        <b>{req.phone || "N/A"}</b> • Received:{" "}
-                        {new Date(req.created_at).toLocaleString("en-IN")}
-                      </p>
+
+                      {req.status === "pending" && (
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            type="button"
+                            disabled={isResolving}
+                            onClick={() =>
+                              handleResolveRequest(req.id, "approved")
+                            }
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              border: "none",
+                              background: "#10b981",
+                              color: "#fff",
+                              fontWeight: 600,
+                              fontSize: "12.5px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <Check size={14} /> Approve & Unblock
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isResolving}
+                            onClick={() =>
+                              handleResolveRequest(req.id, "rejected")
+                            }
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              border: "1px solid #e5e7eb",
+                              background: "#fff",
+                              color: "#ef4444",
+                              fontWeight: 600,
+                              fontSize: "12.5px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <X size={14} /> Reject
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    {req.status === "pending" && (
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button
-                          type="button"
-                          disabled={isResolving}
-                          onClick={() =>
-                            handleResolveRequest(req.id, "approved")
-                          }
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            padding: "6px 12px",
-                            borderRadius: "8px",
-                            border: "none",
-                            background: "#10b981",
-                            color: "#fff",
-                            fontWeight: 600,
-                            fontSize: "12.5px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <Check size={14} /> Approve & Unblock
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isResolving}
-                          onClick={() =>
-                            handleResolveRequest(req.id, "rejected")
-                          }
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            padding: "6px 12px",
-                            borderRadius: "8px",
-                            border: "1px solid #e5e7eb",
-                            background: "#fff",
-                            color: "#ef4444",
-                            fontWeight: 600,
-                            fontSize: "12.5px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <X size={14} /> Reject
-                        </button>
+                    <div
+                      style={{
+                        background: "#f9fafb",
+                        borderRadius: "10px",
+                        padding: "12px",
+                        fontSize: "13.5px",
+                        color: "#374151",
+                        lineHeight: "1.5",
+                        borderLeft: "4px solid #3b82f6",
+                      }}
+                    >
+                      <b>Customer's Message:</b> {req.message}
+                    </div>
+
+                    {req.admin_response && (
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#6b7280",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Admin Decision Note: {req.admin_response}
                       </div>
                     )}
                   </div>
-
-                  <div
-                    style={{
-                      background: "#f9fafb",
-                      borderRadius: "10px",
-                      padding: "12px",
-                      fontSize: "13.5px",
-                      color: "#374151",
-                      lineHeight: "1.5",
-                      borderLeft: "4px solid #3b82f6",
-                    }}
-                  >
-                    <b>Customer's Message:</b> {req.message}
-                  </div>
-
-                  {req.admin_response && (
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        color: "#6b7280",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Admin Decision Note: {req.admin_response}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <Pagination
+                page={requestPagination?.page || requestPage}
+                totalPages={requestPagination?.totalPages || 1}
+                total={requestPagination?.total || rawRequests.length}
+                limit={10}
+                onPageChange={(p) => setRequestPage(p)}
+                itemLabel="support requests"
+              />
+            </>
           )}
         </div>
       )}

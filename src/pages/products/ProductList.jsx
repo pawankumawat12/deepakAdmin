@@ -6,6 +6,7 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Button from "../../components/ui/Button";
 import SearchInput from "../../components/ui/SearchInput";
 import Select from "../../components/ui/Select";
+import Pagination from "../../components/ui/Pagination";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import {
   useDeleteProductMutation,
@@ -251,29 +252,14 @@ export default function ProductList() {
             </>
           )}
         />
-        {pagination && pagination.totalPages > 1 && (
-          <div className="table-pagination">
-            <span>
-              Page {pagination.page} of {pagination.totalPages} ({pagination.total} products)
-            </span>
-            <div className="table-pagination-actions">
-              <Button
-                variant="outline"
-                disabled={pagination.page === 1}
-                onClick={() => setPage((current) => current - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                disabled={pagination.page === pagination.totalPages}
-                onClick={() => setPage((current) => current + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          page={pagination?.page || page}
+          totalPages={pagination?.totalPages || 1}
+          total={pagination?.total || 0}
+          limit={limit}
+          onPageChange={(p) => setPage(p)}
+          itemLabel="products"
+        />
       </div>
       {productToDelete && (
         <ConfirmDialog

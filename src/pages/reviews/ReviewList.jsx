@@ -22,6 +22,8 @@ import {
   Filter,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import useDebouncedValue from "../../utils/useDebouncedValue";
+import Pagination from "../../components/ui/Pagination";
 
 export default function ReviewList() {
   const [activeTab, setActiveTab] = useState("all"); // "all" | "product" | "site" | "hidden"
@@ -29,11 +31,13 @@ export default function ReviewList() {
   const [ratingFilter, setRatingFilter] = useState("");
   const [page, setPage] = useState(1);
 
+  const debouncedSearch = useDebouncedValue(searchTerm, 600);
+
   // Query parameters
   const queryParams = {
     page,
     limit: 10,
-    search: searchTerm || undefined,
+    search: debouncedSearch.trim() || undefined,
     rating: ratingFilter || undefined,
     type:
       activeTab === "product"
@@ -474,11 +478,29 @@ export default function ReviewList() {
                       }}
                     >
                       {/* CUSTOMER */}
-                      <td style={{ padding: "12px 16px" }}>
-                        <div style={{ fontWeight: 600, color: "#111827" }}>
+                      <td style={{ padding: "12px 16px", maxWidth: "180px" }}>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            color: "#111827",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={rev.user_name || "Customer"}
+                        >
                           {rev.user_name || "Customer"}
                         </div>
-                        <div style={{ fontSize: "11.5px", color: "#6b7280" }}>
+                        <div
+                          style={{
+                            fontSize: "11.5px",
+                            color: "#6b7280",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={rev.user_email || `User #${rev.user_id}`}
+                        >
                           {rev.user_email || `User #${rev.user_id}`}
                         </div>
                       </td>
@@ -535,14 +557,17 @@ export default function ReviewList() {
                       </td>
 
                       {/* COMMENT */}
-                      <td style={{ padding: "12px 16px" }}>
+                      <td style={{ padding: "12px 16px", maxWidth: "340px" }}>
                         {rev.title && (
                           <div
                             style={{
                               fontWeight: 700,
                               color: "#111827",
                               marginBottom: "2px",
+                              overflowWrap: "anywhere",
+                              wordBreak: "break-word",
                             }}
+                            title={rev.title}
                           >
                             {rev.title}
                           </div>
@@ -553,7 +578,10 @@ export default function ReviewList() {
                             color: "#4b5563",
                             fontSize: "13px",
                             lineHeight: "1.4",
+                            overflowWrap: "anywhere",
+                            wordBreak: "break-word",
                           }}
+                          title={rev.comment}
                         >
                           {rev.comment}
                         </p>
@@ -686,68 +714,14 @@ export default function ReviewList() {
           </div>
 
           {/* PAGINATION */}
-          {pagination.totalPages > 1 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "12px 16px",
-                borderTop: "1px solid #e5e7eb",
-                background: "#f9fafb",
-                fontSize: "13px",
-                color: "#6b7280",
-              }}
-            >
-              <div>
-                Showing page <b>{pagination.page}</b> of{" "}
-                <b>{pagination.totalPages}</b> ({pagination.total} total reviews)
-              </div>
-              <div style={{ display: "flex", gap: "6px" }}>
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    cursor: page <= 1 ? "not-allowed" : "pointer",
-                    opacity: page <= 1 ? 0.5 : 1,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <ChevronLeft size={14} /> Previous
-                </button>
-                <button
-                  type="button"
-                  disabled={page >= pagination.totalPages}
-                  onClick={() =>
-                    setPage((p) => Math.min(pagination.totalPages, p + 1))
-                  }
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    cursor:
-                      page >= pagination.totalPages
-                        ? "not-allowed"
-                        : "pointer",
-                    opacity: page >= pagination.totalPages ? 0.5 : 1,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  Next <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            page={pagination.page || page}
+            totalPages={pagination.totalPages || 1}
+            total={pagination.total || 0}
+            limit={10}
+            onPageChange={(p) => setPage(p)}
+            itemLabel="reviews"
+          />
         </div>
       )}
 

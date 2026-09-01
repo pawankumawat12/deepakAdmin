@@ -116,7 +116,20 @@ export default function DataTable({
                   )}
 
                   {columns.map((column) => (
-                    <td key={column.key}>
+                    <td
+                      key={column.key}
+                      style={{
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                        maxWidth: column.maxWidth || "320px",
+                        minWidth: column.minWidth || "auto",
+                      }}
+                      title={
+                        typeof row[column.key] === "string" && !column.render
+                          ? row[column.key]
+                          : undefined
+                      }
+                    >
                       {column.render
                         ? column.render(row[column.key], row, index)
                         : row[column.key] ?? "-"}

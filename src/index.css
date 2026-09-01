@@ -11,18 +11,47 @@ body {
     font-family: 'DM Sans', sans-serif
 }
 
+p, h1, h2, h3, h4, h5, h6, span, a, label, li, td, th {
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
 button,
 input,
-select {
-    font: inherit
+select,
+textarea {
+    font: inherit;
+    max-width: 100%;
 }
 
 button {
     cursor: pointer;
-    border: 0
+    border: 0;
 }
 
 a {
     text-decoration: none;
-    color: inherit
+    color: inherit;
+}
+
+/* Universal table responsive protection */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+
+.table td, .table th {
+    max-width: 320px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    vertical-align: middle;
+}
+
+/* Modal safe containment */
+.modal-container {
+    max-width: min(92vw, 680px);
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-wrap: break-word;
 }
