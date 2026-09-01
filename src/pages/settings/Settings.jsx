@@ -188,7 +188,7 @@ export default function Settings() {
 
   const availableColorThemes =
     themeResponse?.data?.availableColorThemes &&
-    themeResponse.data.availableColorThemes.length > 0
+      themeResponse.data.availableColorThemes.length > 0
       ? themeResponse.data.availableColorThemes
       : DEFAULT_FALLBACK_COLOR_THEMES;
 
@@ -583,7 +583,6 @@ export default function Settings() {
       icon: ShoppingCartIcon,
       type: "number",
     },
-   
   ];
 
   return (
@@ -843,7 +842,9 @@ export default function Settings() {
               <Server size={22} />
             </div>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <h2
                   style={{
                     margin: 0,
@@ -860,7 +861,9 @@ export default function Settings() {
                     fontWeight: 700,
                     padding: "2px 8px",
                     borderRadius: "6px",
-                    backgroundColor: smtpForm.is_enabled ? "#dcfce7" : "#fee2e2",
+                    backgroundColor: smtpForm.is_enabled
+                      ? "#dcfce7"
+                      : "#fee2e2",
                     color: smtpForm.is_enabled ? "#166534" : "#991b1b",
                   }}
                 >
@@ -868,7 +871,8 @@ export default function Settings() {
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: "12px", color: "#8b8ba0" }}>
-                Outgoing mail server credentials for OTP verification, password resets, and notifications.
+                Outgoing mail server credentials for OTP verification, password
+                resets, and notifications.
               </p>
             </div>
           </div>
@@ -909,7 +913,13 @@ export default function Settings() {
           {/* SMTP Host */}
           <div>
             <label style={sectionLabel}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
                 <Server size={14} />
                 SMTP Host / Server *
               </span>
@@ -927,7 +937,13 @@ export default function Settings() {
           {/* SMTP Port */}
           <div>
             <label style={sectionLabel}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
                 <Sliders size={14} />
                 SMTP Port *
               </span>
@@ -945,7 +961,13 @@ export default function Settings() {
           {/* Encryption / SSL Mode */}
           <div>
             <label style={sectionLabel}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
                 <ShieldCheck size={14} />
                 Security / Encryption
               </span>
@@ -956,12 +978,19 @@ export default function Settings() {
                 setSmtpForm((prev) => ({
                   ...prev,
                   secure: e.target.value === "true",
-                  port: e.target.value === "true" ? 465 : prev.port === 465 ? 587 : prev.port,
+                  port:
+                    e.target.value === "true"
+                      ? 465
+                      : prev.port === 465
+                        ? 587
+                        : prev.port,
                 }))
               }
               style={inputStyle}
             >
-              <option value="false">STARTTLS / TLS (Standard - Port 587)</option>
+              <option value="false">
+                STARTTLS / TLS (Standard - Port 587)
+              </option>
               <option value="true">SSL / TLS (Direct Secure - Port 465)</option>
             </select>
           </div>
@@ -969,7 +998,13 @@ export default function Settings() {
           {/* Username / Account */}
           <div>
             <label style={sectionLabel}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
                 <Mail size={14} />
                 SMTP Username / Email *
               </span>
@@ -986,25 +1021,36 @@ export default function Settings() {
 
           {/* Password (with Mask & Visibility Toggle) */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <label style={sectionLabel}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
                   <Key size={14} />
                   SMTP Password / App Password *
                 </span>
               </label>
-              {smtpResponse?.data?.is_password_set && (
-                <span style={{ fontSize: "10px", color: "#16a34a", fontWeight: 700 }}>
-                  ✓ Stored in Database
-                </span>
-              )}
             </div>
             <div style={{ position: "relative" }}>
               <input
                 type={showSmtpPassword ? "text" : "password"}
                 value={smtpForm.password}
                 onChange={handleSmtpChange("password")}
-                placeholder={smtpResponse?.data?.is_password_set ? "••••••••" : "Enter SMTP password"}
+                placeholder={
+                  smtpResponse?.data?.is_password_set
+                    ? "••••••••"
+                    : "Enter SMTP password"
+                }
                 style={{ ...inputStyle, paddingRight: "40px" }}
               />
               <button
@@ -1026,15 +1072,24 @@ export default function Settings() {
                 {showSmtpPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <p style={{ fontSize: "10px", color: "#8b8ba0", margin: "4px 0 0" }}>
-              For Gmail, use a 16-character App Password. Stored encrypted (AES-256) in DB.
+            <p
+              style={{ fontSize: "10px", color: "#8b8ba0", margin: "4px 0 0" }}
+            >
+              For Gmail, use a 16-character App Password. Stored encrypted
+              (AES-256) in DB.
             </p>
           </div>
 
           {/* From Email */}
           <div>
             <label style={sectionLabel}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
                 <Mail size={14} />
                 From Email Address
               </span>
@@ -1051,7 +1106,13 @@ export default function Settings() {
           {/* From Name */}
           <div>
             <label style={sectionLabel}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
                 <Sparkles size={14} />
                 From Sender Name
               </span>
@@ -1066,7 +1127,13 @@ export default function Settings() {
           </div>
 
           {/* Enable / Disable Switch */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
+          >
             <label style={sectionLabel}>Enable SMTP Service</label>
             <label
               style={{
@@ -1081,16 +1148,24 @@ export default function Settings() {
                 type="checkbox"
                 checked={smtpForm.is_enabled}
                 onChange={handleSmtpChange("is_enabled")}
-                style={{ width: "18px", height: "18px", accentColor: "#7c3aed" }}
+                style={{
+                  width: "18px",
+                  height: "18px",
+                  accentColor: "#7c3aed",
+                }}
               />
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}>
+              <span
+                style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}
+              >
                 Allow backend to send emails via this configuration
               </span>
             </label>
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <div
+          style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}
+        >
           <Button
             type="button"
             onClick={handleSaveSmtp}
@@ -1157,7 +1232,9 @@ export default function Settings() {
                 marginBottom: "16px",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
                 <div
                   style={{
                     padding: "8px",
@@ -1225,7 +1302,11 @@ export default function Settings() {
                   margin: "6px 0 0 0",
                 }}
               >
-                Will test connecting to <strong>{smtpForm.host}:{smtpForm.port}</strong> as <strong>{smtpForm.user || "user"}</strong>.
+                Will test connecting to{" "}
+                <strong>
+                  {smtpForm.host}:{smtpForm.port}
+                </strong>{" "}
+                as <strong>{smtpForm.user || "user"}</strong>.
               </p>
             </div>
 

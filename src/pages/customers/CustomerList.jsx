@@ -205,28 +205,7 @@ export default function CustomerList() {
 
         {/* Tab Navigation */}
         <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab("customers")}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "10px",
-              fontWeight: 600,
-              fontSize: "14px",
-              border: "1px solid #e5e7eb",
-              background: activeTab === "customers" ? "#3b82f6" : "#fff",
-              color: activeTab === "customers" ? "#fff" : "#374151",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            <Users size={16} />
-            <span>Customers ({rawCustomers.length})</span>
-          </button>
-
-          <button
+         <button
             type="button"
             onClick={() => setActiveTab("requests")}
             style={{

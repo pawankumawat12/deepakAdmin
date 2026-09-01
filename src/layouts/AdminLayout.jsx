@@ -24,6 +24,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { baseApi } from "../services/baseApi";
 
 const navigation = [
   ["Dashboard", "/", LayoutDashboard],
@@ -51,18 +52,24 @@ export default function AdminLayout() {
   const title =
     navigation.find((item) => item[1] === location.pathname)?.[0] ||
     "Admin panel";
-  const logout = async () => {
-    try {
-      setSignOutError("");
-      await logoutRequest().unwrap();
-      dispatch(signOut());
-      setShowSignOut(false);
-      setProfileOpen(false);
-      navigate("/login", { replace: true });
-    } catch (error) {
-      setSignOutError(error?.data?.message || "Unable to sign out. Please try again.");
-    }
-  };
+    const logout = async () => {
+      try {
+        setSignOutError("");
+    
+        await logoutRequest().unwrap();
+    
+      } catch (error) {
+        console.error("Logout API error:", error);
+    
+      } finally {
+        localStorage.removeItem("accessToken");
+        dispatch(signOut());
+        dispatch(baseApi  .util.resetApiState());
+        setShowSignOut(false);
+        setProfileOpen(false);
+        navigate("/login", { replace: true });
+      }
+    };
   return (
     <div className="app-shell">
       <aside className={`sidebar ${open ? "open" : ""}`}>
@@ -83,7 +90,7 @@ export default function AdminLayout() {
             >
               <Icon size={19} />
               <span>{label}</span>
-              {label === "Orders" && <b>8</b>}
+              {label === "Orders" }
             </NavLink>
           ))}
         </nav>

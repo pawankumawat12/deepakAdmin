@@ -29,7 +29,6 @@ export default function Login() {
   const [verifyOtp, { isLoading: verifyingOtp }] = useVerifyOtpMutation();
   const [getMe] = useLazyGetMeQuery();
   const [apiError, setApiError] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [otpDigits, setOtpDigits] = useState(["", "", "", ""]);
   const [resendTimer, setResendTimer] = useState(0);
@@ -62,7 +61,8 @@ export default function Login() {
   const handleRequestOtp = async (data) => {
     try {
       setApiError("");
-      await adminLogin({ email: data.email, password: data.password }).unwrap();
+  const res =  await adminLogin({ email: data.email, password: data.password }).unwrap();
+  console.log(res, 'Check drsonasdlkfasdflaksj')
       setPendingEmail(data.email);
       setOtpSent(true);
       setResendCount(0);
@@ -79,7 +79,9 @@ export default function Login() {
   const handleSignIn = async (data) => {
     try {
       setApiError("");
-      await verifyOtp({ email: pendingEmail, otp: data.otp }).unwrap();
+      const res = await verifyOtp({ email: pendingEmail, otp: data.otp }).unwrap();
+    localStorage.setItem('accessToken', res.token)
+
       const meResponse = await getMe().unwrap();
       dispatch(setUser(meResponse));
       toast.success("Welcome back! Logged in successfully.");

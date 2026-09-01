@@ -8,8 +8,12 @@ import { LoaderCircle } from "lucide-react";
 export default function ProtectedRoute() {
   const dispatch = useDispatch();
   const { data, isLoading } = useGetMeQuery();
+  const token = localStorage.getItem("accessToken");
 
   useEffect(() => {
+    if(!token){
+      return;
+    }
     if (data?.user) dispatch(setUser(data));
   }, [data, dispatch]);
 
