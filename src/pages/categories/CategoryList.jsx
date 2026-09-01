@@ -22,6 +22,7 @@ export default function CategoryList() {
   const [filters, setFilters] = useState(initialFilters);
   const [pendingFilters, setPendingFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
+  const [limit] = useState(10);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [categoryToDelete, setCategoryToDelete] = useState(null);
@@ -31,12 +32,13 @@ export default function CategoryList() {
   const params = useMemo(
     () => ({
       page,
+      limit,
       sortBy,
       sortOrder,
       ...(debouncedQuery.trim() ? { search: debouncedQuery.trim() } : {}),
       ...(filters.isActive !== "" ? { isActive: filters.isActive } : {}),
     }),
-    [page, sortBy, sortOrder, debouncedQuery, filters]
+    [page, limit, sortBy, sortOrder, debouncedQuery, filters]
   );
   const {
     data: categoryResponse,

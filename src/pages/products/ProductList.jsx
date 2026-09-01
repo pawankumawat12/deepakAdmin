@@ -23,6 +23,7 @@ export default function ProductList() {
   const [filters, setFilters] = useState(initialFilters);
   const [pendingFilters, setPendingFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
+  const [limit] = useState(10);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [productToDelete, setProductToDelete] = useState(null);
@@ -32,6 +33,7 @@ export default function ProductList() {
   const params = useMemo(
     () => ({
       page,
+      limit,
       sortBy,
       sortOrder,
       ...(debouncedQuery.trim() ? { search: debouncedQuery.trim() } : {}),
@@ -39,7 +41,7 @@ export default function ProductList() {
       ...(filters.isActive !== "" ? { isActive: filters.isActive } : {}),
       ...(filters.availabilityType ? { availabilityType: filters.availabilityType } : {}),
     }),
-    [page, debouncedQuery, filters, sortBy, sortOrder]
+    [page, limit, debouncedQuery, filters, sortBy, sortOrder]
   );
   const {
     data: productResponse,

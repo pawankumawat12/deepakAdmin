@@ -182,6 +182,24 @@ export default function OfferList() {
       return;
     }
 
+    if (formData.type === "BOGO") {
+      const pIds = formData.target_product_ids || [];
+      if (pIds.length === 0) {
+        setStatusMessage({
+          text: "Please select a target product for this BOGO offer.",
+          type: "error",
+        });
+        return;
+      }
+      if (Number(formData.buy_qty) < 1 || Number(formData.get_qty) < 1) {
+        setStatusMessage({
+          text: "Buy Quantity and Get Quantity must each be at least 1.",
+          type: "error",
+        });
+        return;
+      }
+    }
+
     const payload = {
       ...formData,
       code: formData.code.trim().toUpperCase(),
@@ -1069,11 +1087,12 @@ export default function OfferList() {
                   <>
                     <div>
                       <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px", color: "#374151" }}>
-                        Buy Quantity
+                        Buy Quantity * (e.g. 1)
                       </label>
                       <input
                         type="number"
                         min="1"
+                        required
                         value={formData.buy_qty}
                         onChange={(e) => setFormData({ ...formData, buy_qty: e.target.value })}
                         style={{
@@ -1087,11 +1106,12 @@ export default function OfferList() {
                     </div>
                     <div>
                       <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px", color: "#374151" }}>
-                        Get Free Quantity
+                        Get Free Quantity * (e.g. 1)
                       </label>
                       <input
                         type="number"
                         min="1"
+                        required
                         value={formData.get_qty}
                         onChange={(e) => setFormData({ ...formData, get_qty: e.target.value })}
                         style={{
@@ -1184,6 +1204,116 @@ export default function OfferList() {
                   />
                 </div>
               </div>
+
+              {/* Target Product Selection for BOGO */}
+              {formData.type === "BOGO" && (
+                <div
+                  style={{
+                    marginBottom: "18px",
+                    padding: "14px",
+                    borderRadius: "12px",
+                    background: "#fffbeb",
+                    border: "1px solid #fde68a",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "12px",
+                      fontWeight: 800,
+                      marginBottom: "6px",
+                      color: "#92400e",
+                    }}
+                  >
+                    🎯 Select Target Product for BOGO * (Required)
+                  </label>
+                  <select
+                    value={(formData.target_product_ids && formData.target_product_ids[0]) || ""}
+                    onChange={(e) => {
+                      const val = e.target.value ? [Number(e.target.value)] : [];
+                      setFormData({ ...formData, target_product_ids: val });
+                    }}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: "10px",
+                      border: "1px solid #d97706",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      background: "#ffffff",
+                      outline: "none",
+                    }}
+                  >
+                    <option value="">-- Choose a Product for BOGO --</option>
+                    {allProducts.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} (₹{p.price}) {p.category_name ? `• ${p.category_name}` : ""}
+                      </option>
+                    ))}
+                  </select>
+
+                  {formData.target_product_ids && formData.target_product_ids.length > 0 && (
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: "#b45309",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <span>🔥 Deal Summary:</span>
+                      <span>
+                        Buy {formData.buy_qty || 1}{" "}
+                        <strong>
+                          {allProducts.find((p) => p.id === formData.target_product_ids[0])?.name || "Product"}
+                        </strong>
+                        , Get {formData.get_qty || 1} FREE
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Target Product Multi-Select if PRODUCT type */}
+              {formData.type === "PRODUCT" && (
+                <div style={{ marginBottom: "18px" }}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px", color: "#374151" }}>
+                    Select Eligible Products:
+                  </label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", maxHeight: "140px", overflowY: "auto", padding: "8px", border: "1px solid #e5e7eb", borderRadius: "10px" }}>
+                    {allProducts.map((prod) => {
+                      const isSelected = (formData.target_product_ids || []).includes(prod.id);
+                      return (
+                        <button
+                          type="button"
+                          key={prod.id}
+                          onClick={() => {
+                            const cur = formData.target_product_ids || [];
+                            const next = isSelected ? cur.filter((x) => x !== prod.id) : [...cur, prod.id];
+                            setFormData({ ...formData, target_product_ids: next });
+                          }}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            border: `1px solid ${isSelected ? "#4f7d16" : "#e5e7eb"}`,
+                            background: isSelected ? "#f4f8ec" : "#ffffff",
+                            color: isSelected ? "#4f7d16" : "#374151",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {isSelected ? "✓ " : ""}{prod.name} (₹{prod.price})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Target Category Multi-Select if Category */}
               {formData.type === "CATEGORY" && (
