@@ -35,7 +35,7 @@ const navigation = [
   ["Offers", "/offers", BadgePercent],
   ["Reviews", "/reviews", Star],
   ["Messages", "/messages", MessageSquare],
-  ["Favourites", "/favourites", Heart],
+  // ["Favourites", "/favourites", Heart],
   ["Settings", "/settings", Settings],
 ];
 
