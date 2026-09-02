@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import DataTable from "../../components/common/DataTable";
 import Button from "../../components/ui/Button";
 import Select from "../../components/ui/Select";
@@ -12,6 +13,7 @@ import {
   useUpdateOrderPaymentStatusMutation,
   useAcceptOrderMutation,
   useRejectOrderMutation,
+  useGetAdminOrderByIdQuery,
 } from "../../services/orderApi";
 import { getAdminSocket } from "../../services/socket";
 import AdminOrderChatModal from "../../components/orders/AdminOrderChatModal";
@@ -42,6 +44,7 @@ import {
 import OrderDetailsModal from "../../modals/OrderDetailsModal";
 
 export default function OrderList() {
+  const location = useLocation();
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -53,6 +56,11 @@ export default function OrderList() {
   const [rejectModalOrder, setRejectModalOrder] = useState(null);
   const [rejectReason, setRejectReason] = useState("Out of ingredients / unavailable");
   const [liveAlert, setLiveAlert] = useState(null);
+
+  // When navigating from a notification, this holds the order ID to auto-open chat for
+  const [pendingChatOrderId, setPendingChatOrderId] = useState(
+    () => location.state?.openChatOrderId || null
+  );
 
   const {
     data: orderResponse,
@@ -71,6 +79,21 @@ export default function OrderList() {
   const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
   const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
   const [markProduced, { isLoading: isMarking }] = useMarkItemProducedMutation();
+
+  // Fetch the specific order when a notification click brought us here
+  const { data: pendingChatOrderData } = useGetAdminOrderByIdQuery(pendingChatOrderId, {
+    skip: !pendingChatOrderId,
+  });
+
+  // Once the pending order data arrives, open the chat modal and clear pending state
+  useEffect(() => {
+    if (pendingChatOrderData?.data && pendingChatOrderId) {
+      setActiveChatOrder(pendingChatOrderData.data);
+      setPendingChatOrderId(null);
+      // Clear the router state so navigating back/forward doesn't re-trigger
+      window.history.replaceState({}, "");
+    }
+  }, [pendingChatOrderData, pendingChatOrderId]);
 
   const orders = orderResponse?.data || [];
   const pagination = orderResponse?.pagination;

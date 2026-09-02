@@ -49,6 +49,10 @@ export const orderApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Order", "Product"],
     }),
+    getAdminOrderById: build.query({
+      query: (id) => `/orders/${id}`,
+      providesTags: (_res, _err, id) => [{ type: "Order", id }],
+    }),
   }),
 });
 
@@ -59,5 +63,6 @@ export const {
   useUpdateOrderPaymentStatusMutation,
   useAcceptOrderMutation,
   useRejectOrderMutation,
+  useGetAdminOrderByIdQuery,
 } = orderApi;
 

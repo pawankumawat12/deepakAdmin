@@ -105,10 +105,17 @@ export default function AdminLayout() {
             }}
             onClick={() => {
               toast.dismiss(t.id);
-              if (notif.order_id) navigate("/orders");
-              else if (notif.type === "contact_inquiry") navigate("/messages");
-              else if (notif.type === "new_review") navigate("/reviews");
-              else if (notif.type === "customer_unblock_request") navigate("/customers");
+              if (notif.type === "chat_message" && notif.order_id) {
+                navigate("/orders", { state: { openChatOrderId: notif.order_id } });
+              } else if (notif.order_id) {
+                navigate("/orders");
+              } else if (notif.type === "contact_inquiry") {
+                navigate("/messages");
+              } else if (notif.type === "new_review") {
+                navigate("/reviews");
+              } else if (notif.type === "customer_unblock_request") {
+                navigate("/customers");
+              }
             }}
           >
             <div
@@ -181,7 +188,10 @@ export default function AdminLayout() {
 
     setNotificationsOpen(false);
 
-    if (notif.order_id || notif.type === "order" || notif.type === "new_order") {
+    if (notif.type === "chat_message" && notif.order_id) {
+      // Navigate to orders page and auto-open the chat modal for this order
+      navigate("/orders", { state: { openChatOrderId: notif.order_id } });
+    } else if (notif.order_id || notif.type === "order" || notif.type === "new_order") {
       navigate("/orders");
     } else if (notif.type === "contact_inquiry") {
       navigate("/messages");
