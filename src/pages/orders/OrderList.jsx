@@ -39,6 +39,7 @@ import {
   AlertTriangle,
   Search,
 } from "lucide-react";
+import OrderDetailsModal from "../../modals/OrderDetailsModal";
 
 export default function OrderList() {
   const [statusFilter, setStatusFilter] = useState("");
@@ -193,11 +194,10 @@ export default function OrderList() {
           typeof order.delivery_address_json === "string"
             ? JSON.parse(order.delivery_address_json)
             : order.delivery_address_json;
-        deliveryAddress = `${parsedAddress.house_number || ""}, ${
-          parsedAddress.formatted_address ||
+        deliveryAddress = `${parsedAddress.house_number || ""}, ${parsedAddress.formatted_address ||
           `${parsedAddress.city || ""} - ${parsedAddress.pincode || ""}`
-        }`;
-      } catch {}
+          }`;
+      } catch { }
     }
 
     let parsedPricing = null;
@@ -207,7 +207,7 @@ export default function OrderList() {
           typeof order.pricing_details_json === "string"
             ? JSON.parse(order.pricing_details_json)
             : order.pricing_details_json;
-      } catch {}
+      } catch { }
     }
 
     let parsedPaymentDetails = null;
@@ -217,7 +217,7 @@ export default function OrderList() {
           typeof order.payment_details_json === "string"
             ? JSON.parse(order.payment_details_json)
             : order.payment_details_json;
-      } catch {}
+      } catch { }
     }
 
     return {
@@ -286,21 +286,20 @@ export default function OrderList() {
               liveAlert.type === "order"
                 ? "#dcfce7"
                 : liveAlert.type === "payment"
-                ? "#ede9fe"
-                : "#eff6ff",
-            border: `1px solid ${
-              liveAlert.type === "order"
+                  ? "#ede9fe"
+                  : "#eff6ff",
+            border: `1px solid ${liveAlert.type === "order"
                 ? "#86efac"
                 : liveAlert.type === "payment"
-                ? "#c4b5fd"
-                : "#bfdbfe"
-            }`,
+                  ? "#c4b5fd"
+                  : "#bfdbfe"
+              }`,
             color:
               liveAlert.type === "order"
                 ? "#166534"
                 : liveAlert.type === "payment"
-                ? "#5b21b6"
-                : "#1e40af",
+                  ? "#5b21b6"
+                  : "#1e40af",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -346,30 +345,11 @@ export default function OrderList() {
             label: "ORDER",
             render: (value, item) => (
               <div>
-                <b>{value}</b>
+                <b onClick={() => setSelectedOrderDetails(item)} className="view-btn">{value}</b>
                 <div style={{ fontSize: "11px", color: "var(--color-text-muted)" }}>
                   {item.payment_method}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedOrderDetails(item)}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    marginTop: "4px",
-                    background: "#f3f4f6",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    padding: "2px 6px",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    color: "#374151",
-                    cursor: "pointer",
-                  }}
-                >
-                  <Receipt size={11} /> View Breakdown
-                </button>
+
               </div>
             ),
           },
@@ -539,9 +519,6 @@ export default function OrderList() {
               } else if (currentStatus === "Failed") {
                 statusBg = "#fee2e2";
                 statusColor = "#b91c1c";
-              } else if (currentStatus === "Pending Verification") {
-                statusBg = "#ede9fe";
-                statusColor = "#6d28d9";
               }
 
               return (
@@ -597,7 +574,6 @@ export default function OrderList() {
                     }}
                   >
                     <option value="Pending">Pending</option>
-                    <option value="Pending Verification">Pending Verification</option>
                     <option value="Paid">Paid</option>
                     <option value="Failed">Failed</option>
                     <option value="Refunded">Refunded</option>
@@ -694,6 +670,8 @@ export default function OrderList() {
                     color: "#6d28d9",
                     fontSize: "10px",
                     fontWeight: 700,
+                    width: "75px",
+                    textAlign: "center",
                     cursor: "pointer",
                   }}
                 >
@@ -703,6 +681,19 @@ export default function OrderList() {
             ),
           },
           { key: "createdAtFormatted", label: "TIME" },
+          // {
+          //   key: "actions",
+          //   label: "ACTION",
+          //   render: (_val, item) => (
+          //     <button
+          //       type="button"
+          //       onClick={() => setSelectedOrderDetails(item)}
+          //       className="view-btn"
+          //     >
+          //       View
+          //     </button>
+          //   ),
+          // }
         ]}
       />
 
@@ -715,318 +706,19 @@ export default function OrderList() {
         itemLabel="orders"
       />
 
-      {/* PRICING & ORDER DETAILS MODAL */}
-      {selectedOrderDetails && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: "16px",
-          }}
-          onClick={() => setSelectedOrderDetails(null)}
-        >
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "20px",
-              maxWidth: "560px",
-              width: "100%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              padding: "24px",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderBottom: "1px solid #e5e7eb",
-                paddingBottom: "16px",
-                marginBottom: "20px",
-              }}
-            >
-              <div>
-                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 800, color: "#111827" }}>
-                  Order Breakdown: {selectedOrderDetails.orderNumber}
-                </h2>
-                <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#6b7280" }}>
-                  Status: <b>{selectedOrderDetails.status}</b> • Payment: {selectedOrderDetails.payment_method}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedOrderDetails(null)}
-                style={{
-                  background: "#f3f4f6",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "32px",
-                  height: "32px",
-                  display: "grid",
-                  placeItems: "center",
-                  cursor: "pointer",
-                }}
-              >
-                <X size={16} />
-              </button>
-            </div>
 
-            {/* Items Summary */}
-            <div style={{ marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#374151", marginBottom: "8px" }}>
-                Ordered Items
-              </h3>
-              <div
-                style={{
-                  backgroundColor: "#f9fafb",
-                  borderRadius: "12px",
-                  padding: "12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                }}
-              >
-                {(selectedOrderDetails.items || []).map((it) => (
-                  <div
-                    key={it.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontSize: "12px",
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontWeight: 700 }}>{it.quantity}x</span> {it.product_name}
-                      {it.availability_type === "MADE_TO_ORDER" && (
-                        <span
-                          style={{
-                            marginLeft: "6px",
-                            fontSize: "10px",
-                            backgroundColor: "#ffedd5",
-                            color: "#c2410c",
-                            padding: "1px 4px",
-                            borderRadius: "4px",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Made to order
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontWeight: 600 }}>
-                      ₹{Number(it.total || it.price * it.quantity).toLocaleString("en-IN")}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Complete Pricing Breakdown */}
-            <div style={{ marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#374151", marginBottom: "8px" }}>
-                Pricing Settings & Calculations
-              </h3>
-              {(() => {
-                const p = selectedOrderDetails.parsedPricing || {};
-                const subtotal = p.subtotal ?? selectedOrderDetails.subtotal ?? 0;
-                const discount = p.discount ?? selectedOrderDetails.discount ?? 0;
-                const discountPercent = p.discount_percent ?? 0;
-                const deliveryFee = p.delivery_fee ?? selectedOrderDetails.delivery_fee ?? 0;
-                const taxAmount = p.tax_amount ?? selectedOrderDetails.tax_amount ?? 0;
-                const gstPercent = p.gst_percent ?? 5;
-                const taxInclusive = p.tax_inclusive ?? selectedOrderDetails.tax_inclusive ?? false;
-                const packagingFee = p.packaging_fee ?? selectedOrderDetails.packaging_fee ?? 0;
-                const platformFee = p.platform_fee ?? selectedOrderDetails.platform_fee ?? 0;
-                const codFee = p.cod_fee ?? selectedOrderDetails.cod_fee ?? 0;
-                const distanceKm = p.distance_km ?? selectedOrderDetails.distance_km;
-                const grandTotal = p.grand_total ?? selectedOrderDetails.total_amount ?? 0;
+{selectedOrderDetails && (
+  <OrderDetailsModal
+    order={selectedOrderDetails}
+    onClose={() => setSelectedOrderDetails(null)}
+    onPaymentStatusChange={handlePaymentStatusChange}
+    isUpdatingPayment={isUpdatingPayment}
+  />
+)}
+      
 
-                return (
-                  <div
-                    style={{
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "12px",
-                      padding: "14px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                      fontSize: "12px",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: "#6b7280" }}>Item Subtotal</span>
-                      <span style={{ fontWeight: 600 }}>₹{Number(subtotal).toLocaleString("en-IN")}</span>
-                    </div>
-
-                    {Number(discount) > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", color: "#16a34a" }}>
-                        <span>Discount {discountPercent > 0 ? `(${discountPercent}%)` : ""}</span>
-                        <span style={{ fontWeight: 600 }}>- ₹{Number(discount).toLocaleString("en-IN")}</span>
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: "#6b7280" }}>
-                        Delivery Charge {distanceKm ? `(${distanceKm} km)` : ""}
-                      </span>
-                      <span style={{ fontWeight: 600, color: deliveryFee === 0 ? "#16a34a" : "#111827" }}>
-                        {deliveryFee === 0 ? "FREE" : `₹${Number(deliveryFee).toLocaleString("en-IN")}`}
-                      </span>
-                    </div>
-
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: "#6b7280" }}>
-                        GST ({gstPercent}%) {taxInclusive ? "(Inclusive)" : "(Added)"}
-                      </span>
-                      <span style={{ fontWeight: 600 }}>
-                        {taxInclusive ? `₹${Number(taxAmount).toLocaleString("en-IN")} (Incl)` : `+ ₹${Number(taxAmount).toLocaleString("en-IN")}`}
-                      </span>
-                    </div>
-
-                    {Number(packagingFee) > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#6b7280" }}>Packaging Fee</span>
-                        <span style={{ fontWeight: 600 }}>₹{Number(packagingFee).toLocaleString("en-IN")}</span>
-                      </div>
-                    )}
-
-                    {Number(platformFee) > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#6b7280" }}>Platform Fee</span>
-                        <span style={{ fontWeight: 600 }}>₹{Number(platformFee).toLocaleString("en-IN")}</span>
-                      </div>
-                    )}
-
-                    {Number(codFee) > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#6b7280" }}>COD Handling Fee</span>
-                        <span style={{ fontWeight: 600 }}>₹{Number(codFee).toLocaleString("en-IN")}</span>
-                      </div>
-                    )}
-
-                    <div
-                      style={{
-                        borderTop: "1px dashed #d1d5db",
-                        paddingTop: "8px",
-                        marginTop: "4px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "14px",
-                        fontWeight: 800,
-                        color: "#111827",
-                      }}
-                    >
-                      <span>Final Order Total</span>
-                      <span>₹{Number(grandTotal).toLocaleString("en-IN")}</span>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Payment Information & Verification */}
-            <div style={{ marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#374151", marginBottom: "8px" }}>
-                Payment Information & Verification
-              </h3>
-              <div
-                style={{
-                  backgroundColor: "#f9fafb",
-                  borderRadius: "12px",
-                  padding: "14px",
-                  fontSize: "12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#6b7280" }}>Payment Method</span>
-                  <span style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Banknote size={14} color="#16a34a" />
-                    {selectedOrderDetails.payment_method || "Cash on Delivery"}
-                  </span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#6b7280" }}>Payment Status</span>
-                  <Select
-                    value={selectedOrderDetails.payment_status || "Pending"}
-                    disabled={isUpdatingPayment}
-                    onChange={(e) => handlePaymentStatusChange(selectedOrderDetails.id, e.target.value)}
-                    style={{
-                      fontSize: "12px",
-                      padding: "4px 8px",
-                      borderRadius: "8px",
-                      fontWeight: 700,
-                      width: "160px",
-                    }}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Failed">Failed</option>
-                    <option value="Refunded">Refunded</option>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Delivery Address Snapshot */}
-            <div>
-              <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#374151", marginBottom: "8px" }}>
-                Delivery Address Snapshot
-              </h3>
-              <div
-                style={{
-                  backgroundColor: "#f9fafb",
-                  borderRadius: "12px",
-                  padding: "12px",
-                  fontSize: "12px",
-                  color: "#4b5563",
-                  lineHeight: "1.6",
-                }}
-              >
-                {selectedOrderDetails.parsedAddress ? (
-                  <>
-                    <div style={{ fontWeight: 700, color: "#111827" }}>
-                      {selectedOrderDetails.parsedAddress.receiver_name} ({selectedOrderDetails.parsedAddress.phone_number})
-                    </div>
-                    <div>
-                      {selectedOrderDetails.parsedAddress.house_number}
-                      {selectedOrderDetails.parsedAddress.building_name ? `, ${selectedOrderDetails.parsedAddress.building_name}` : ""}
-                      {selectedOrderDetails.parsedAddress.floor ? `, Floor ${selectedOrderDetails.parsedAddress.floor}` : ""}
-                      {selectedOrderDetails.parsedAddress.landmark ? `, Near ${selectedOrderDetails.parsedAddress.landmark}` : ""}
-                    </div>
-                    <div>
-                      {selectedOrderDetails.parsedAddress.formatted_address || `${selectedOrderDetails.parsedAddress.city}, ${selectedOrderDetails.parsedAddress.state} - ${selectedOrderDetails.parsedAddress.pincode}`}
-                    </div>
-                    {selectedOrderDetails.parsedAddress.latitude != null && (
-                      <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "4px" }}>
-                        GPS: {selectedOrderDetails.parsedAddress.latitude}, {selectedOrderDetails.parsedAddress.longitude}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div>{selectedOrderDetails.shipping_address || "No address details available"}</div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ACCEPT ORDER CONFIRMATION MODAL */}
-      {acceptModalOrder && (
+     {acceptModalOrder && (
         <div
           style={{
             position: "fixed",
@@ -1135,7 +827,8 @@ export default function OrderList() {
             </div>
           </div>
         </div>
-      )}
+      )} 
+
 
       {/* REJECT ORDER MODAL */}
       {rejectModalOrder && (
@@ -1232,9 +925,7 @@ export default function OrderList() {
               </div>
             </div>
 
-            <p style={{ fontSize: "11px", color: "#dc2626", margin: "0 0 20px 0" }}>
-              ⚠️ Rejecting this order will restore reserved product stock and notify the customer instantly.
-            </p>
+         
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
               <button

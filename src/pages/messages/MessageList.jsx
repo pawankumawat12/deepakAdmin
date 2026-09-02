@@ -877,8 +877,9 @@ export default function MessageList() {
       )}
 
       {/* CONFIRM DELETE DIALOG */}
-      {/* <ConfirmDialog
-        open={Boolean(deleteConfirmId)}
+      {deleteConfirmId && (
+      <ConfirmDialog
+        open={deleteConfirmId}
         title="Delete Contact Inquiry?"
         message="Are you sure you want to delete this customer inquiry? This action cannot be undone."
         confirmLabel="Delete"
@@ -886,7 +887,8 @@ export default function MessageList() {
         loading={isDeleting}
         onClose={() => setDeleteConfirmId(null)}
         onConfirm={handleDelete}
-      /> */}
+      />
+    )}
     </div>
   );
 }

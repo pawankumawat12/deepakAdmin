@@ -4,7 +4,7 @@ export const notificationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAdminNotifications: builder.query({
       query: (params) => ({
-        url: "/notifications/admin",
+        url: "/notifications",
         params: params || {},
       }),
       providesTags: ["Notification"],

@@ -227,9 +227,7 @@ export default function ProductForm({
               placeholder="0"
               {...register("stock")}
             />
-            <small className="muted">
-              Stock quantity will automatically decrease upon successful orders.
-            </small>
+            
           </label>
         )}
 

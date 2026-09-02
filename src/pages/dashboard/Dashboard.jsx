@@ -219,7 +219,7 @@ export default function Dashboard() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <h1 style={{ margin: 0, fontSize: "22px", fontWeight: 900, color: "#111827" }}>
-              Welcome back, {user?.name || "Admin"}! 👋
+              Welcome back, {user?.name || "Admin"}! 
             </h1>
             <span
               style={{

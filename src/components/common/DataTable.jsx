@@ -119,10 +119,9 @@ export default function DataTable({
                     <td
                       key={column.key}
                       style={{
-                        overflowWrap: "anywhere",
-                        wordBreak: "break-word",
+                     
                         maxWidth: column.maxWidth || "320px",
-                        minWidth: column.minWidth || "auto",
+                        minWidth: column.minWidth || "140px",
                       }}
                       title={
                         typeof row[column.key] === "string" && !column.render

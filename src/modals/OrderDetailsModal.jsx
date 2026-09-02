@@ -1,0 +1,727 @@
+import React from "react";
+import { X, Banknote, MapPin, User, ShoppingBag, Receipt, Truck, Tag } from "lucide-react";
+
+const OrderDetailsModal = ({
+  order,
+  onClose,
+  onPaymentStatusChange,
+  isUpdatingPayment,
+}) => {
+  if (!order) return null;
+
+  const p = order.parsedPricing || {};
+  const address = order.parsedAddress || order.delivery_address_json;
+  const paymentDetails = order.parsedPaymentDetails;
+
+  const money = (value) =>
+    `₹${Number(value || 0).toLocaleString("en-IN")}`;
+
+  const number = (value) =>
+    Number(value || 0).toLocaleString("en-IN");
+
+  const subtotal = Number(p.subtotal ?? order.subtotal ?? 0);
+  const discount = Number(p.discount ?? order.discount ?? 0);
+  const discountPercent = Number(p.discount_percent ?? 0);
+
+  const discountedSubtotal = Number(
+    p.discounted_subtotal ?? subtotal - discount
+  );
+
+  const deliveryFee = Number(
+    p.delivery_fee ?? order.delivery_fee ?? 0
+  );
+
+  const distanceKm =
+    p.distance_km ?? order.distance_km ?? null;
+
+  const deliveryChargeType =
+    p.delivery_charge_type || "Not specified";
+
+  const deliveryChargeValue =
+    Number(p.delivery_charge_value ?? 0);
+
+  const taxAmount = Number(
+    p.tax_amount ?? order.tax_amount ?? 0
+  );
+
+  const gstPercent = Number(p.gst_percent ?? 0);
+
+  const taxInclusive =
+    p.tax_inclusive ??
+    order.tax_inclusive ??
+    false;
+
+  const packagingFee = Number(
+    p.packaging_fee ?? order.packaging_fee ?? 0
+  );
+
+  const platformFee = Number(
+    p.platform_fee ?? order.platform_fee ?? 0
+  );
+
+  const codFee = Number(
+    p.cod_fee ?? order.cod_fee ?? 0
+  );
+
+  const grandTotal = Number(
+    p.grand_total ?? order.total_amount ?? 0
+  );
+
+  const freeDeliveryThreshold = Number(
+    p.free_delivery_threshold ?? 0
+  );
+
+  const freeDeliverySavings = Number(
+    p.free_delivery_savings ?? 0
+  );
+
+  const freeDeliveryShortfall = Number(
+    p.free_delivery_shortfall ?? 0
+  );
+
+  const maxDeliveryDistance = Number(
+    p.max_delivery_distance ?? 0
+  );
+
+  const minimumOrderAmount = Number(
+    p.minimum_order_amount ?? 0
+  );
+
+  const minimumOrderShortfall = Number(
+    p.minimum_order_shortfall ?? 0
+  );
+
+  const storeLatitude = p.store_latitude;
+  const storeLongitude = p.store_longitude;
+
+  const isFreeDelivery = Boolean(p.is_free_delivery);
+  const isOutOfRange = Boolean(p.is_out_of_range);
+  const isBelowMinimum = Boolean(p.is_below_minimum_order);
+  const isCod = Boolean(p.is_cod);
+
+  const offer = p.applied_offer;
+  const offerEvaluation = p.offer_evaluation;
+
+  const orderDate = order.created_at
+    ? new Date(order.created_at).toLocaleString("en-IN")
+    : "-";
+
+  const updatedDate = order.updated_at
+    ? new Date(order.updated_at).toLocaleString("en-IN")
+    : "-";
+
+  return (
+    <div
+      className="modal d-block"
+      tabIndex="-1"
+      style={{
+        backgroundColor: "rgba(0,0,0,0.5)",
+        zIndex: 9999,
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+        style={{ maxWidth: "700px" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-content border-0 rounded-4 shadow">
+
+          <div className="modal-header justify-content-between px-4 py-3">
+
+            <div>
+              <h5 className="modal-title fw-bold mb-1">
+                Order Details
+              </h5>
+
+              <div className="small text-muted">
+                {order.orderNumber || order.order_number}
+              </div>
+            </div>
+
+            <div className="d-flex align-items-center gap-2">
+
+        
+
+              <button
+                type="button"
+                className="btn-close"
+                onClick={onClose}
+              />
+
+            </div>
+
+          </div>
+
+          <div className="modal-body px-4">
+
+            {/* ================= ORDER OVERVIEW ================= */}
+            <OrderSection
+              icon={<Receipt size={15} />}
+              title="Order Overview"
+            >
+
+              <div className="row g-3">
+
+                <Info
+                  label="Order Number"
+                  value={order.orderNumber || order.order_number}
+                />
+
+                <Info
+                  label="Order ID"
+                  value={`#${order.id}`}
+                />
+
+                <Info
+                  label="Created At"
+                  value={orderDate}
+                />
+
+               
+
+                <Info
+                  label="Order Status"
+                  value={order.status}
+                  badge
+                />
+
+              </div>
+
+            </OrderSection>
+
+
+            {/* ================= CUSTOMER ================= */}
+            <OrderSection
+              icon={<User size={15} />}
+              title="Customer Information"
+            >
+
+              <div className="row g-3">
+
+                <Info
+                  label="Customer Name"
+                  value={order.customer_name || order.customer}
+                />
+
+                
+
+                <Info
+                  label="Email"
+                  value={order.customer_email}
+                />
+
+                <Info
+                  label="Phone"
+                  value={order.customer_phone}
+                />
+
+              </div>
+
+            </OrderSection>
+
+
+            {/* ================= ITEMS ================= */}
+            <OrderSection
+              icon={<ShoppingBag size={15} />}
+              title="Ordered Items"
+            >
+
+              <div className="border rounded-3 overflow-hidden">
+
+                {(order.items || []).map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3 border-bottom"
+                  >
+
+                    <div className="d-flex justify-content-between">
+
+                      <div>
+
+                        <div className="fw-semibold">
+                          {item.product_name}
+                        </div>
+
+                        <div className="small text-muted mt-1">
+                          Product ID: {item.product_id}
+                        </div>
+
+                        <div className="small mt-1">
+                          {item.quantity} × {money(item.price)}
+                        </div>
+
+                        {/* <div className="mt-2 d-flex gap-2 flex-wrap">
+
+                          <span className="badge bg-light text-dark border">
+                            {item.availability_type}
+                          </span>
+
+                          {item.production_status && (
+                            <span className="badge bg-warning text-dark">
+                              Production: {item.production_status}
+                            </span>
+                          )}
+
+                        </div> */}
+
+                      </div>
+
+                      <div className="text-end">
+
+                        <div className="small text-muted">
+                          Item Total
+                        </div>
+
+                        <div className="fw-bold">
+                          {money(item.total)}
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                ))}
+
+              </div>
+
+              <div className="small text-muted mt-2">
+                Total Items: {p.total_items ?? order.itemsSummary}
+              </div>
+
+            </OrderSection>
+
+
+            {/* ================= PRICING ================= */}
+            <OrderSection
+              icon={<Receipt size={15} />}
+              title="Pricing Calculation"
+            >
+
+              <div className="border rounded-3 p-3">
+
+                <PriceRow
+                  label="Original Subtotal"
+                  value={money(subtotal)}
+                />
+
+                {discount > 0 && (
+                  <PriceRow
+                    label={`Offer Discount ${
+                      discountPercent
+                        ? `(${discountPercent}%)`
+                        : ""
+                    }`}
+                    value={`- ${money(discount)}`}
+                    success
+                  />
+                )}
+
+                <PriceRow
+                  label="Discounted Subtotal"
+                  value={money(discountedSubtotal)}
+                />
+
+                <hr />
+
+                <PriceRow
+                  label={
+                    <>
+                      Delivery Fee
+                      {distanceKm != null &&
+                        ` (${Number(distanceKm)})`}
+                    </>
+                  }
+                  value={
+                    deliveryFee === 0
+                      ? "FREE"
+                      : money(deliveryFee)
+                  }
+                  success={deliveryFee === 0}
+                />
+
+                {taxAmount > 0 && (
+                  <PriceRow
+                    label={`GST (${gstPercent}%) ${
+                      taxInclusive
+                        ? "Inclusive"
+                        : "Added"
+                    }`}
+                    value={
+                      taxInclusive
+                        ? `${money(taxAmount)} (Included)`
+                        : `+ ${money(taxAmount)}`
+                    }
+                  />
+                )}
+
+                {packagingFee > 0 && (
+                  <PriceRow
+                    label="Packaging Fee"
+                    value={money(packagingFee)}
+                  />
+                )}
+
+                {platformFee > 0 && (
+                  <PriceRow
+                    label="Platform Fee"
+                    value={money(platformFee)}
+                  />
+                )}
+
+                {codFee > 0 && (
+                  <PriceRow
+                    label="COD Handling Fee"
+                    value={money(codFee)}
+                  />
+                )}
+
+                <hr />
+
+                <div className="d-flex justify-content-between fw-bold fs-5">
+                  <span>Final Order Total</span>
+                  <span>{money(grandTotal)}</span>
+                </div>
+
+              </div>
+
+            </OrderSection>
+
+
+            {/* ================= APPLIED OFFER ================= */}
+            {offer && (
+              <OrderSection
+                icon={<Tag size={15} />}
+                title="Applied Offer"
+              >
+
+                <div className="alert alert-success mb-0">
+
+                  <div className="fw-bold mb-2">
+                    {offer.title}
+                  </div>
+
+                  <div className="row g-2 small">
+
+                    <Info
+                      label="Offer ID"
+                      value={offer.id}
+                    />
+
+                    <Info
+                      label="Code"
+                      value={offer.code}
+                    />
+
+                    <Info
+                      label="Type"
+                      value={offer.type}
+                    />
+
+                    <Info
+                      label="Offer Value"
+                      value={offer.discount_value}
+                    />
+
+                    <Info
+                      label="Actual Discount"
+                      value={money(offer.discount)}
+                    />
+
+                    <Info
+                      label="Eligible"
+                      value={
+                        offerEvaluation?.isEligible
+                          ? "Yes"
+                          : "No"
+                      }
+                    />
+
+                  </div>
+
+                </div>
+
+              </OrderSection>
+            )}
+
+            {/* ================= PAYMENT ================= */}
+            <OrderSection
+              icon={<Banknote size={15} />}
+              title="Payment Information"
+            >
+
+              <div className="border rounded-3 p-3">
+
+                <div className="row g-3 mb-3">
+
+                  <Info
+                    label="Payment Method"
+                    value={
+                      order.payment_method ||
+                      "Cash on Delivery"
+                    }
+                  />
+
+                  <Info
+                    label="Payment Status"
+                    value={order.payment_status}
+                    badge
+                  />
+
+                  <Info
+                    label="Transaction ID"
+                    value={order.transaction_id || "N/A"}
+                  />
+
+                </div>
+
+                <div className="d-flex justify-content-between align-items-center">
+
+                  <span className="small text-muted">
+                    Update Payment Status
+                  </span>
+
+                  <select
+                    className="form-select form-select-sm"
+                    style={{ width: "170px" }}
+                    value={order.payment_status || "Pending"}
+                    disabled={isUpdatingPayment}
+                    onChange={(e) =>
+                      onPaymentStatusChange(
+                        order.id,
+                        e.target.value
+                      )
+                    }
+                  >
+                    <option value="Pending">
+                      Pending
+                    </option>
+
+                    <option value="Paid">
+                      Paid
+                    </option>
+
+                    <option value="Failed">
+                      Failed
+                    </option>
+
+                    <option value="Refunded">
+                      Refunded
+                    </option>
+                  </select>
+
+                </div>
+
+              </div>
+
+              {paymentDetails && (
+                <pre className="bg-light border rounded-3 p-3 small mt-3 mb-0">
+                  {JSON.stringify(paymentDetails, null, 2)}
+                </pre>
+              )}
+
+            </OrderSection>
+
+
+            {/* ================= ADDRESS ================= */}
+            <OrderSection
+              icon={<MapPin size={15} />}
+              title="Delivery Address Snapshot"
+            >
+
+              <div className="card border-0 bg-light rounded-3">
+
+                <div className="card-body p-3 small">
+
+                  {address ? (
+                    <>
+
+                      <div className="fw-bold">
+                        {address.receiver_name}
+                      </div>
+
+                      <div className="text-muted mb-2">
+                        {address.phone_number}
+                      </div>
+
+                      <div>
+                        {address.house_number}
+
+                        {address.building_name &&
+                          `, ${address.building_name}`}
+
+                        {address.floor &&
+                          `, Floor ${address.floor}`}
+
+                        {address.landmark &&
+                          `, Near ${address.landmark}`}
+                      </div>
+
+                      <div>
+                        {address.formatted_address ||
+                          `${address.city}, ${address.state} - ${address.pincode}`}
+                      </div>
+
+                      <div className="text-muted mt-2">
+                        City: {address.city} | State:{" "}
+                        {address.state} | Pincode:{" "}
+                        {address.pincode}
+                      </div>
+
+                      {/* {address.latitude != null && (
+                        <div className="text-muted mt-1">
+                          GPS: {address.latitude},{" "}
+                          {address.longitude}
+                        </div>
+                      )} */}
+
+                    </>
+                  ) : (
+                    order.shipping_address ||
+                    "No address details available"
+                  )}
+
+                </div>
+
+              </div>
+
+            </OrderSection>
+
+
+            {/* ================= NOTES ================= */}
+            {order.notes && (
+              <OrderSection title="Order Notes">
+
+                <div className="alert alert-light border mb-0 small">
+                  {order.notes}
+                </div>
+
+              </OrderSection>
+            )}
+
+
+            {/* ================= CANCELLATION ================= */}
+            {order.cancel_reason && (
+              <OrderSection title="Cancellation Information">
+
+                <div className="alert alert-danger mb-0 small">
+                  <strong>Cancel Reason:</strong>{" "}
+                  {order.cancel_reason}
+                </div>
+
+              </OrderSection>
+            )}
+
+          </div>
+
+
+          {/* ================= FOOTER ================= */}
+          <div className="modal-footer">
+
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={onClose}
+            >
+              Close
+            </button>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+/* =========================================================
+   REUSABLE COMPONENTS
+========================================================= */
+
+const OrderSection = ({
+  title,
+  icon,
+  children,
+}) => (
+  <section className="mb-4">
+
+    <h6 className="fw-bold mb-2 d-flex align-items-center gap-2">
+      {icon}
+      {title}
+    </h6>
+
+    {children}
+
+  </section>
+);
+
+
+const PriceRow = ({
+  label,
+  value,
+  success = false,
+}) => (
+  <div className="d-flex justify-content-between align-items-center mb-2 small">
+
+    <span
+      className={
+        success
+          ? "text-success"
+          : "text-muted"
+      }
+    >
+      {label}
+    </span>
+
+    <span className="fw-semibold">
+      {value}
+    </span>
+
+  </div>
+);
+
+
+const Info = ({
+  label,
+  value,
+  badge = false,
+}) => (
+  <div className="col-6">
+
+    <div className="small text-muted">
+      {label}
+    </div>
+
+    {badge ? (
+      <span className="badge bg-primary mt-1">
+        {value || "-"}
+      </span>
+    ) : (
+      <div className="small fw-semibold mt-1">
+        {value ?? "-"}
+      </div>
+    )}
+
+  </div>
+);
+
+
+const StatusBadge = ({
+  text,
+  success,
+}) => (
+  <span
+    className={`badge ${
+      success
+        ? "bg-success"
+        : "bg-warning text-dark"
+    }`}
+  >
+    {text}
+  </span>
+);
+
+
+export default OrderDetailsModal;
