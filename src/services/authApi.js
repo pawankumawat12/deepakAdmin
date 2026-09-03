@@ -1,4 +1,5 @@
 import { baseApi } from "./baseApi";
+import { setUser, signOut } from "../context/authSlice";
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -22,6 +23,20 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body: payload,
       }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const token = data?.accessToken || data?.token || data?.user?.token;
+          if (token && typeof window !== "undefined") {
+            localStorage.setItem("accessToken", token);
+          }
+          if (data?.user) {
+            dispatch(setUser(data.user));
+          }
+        } catch {
+          // Handled in component
+        }
+      },
       invalidatesTags: ["Auth"],
     }),
     getMe: build.query({
@@ -30,6 +45,15 @@ export const authApi = baseApi.injectEndpoints({
     }),
     logout: build.mutation({
       query: () => ({ url: "/auth/logout", method: "POST" }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("accessToken");
+        }
+        dispatch(signOut());
+        try {
+          await queryFulfilled;
+        } catch {}
+      },
       invalidatesTags: ["Auth"],
     }),
     forgotPassword: build.mutation({

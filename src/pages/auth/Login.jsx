@@ -88,13 +88,6 @@ export default function Login() {
         dispatch(setUser(res.user));
       }
 
-      try {
-        const meResponse = await getMe().unwrap();
-        dispatch(setUser(meResponse));
-      } catch (meErr) {
-        console.error("Failed to fetch updated profile:", meErr);
-      }
-
       toast.success("Welcome back! Logged in successfully.");
       navigate("/", { replace: true });
     } catch (error) {

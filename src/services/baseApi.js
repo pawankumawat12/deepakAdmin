@@ -38,8 +38,15 @@ class SimpleMutex {
 
 const mutex = new SimpleMutex();
 
+const getNormalizedBaseUrl = () => {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || "").trim();
+  if (!envUrl) return "http://localhost:5000/api/v1";
+  const clean = envUrl.replace(/\/+$/, "");
+  return clean.endsWith("/api/v1") ? clean : `${clean}/api/v1`;
+};
+
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1",
+  baseUrl: getNormalizedBaseUrl(),
   credentials: "include",
   prepareHeaders: (headers) => {
     const accessToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
@@ -79,7 +86,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
           const newAccessToken =
             refreshResult.data.accessToken || refreshResult.data.token;
 
-          if (newAccessToken) {
+          if (typeof window !== "undefined" && newAccessToken) {
             localStorage.setItem("accessToken", newAccessToken);
           }
 
@@ -89,7 +96,9 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 
           result = await rawBaseQuery(args, api, extraOptions);
         } else {
-          localStorage.removeItem("accessToken");
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("accessToken");
+          }
           api.dispatch(signOut());
         }
       } finally {
