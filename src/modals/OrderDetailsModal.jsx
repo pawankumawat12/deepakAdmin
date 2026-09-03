@@ -1,5 +1,6 @@
 import React from "react";
 import { X, Banknote, MapPin, User, ShoppingBag, Receipt, Truck, Tag } from "lucide-react";
+import Button from "../components/ui/Button";
 
 const OrderDetailsModal = ({
   order,
@@ -140,15 +141,14 @@ const OrderDetailsModal = ({
             </div>
 
             <div className="d-flex align-items-center gap-2">
-
-        
-
-              <button
-                type="button"
+              <Button
+                variant="plain"
                 className="btn-close"
                 onClick={onClose}
-              />
-
+                aria-label="Close"
+              >
+                <X size={18} />
+              </Button>
             </div>
 
           </div>
@@ -618,15 +618,12 @@ const OrderDetailsModal = ({
 
           {/* ================= FOOTER ================= */}
           <div className="modal-footer">
-
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
+            <Button
+              variant="outline"
               onClick={onClose}
             >
               Close
-            </button>
-
+            </Button>
           </div>
 
         </div>

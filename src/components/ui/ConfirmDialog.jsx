@@ -49,12 +49,12 @@ export default function ConfirmDialog({
             Cancel
           </Button>
           <Button
-            className={danger ? "danger-btn" : ""}
+            variant={danger ? "danger" : "primary"}
             onClick={onConfirm}
             disabled={isLoading}
+            loading={isLoading}
           >
-            {isLoading && <LoaderCircle size={16} className="spin" />}
-            {isLoading ? "Signing out..." : confirmLabel}
+            {isLoading ? "Processing..." : confirmLabel}
           </Button>
         </div>
       </section>

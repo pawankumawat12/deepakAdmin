@@ -18,6 +18,7 @@ import {
   BadgePercent,
   Star,
   MessageSquare,
+  Mail,
   Heart,
   Settings,
   UserRound,
@@ -47,6 +48,7 @@ const navigation = [
   ["Offers", "/offers", BadgePercent],
   ["Reviews", "/reviews", Star],
   ["Messages", "/messages", MessageSquare],
+  ["Email Logs", "/email-logs", Mail],
   ["Settings", "/settings", Settings],
 ];
 
@@ -271,8 +273,8 @@ export default function AdminLayout() {
 
             {/* Notification Bell with Badge & Dropdown */}
             <div style={{ position: "relative" }} ref={notifRef}>
-              <button
-                type="button"
+              <Button
+                variant="plain"
                 onClick={() => {
                   setNotificationsOpen(!notificationsOpen);
                   setProfileOpen(false);
@@ -317,7 +319,7 @@ export default function AdminLayout() {
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
-              </button>
+              </Button>
 
               {/* Notification Dropdown Panel */}
               {notificationsOpen && (
@@ -368,8 +370,8 @@ export default function AdminLayout() {
                     </div>
 
                     {unreadCount > 0 && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="text"
                         onClick={handleMarkAllRead}
                         disabled={isMarkingAll}
                         style={{
@@ -386,7 +388,7 @@ export default function AdminLayout() {
                       >
                         <CheckCheck size={13} />
                         <span>Mark all read</span>
-                      </button>
+                      </Button>
                     )}
                   </div>
 

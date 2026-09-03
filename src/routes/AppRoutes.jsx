@@ -20,6 +20,7 @@ import FavouriteList from "../pages/favourites/FavouriteList";
 import Settings from "../pages/settings/Settings";
 import Profile from "../pages/profile/Profile";
 import ReviewList from "../pages/reviews/ReviewList";
+import EmailLogList from "../pages/emailLogs/EmailLogList";
 
 export default function AppRoutes() {
   return (
@@ -46,6 +47,7 @@ export default function AppRoutes() {
           <Route path="offers" element={<OfferList />} />
           <Route path="reviews" element={<ReviewList />} />
           <Route path="messages" element={<MessageList />} />
+          <Route path="email-logs" element={<EmailLogList />} />
           <Route path="favourites" element={<FavouriteList />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />

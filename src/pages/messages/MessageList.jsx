@@ -21,6 +21,7 @@ import DataTable from "../../components/common/DataTable";
 import SearchInput from "../../components/ui/SearchInput";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import Button from "../../components/ui/Button";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import {
   useGetContactQueriesQuery,
@@ -302,28 +303,14 @@ export default function MessageList() {
           </p>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="outline"
           onClick={() => refetch()}
           disabled={isFetching}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 14px",
-            borderRadius: "10px",
-            border: "1px solid #e5e7eb",
-            background: "#ffffff",
-            color: "#374151",
-            fontWeight: 600,
-            fontSize: "13px",
-            cursor: "pointer",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-          }}
         >
-          <RefreshCw size={14} className={isFetching ? "animate-spin" : ""} />
+          <RefreshCw size={14} className={isFetching ? "spin animate-spin" : ""} />
           <span>Refresh</span>
-        </button>
+        </Button>
       </div>
 
       {/* STATS OVERVIEW CARDS */}
@@ -506,27 +493,17 @@ export default function MessageList() {
           ].map((tab) => {
             const isActive = statusFilter === tab.id;
             return (
-              <button
+              <Button
                 key={tab.id}
-                type="button"
+                variant={isActive ? "primary" : "outline"}
                 onClick={() => {
                   setStatusFilter(tab.id);
                   setPage(1);
                 }}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: "10px",
-                  border: isActive ? "1px solid #4f7d16" : "1px solid #e5e7eb",
-                  background: isActive ? "#4f7d16" : "#ffffff",
-                  color: isActive ? "#ffffff" : "#4b5563",
-                  fontWeight: 700,
-                  fontSize: "12.5px",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
+                style={{ height: "34px", padding: "0 12px", fontSize: "12px" }}
               >
                 {tab.label}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -552,45 +529,22 @@ export default function MessageList() {
         emptyMessage="No customer contact inquiries found."
         renderActions={(row) => (
           <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              type="button"
+            <Button
+              variant="outline"
               onClick={() => handleOpenDetailModal(row)}
               title="View & Manage Inquiry"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                padding: "6px 10px",
-                borderRadius: "8px",
-                border: "1px solid #e5e7eb",
-                background: "#f9fafb",
-                color: "#374151",
-                fontSize: "12px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              style={{ height: "30px", padding: "0 8px", fontSize: "12px" }}
             >
               <Eye size={13} /> View
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="danger"
               onClick={() => setDeleteConfirmId(row.id)}
               title="Delete Inquiry"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "30px",
-                height: "30px",
-                borderRadius: "8px",
-                border: "1px solid #fee2e2",
-                background: "#fef2f2",
-                color: "#dc2626",
-                cursor: "pointer",
-              }}
+              style={{ width: "30px", height: "30px", padding: 0, justifyContent: "center" }}
             >
               <Trash2 size={13} />
-            </button>
+            </Button>
           </div>
         )}
       />
@@ -650,23 +604,22 @@ export default function MessageList() {
                 </p>
               </div>
 
-              <button
-                type="button"
+              <Button
+                variant="plain"
                 onClick={handleCloseDetailModal}
                 style={{
                   background: "#f3f4f6",
-                  border: "none",
                   borderRadius: "50%",
                   width: "32px",
                   height: "32px",
                   display: "grid",
                   placeItems: "center",
-                  cursor: "pointer",
                   color: "#6b7280",
                 }}
+                aria-label="Close"
               >
                 <X size={16} />
-              </button>
+              </Button>
             </div>
 
             {/* Customer Details Box */}
@@ -824,52 +777,21 @@ export default function MessageList() {
 
               {/* Action Buttons */}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
                   onClick={handleCloseDetailModal}
-                  style={{
-                    padding: "9px 16px",
-                    borderRadius: "10px",
-                    border: "1px solid #e5e7eb",
-                    background: "#ffffff",
-                    color: "#4b5563",
-                    fontWeight: 600,
-                    fontSize: "13px",
-                    cursor: "pointer",
-                  }}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
                   type="submit"
                   disabled={isUpdating}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "9px 18px",
-                    borderRadius: "10px",
-                    border: "none",
-                    background: "#4f7d16",
-                    color: "#ffffff",
-                    fontWeight: 700,
-                    fontSize: "13px",
-                    cursor: isUpdating ? "not-allowed" : "pointer",
-                    opacity: isUpdating ? 0.7 : 1,
-                  }}
+                  loading={isUpdating}
                 >
-                  {isUpdating ? (
-                    <>
-                      <LoaderCircle size={14} className="animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check size={14} />
-                      <span>Save Changes</span>
-                    </>
-                  )}
-                </button>
+                  {!isUpdating && <Check size={14} />}
+                  <span>Save Changes</span>
+                </Button>
               </div>
             </form>
           </div>
