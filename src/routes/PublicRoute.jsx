@@ -1,23 +1,32 @@
 import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { setUser } from "../context/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { setUser, signOut } from "../context/authSlice";
 import { useGetMeQuery } from "../services/authApi";
+import { baseApi } from "../services/baseApi";
 import { LoaderCircle } from "lucide-react";
 
 export default function PublicRoute() {
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
   const hasToken =
     typeof window !== "undefined" &&
     Boolean(localStorage.getItem("accessToken"));
 
-  const { data, isLoading } = useGetMeQuery(undefined, {
+  const { data, isLoading, isError } = useGetMeQuery(undefined, {
     skip: !hasToken,
   });
 
   useEffect(() => {
     if (data?.user) dispatch(setUser(data.user));
   }, [data, dispatch]);
+
+  useEffect(() => {
+    if (isError) {
+      dispatch(signOut());
+      dispatch(baseApi.util.resetApiState());
+    }
+  }, [isError, dispatch]);
 
   if (isLoading) {
     return (
@@ -38,7 +47,7 @@ export default function PublicRoute() {
   }
 
   // If already logged in as admin, redirect to Dashboard
-  if (data?.user?.role === "admin") {
+  if (user?.role === "admin" || data?.user?.role === "admin") {
     return <Navigate to="/" replace />;
   }
 

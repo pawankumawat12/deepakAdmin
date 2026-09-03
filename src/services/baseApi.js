@@ -66,14 +66,16 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
 
   const url = typeof args === "string" ? args : args?.url;
-  const isRefreshRequest = url === "/auth/refresh-token";
-  const isLogoutRequest = url === "/auth/logout";
+  const isRefreshRequest =
+    url === "/auth/refresh-token" || url?.includes("refresh-token");
+  const isAuthEndpoint =
+    isRefreshRequest ||
+    url === "/auth/logout" ||
+    url === "/auth/login" ||
+    url === "/auth/admin-login" ||
+    url === "/auth/verify-otp";
 
-  if (
-    result.error?.status === 401 &&
-    !isRefreshRequest &&
-    !isLogoutRequest
-  ) {
+  if (result.error?.status === 401 && !isAuthEndpoint) {
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
@@ -86,7 +88,10 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
           extraOptions
         );
 
-        if (!refreshResult.error && (refreshResult.data?.accessToken || refreshResult.data?.token)) {
+        if (
+          !refreshResult.error &&
+          (refreshResult.data?.accessToken || refreshResult.data?.token)
+        ) {
           const newAccessToken =
             refreshResult.data.accessToken || refreshResult.data.token;
 
@@ -104,6 +109,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
             localStorage.removeItem("accessToken");
           }
           api.dispatch(signOut());
+          api.dispatch(baseApi.util.resetApiState());
         }
       } finally {
         release();

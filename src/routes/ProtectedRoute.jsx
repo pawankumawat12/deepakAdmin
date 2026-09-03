@@ -1,13 +1,32 @@
 import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { setUser } from "../context/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { setUser, signOut } from "../context/authSlice";
 import { useGetMeQuery } from "../services/authApi";
+import { baseApi } from "../services/baseApi";
 import { LoaderCircle } from "lucide-react";
 
 export default function ProtectedRoute() {
   const dispatch = useDispatch();
-  const { data, isLoading } = useGetMeQuery();
+  const user = useSelector((state) => state.auth.user);
+
+  const { data, isLoading, isFetching, isError, refetch } = useGetMeQuery(
+    undefined,
+    {
+      refetchOnMountOrArgChange: true,
+    }
+  );
+
+  // If accessToken is removed in another tab or directly via DevTools, revalidate immediately
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "accessToken" && !e.newValue) {
+        refetch();
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [refetch]);
 
   useEffect(() => {
     if (data?.user) {
@@ -15,7 +34,14 @@ export default function ProtectedRoute() {
     }
   }, [data, dispatch]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isError) {
+      dispatch(signOut());
+      dispatch(baseApi.util.resetApiState());
+    }
+  }, [isError, dispatch]);
+
+  if (isLoading || (isFetching && !user)) {
     return (
       <div
         style={{
@@ -33,9 +59,7 @@ export default function ProtectedRoute() {
     );
   }
 
-  return data?.user?.role === "admin" ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/login" replace />
-  );
+  const isAdmin = user?.role === "admin" || data?.user?.role === "admin";
+
+  return isAdmin ? <Outlet /> : <Navigate to="/login" replace />;
 }
