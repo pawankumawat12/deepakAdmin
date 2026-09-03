@@ -5,10 +5,13 @@ const authSlice = createSlice({
   initialState: { user: null },
   reducers: {
     setUser: (state, action) => {
-      state.user = action.payload.user;
+      state.user = action.payload?.user || action.payload;
     },
     signOut: (state) => {
       state.user = null;
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+      }
     },
   },
 });

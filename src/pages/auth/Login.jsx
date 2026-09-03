@@ -80,10 +80,21 @@ export default function Login() {
     try {
       setApiError("");
       const res = await verifyOtp({ email: pendingEmail, otp: data.otp }).unwrap();
-    localStorage.setItem('accessToken', res.token)
+      const token = res?.accessToken || res?.token || res?.user?.token;
+      if (token) {
+        localStorage.setItem("accessToken", token);
+      }
+      if (res?.user) {
+        dispatch(setUser(res.user));
+      }
 
-      const meResponse = await getMe().unwrap();
-      dispatch(setUser(meResponse));
+      try {
+        const meResponse = await getMe().unwrap();
+        dispatch(setUser(meResponse));
+      } catch (meErr) {
+        console.error("Failed to fetch updated profile:", meErr);
+      }
+
       toast.success("Welcome back! Logged in successfully.");
       navigate("/", { replace: true });
     } catch (error) {
