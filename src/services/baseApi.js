@@ -105,18 +105,25 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 
           result = await rawBaseQuery(args, api, extraOptions);
         } else {
+          // Stop all retries immediately, clear access token and Redux auth state
           if (typeof window !== "undefined") {
             localStorage.removeItem("accessToken");
           }
           api.dispatch(signOut());
-          api.dispatch(baseApi.util.resetApiState());
         }
       } finally {
         release();
       }
     } else {
       await mutex.waitForUnlock();
-      result = await rawBaseQuery(args, api, extraOptions);
+      // Only retry if a new token was successfully stored by the refresh call
+      const tokenAfterUnlock =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      if (tokenAfterUnlock) {
+        result = await rawBaseQuery(args, api, extraOptions);
+      }
     }
   }
 

@@ -3,7 +3,6 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, signOut } from "../context/authSlice";
 import { useGetMeQuery } from "../services/authApi";
-import { baseApi } from "../services/baseApi";
 import { LoaderCircle } from "lucide-react";
 
 export default function ProtectedRoute() {
@@ -37,11 +36,10 @@ export default function ProtectedRoute() {
   useEffect(() => {
     if (isError) {
       dispatch(signOut());
-      dispatch(baseApi.util.resetApiState());
     }
   }, [isError, dispatch]);
 
-  if (isLoading || (isFetching && !user)) {
+  if ((isLoading || isFetching) && !isError && !user) {
     return (
       <div
         style={{
