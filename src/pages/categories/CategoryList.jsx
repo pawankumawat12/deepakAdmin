@@ -153,9 +153,10 @@ export default function CategoryList() {
                   return <span className="muted">No image</span>;
                 }
             
+                const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
                 const imageUrl = value.startsWith("http")
                   ? value
-                  : `http://localhost:5000${value}`;
+                  : `${backendUrl}${value.startsWith("/") ? "" : "/"}${value}`;
             
                 return (
                   <img

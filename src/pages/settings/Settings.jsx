@@ -50,8 +50,10 @@ import {
 } from "lucide-react";
 import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 const API_ORIGIN = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1"
-).replace(/\/api\/v1$/, "");
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  ""
+).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
 
 const DEFAULT_FALLBACK_COLOR_THEMES = [
   {

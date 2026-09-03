@@ -61,7 +61,7 @@ export default function ProductForm({
       originalUrl: image,
       previewUrl: image.startsWith("http")
         ? image
-        : `http://localhost:5000${image}`,
+        : `${(import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "")}${image.startsWith("/") ? "" : "/"}${image}`,
       isExisting: true,
     }));
 

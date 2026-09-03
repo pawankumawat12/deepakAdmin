@@ -39,8 +39,12 @@ class SimpleMutex {
 const mutex = new SimpleMutex();
 
 const getNormalizedBaseUrl = () => {
-  const envUrl = (import.meta.env.VITE_API_BASE_URL || "").trim();
-  if (!envUrl) return "http://localhost:5000/api/v1";
+  const envUrl = (
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    ""
+  ).trim();
+  if (!envUrl) return "/api/v1";
   const clean = envUrl.replace(/\/+$/, "");
   return clean.endsWith("/api/v1") ? clean : `${clean}/api/v1`;
 };

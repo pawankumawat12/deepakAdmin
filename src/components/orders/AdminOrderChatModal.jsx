@@ -24,9 +24,11 @@ import {
 } from "../../services/chatApi";
 import { getAdminSocket } from "../../services/socket";
 
-const API_ORIGIN =
+const API_ORIGIN = (
+  import.meta.env.VITE_BACKEND_URL ||
   import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") ||
-  "http://localhost:5000";
+  ""
+).replace(/\/+$/, "");
 
 // Full categorized WhatsApp Emojis
 const EMOJI_CATEGORIES = [

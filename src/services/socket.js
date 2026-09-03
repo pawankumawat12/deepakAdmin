@@ -1,8 +1,11 @@
 import { io } from "socket.io-client";
 
 const SOCKET_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"
-).replace(/\/api\/v1$/, "");
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  ""
+).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
 
 let socket = null;
 

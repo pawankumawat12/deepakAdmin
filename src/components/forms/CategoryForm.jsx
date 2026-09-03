@@ -11,8 +11,12 @@ import Select from "../ui/Select";
 const getImageSrc = (imageUrl) => {
   if (!imageUrl || /^(?:blob:|data:|https?:\/\/)/i.test(imageUrl)) return imageUrl;
 
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
-  return `${new URL(apiUrl).origin}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
+  const backendUrl = (
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    ""
+  ).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
+  return `${backendUrl}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
 };
 
 export default function CategoryForm({
