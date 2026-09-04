@@ -58,6 +58,7 @@ export default function MessageList() {
   const [activeModalQuery, setActiveModalQuery] = useState(null);
   const [editStatus, setEditStatus] = useState("pending");
   const [editNotes, setEditNotes] = useState("");
+  const [replyText, setReplyText] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const rawQueries = queriesResponse?.data || [];
@@ -79,6 +80,7 @@ export default function MessageList() {
     setActiveModalQuery(query);
     setEditStatus(query.status || "pending");
     setEditNotes(query.admin_notes || "");
+    setReplyText(query.admin_reply || "");
   };
 
   const handleCloseDetailModal = () => {
@@ -90,13 +92,17 @@ export default function MessageList() {
     if (!activeModalQuery) return;
 
     try {
+      const isSendingNewReply = replyText.trim() && replyText.trim() !== activeModalQuery.admin_reply;
+      const finalStatus = isSendingNewReply && editStatus === "pending" ? "resolved" : editStatus;
+
       await updateQuery({
         id: activeModalQuery.id,
-        status: editStatus,
+        status: finalStatus,
         admin_notes: editNotes,
+        admin_reply: replyText.trim(),
       }).unwrap();
 
-      toast.success("Inquiry updated successfully!");
+      toast.success(isSendingNewReply ? "Reply sent to customer successfully!" : "Inquiry updated successfully!");
       handleCloseDetailModal();
     } catch (err) {
       toast.error(err?.data?.message || "Failed to update inquiry");
@@ -256,6 +262,45 @@ export default function MessageList() {
       key: "status",
       label: "STATUS",
       render: (status) => getStatusBadge(status),
+    },
+    {
+      key: "admin_reply",
+      label: "REPLY STATUS",
+      render: (_, row) => (
+        row.admin_reply ? (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#ecfdf5",
+              color: "#047857",
+              padding: "3px 8px",
+              borderRadius: "9999px",
+              fontSize: "11px",
+              fontWeight: 700,
+            }}
+          >
+            <CheckCircle2 size={12} /> Replied
+          </span>
+        ) : (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#fff1f2",
+              color: "#be123c",
+              padding: "3px 8px",
+              borderRadius: "9999px",
+              fontSize: "11px",
+              fontWeight: 700,
+            }}
+          >
+            <Clock size={12} /> Pending Reply
+          </span>
+        )
+      ),
     },
     {
       key: "created_at",
@@ -530,12 +575,13 @@ export default function MessageList() {
         renderActions={(row) => (
           <div style={{ display: "flex", gap: "6px" }}>
             <Button
-              variant="outline"
+              variant={row.admin_reply ? "outline" : "primary"}
               onClick={() => handleOpenDetailModal(row)}
-              title="View & Manage Inquiry"
-              style={{ height: "30px", padding: "0 8px", fontSize: "12px" }}
+              title={row.admin_reply ? "View & Update Response" : "Reply to Customer"}
+              style={{ height: "30px", padding: "0 10px", fontSize: "12px", gap: "5px" }}
             >
-              <Eye size={13} /> View
+              {row.admin_reply ? <Eye size={13} /> : <Send size={13} />}
+              {row.admin_reply ? "View" : "Reply"}
             </Button>
             <Button
               variant="danger"
@@ -581,7 +627,9 @@ export default function MessageList() {
               borderRadius: "20px",
               boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
               width: "100%",
-              maxWidth: "600px",
+              maxWidth: "620px",
+              maxHeight: "90vh",
+              overflowY: "auto",
               padding: "24px",
             }}
           >
@@ -706,19 +754,19 @@ export default function MessageList() {
               </p>
 
               <label style={{ display: "block", fontSize: "11px", fontWeight: 800, color: "#6b7280", textTransform: "uppercase" }}>
-                Message
+                Customer's Message
               </label>
               <div
                 style={{
                   marginTop: "4px",
                   padding: "14px",
                   borderRadius: "12px",
-                  background: "#ffffff",
-                  border: "1px solid #e5e7eb",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
                   fontSize: "13.5px",
                   lineHeight: "1.6",
-                  color: "#374151",
-                  maxHeight: "180px",
+                  color: "#334155",
+                  maxHeight: "150px",
                   overflowY: "auto",
                   overflowWrap: "anywhere",
                   wordBreak: "break-word",
@@ -728,8 +776,61 @@ export default function MessageList() {
               </div>
             </div>
 
-            {/* Status & Admin Notes Form */}
+            {/* Official Reply & Status Form */}
             <form onSubmit={handleSaveStatus}>
+              {/* Reply to Customer */}
+              <div
+                style={{
+                  marginBottom: "16px",
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "12px",
+                  padding: "14px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                  <label
+                    style={{
+                      fontSize: "11.5px",
+                      fontWeight: 800,
+                      color: "#166534",
+                      textTransform: "uppercase",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <Send size={13} /> Reply to Customer (Visible in Customer Thread)
+                  </label>
+                  {activeModalQuery.replied_at && (
+                    <span style={{ fontSize: "11px", color: "#15803d", fontWeight: 600 }}>
+                      Replied {new Date(activeModalQuery.replied_at).toLocaleDateString("en-IN")}
+                      {activeModalQuery.admin_responder_name ? ` by ${activeModalQuery.admin_responder_name}` : ""}
+                    </span>
+                  )}
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type your official reply to this customer inquiry. The reply will be saved and displayed directly in the customer's Contact Us conversation thread and sent to their email..."
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #86efac",
+                    fontSize: "13px",
+                    lineHeight: "1.5",
+                    outline: "none",
+                    background: "#ffffff",
+                    color: "#1e293b",
+                    resize: "vertical",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
               <div style={{ marginBottom: "14px" }}>
                 <label style={{ display: "block", fontSize: "11px", fontWeight: 800, color: "#6b7280", textTransform: "uppercase", marginBottom: "4px" }}>
                   Status
@@ -756,13 +857,13 @@ export default function MessageList() {
 
               <div style={{ marginBottom: "20px" }}>
                 <label style={{ display: "block", fontSize: "11px", fontWeight: 800, color: "#6b7280", textTransform: "uppercase", marginBottom: "4px" }}>
-                  Admin Decision Notes (Internal)
+                  Internal Admin Notes (Private)
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  placeholder="Add notes about resolution, customer call, email response..."
+                  placeholder="Add internal notes about resolution, customer phone calls, etc..."
                   style={{
                     width: "100%",
                     padding: "10px 12px",
@@ -771,6 +872,7 @@ export default function MessageList() {
                     fontSize: "13px",
                     outline: "none",
                     resize: "none",
+                    boxSizing: "border-box",
                   }}
                 />
               </div>
@@ -789,8 +891,8 @@ export default function MessageList() {
                   disabled={isUpdating}
                   loading={isUpdating}
                 >
-                  {!isUpdating && <Check size={14} />}
-                  <span>Save Changes</span>
+                  {!isUpdating && (replyText.trim() ? <Send size={14} /> : <Check size={14} />)}
+                  <span>{replyText.trim() ? "Send Reply & Save" : "Save Changes"}</span>
                 </Button>
               </div>
             </form>

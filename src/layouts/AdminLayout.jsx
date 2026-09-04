@@ -38,6 +38,7 @@ import {
   useMarkAllAdminNotificationsReadMutation,
 } from "../services/notificationApi";
 import { getAdminSocket } from "../services/socket";
+import { toAssetUrl } from "../utils/assetUrl";
 
 const navigation = [
   ["Dashboard", "/", LayoutDashboard],
@@ -496,7 +497,22 @@ export default function AdminLayout() {
                   setNotificationsOpen(false);
                 }}
               >
-                <span>{user?.name?.slice(0, 2).toUpperCase() || "AD"}</span>
+                {user?.image ? (
+                  <img
+                    src={toAssetUrl(user.image)}
+                    alt={user.name || "Admin"}
+                    style={{
+                      width: "34px",
+                      height: "34px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "2px solid #e5e7eb",
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <span>{user?.name?.slice(0, 2).toUpperCase() || "AD"}</span>
+                )}
                 <div>
                   <strong>{user?.name}</strong>
                   <small>{user?.role}</small>

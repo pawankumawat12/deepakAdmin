@@ -41,6 +41,7 @@ import {
   AlertTriangle,
   Search,
   Zap,
+  FileText,
 } from "lucide-react";
 import OrderDetailsModal from "../../modals/OrderDetailsModal";
 
@@ -291,6 +292,7 @@ export default function OrderList() {
             style={{ width: "160px" }}
           >
             <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
             <option value="Preparing">Preparing</option>
             <option value="Out for Delivery">Out for Delivery</option>
             <option value="Delivered">Delivered</option>
@@ -373,7 +375,25 @@ export default function OrderList() {
                 <div style={{ fontSize: "11px", color: "var(--color-text-muted)" }}>
                   {item.payment_method}
                 </div>
-
+                {item.notes && item.notes.trim() && (
+                  <span
+                    style={{
+                      marginTop: "4px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      background: "#fef3c7",
+                      color: "#b45309",
+                      padding: "1px 6px",
+                      borderRadius: "4px",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                    }}
+                    title={`Special instructions: ${item.notes}`}
+                  >
+                    <FileText size={10} /> Special Note
+                  </span>
+                )}
               </div>
             ),
           },
@@ -491,6 +511,28 @@ export default function OrderList() {
                     </div>
                   ))}
                 </div>
+                {item.notes && item.notes.trim() && (
+                  <div
+                    style={{
+                      marginTop: "6px",
+                      padding: "5px 8px",
+                      borderRadius: "6px",
+                      background: "#fffbeb",
+                      border: "1px solid #fde68a",
+                      color: "#92400e",
+                      fontSize: "11px",
+                      lineHeight: "1.3",
+                      maxWidth: "280px",
+                    }}
+                    title={item.notes}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px", fontWeight: 700, marginBottom: "2px" }}>
+                      <FileText size={11} />
+                      <span>Note / Instructions:</span>
+                    </div>
+                    <div style={{ wordBreak: "break-word" }}>{item.notes}</div>
+                  </div>
+                )}
               </div>
             ),
           },
@@ -630,8 +672,33 @@ export default function OrderList() {
                   borderRadius: "8px",
                   fontWeight: 700,
                   width: "140px",
+                  backgroundColor:
+                    value === "Pending" || value === "Order Placed" || value === "Pending Payment"
+                      ? "#fef3c7"
+                      : value === "Preparing"
+                        ? "#dbeafe"
+                        : value === "Out for Delivery"
+                          ? "#ffedd5"
+                          : value === "Delivered"
+                            ? "#dcfce7"
+                            : value === "Cancelled"
+                              ? "#fee2e2"
+                              : "#ffffff",
+                  color:
+                    value === "Pending" || value === "Order Placed" || value === "Pending Payment"
+                      ? "#b45309"
+                      : value === "Preparing"
+                        ? "#1e40af"
+                        : value === "Out for Delivery"
+                          ? "#c2410c"
+                          : value === "Delivered"
+                            ? "#15803d"
+                            : value === "Cancelled"
+                              ? "#b91c1c"
+                              : "#374151",
                 }}
               >
+                <option value="Pending">Pending</option>
                 <option value="Preparing">Preparing</option>
                 <option value="Out for Delivery">Out for Delivery</option>
                 <option value="Delivered">Delivered</option>
@@ -644,7 +711,7 @@ export default function OrderList() {
             label: "VERIFICATION & CHAT",
             render: (_val, item) => (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {item.status === "Preparing" && (
+                {(item.status === "Pending" || item.status === "Order Placed" || item.status === "Pending Payment") && (
                   <div style={{ display: "flex", gap: "4px" }}>
                     <button
                       type="button"
@@ -654,16 +721,16 @@ export default function OrderList() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "4px",
-                        padding: "3px 7px",
+                        padding: "4px 8px",
                         borderRadius: "6px",
                         border: "1px solid #86efac",
                         backgroundColor: "#dcfce7",
                         color: "#166534",
-                        fontSize: "10px",
+                        fontSize: "11px",
                         fontWeight: 700,
                         cursor: "pointer",
                       }}
-                      title="Accept order and confirm verification"
+                      title="Accept order and start food preparation"
                     >
                       <ThumbsUp size={11} /> Accept
                     </button>
@@ -675,12 +742,12 @@ export default function OrderList() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "4px",
-                        padding: "3px 7px",
+                        padding: "4px 8px",
                         borderRadius: "6px",
                         border: "1px solid #fca5a5",
                         backgroundColor: "#fee2e2",
                         color: "#991b1b",
-                        fontSize: "10px",
+                        fontSize: "11px",
                         fontWeight: 700,
                         cursor: "pointer",
                       }}
@@ -816,7 +883,7 @@ export default function OrderList() {
             </div>
 
             <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 20px 0", lineHeight: 1.5 }}>
-              Accepting will notify the customer in real-time that their food preparation has started.
+              Accepting this order will change its status to <strong>Preparing</strong> and notify the customer in real-time that their order has been accepted and is being prepared.
             </p>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>

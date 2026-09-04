@@ -20,6 +20,7 @@ import Pagination from "../../components/ui/Pagination";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Button from "../../components/ui/Button";
 import Skeleton from "../../components/ui/Skeleton";
+import DataTable from "../../components/common/DataTable";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import {
   useGetEmailLogsQuery,
@@ -299,6 +300,185 @@ export default function EmailLogList() {
     );
   };
 
+  const columns = useMemo(
+    () => [
+      {
+        key: "select",
+        label: (
+          <input
+            type="checkbox"
+            checked={isAllSelected}
+            onChange={handleSelectAll}
+            style={{ cursor: "pointer" }}
+            aria-label="Select all email logs"
+          />
+        ),
+        minWidth: "50px",
+        maxWidth: "60px",
+        render: (_, log) => {
+          const isSelected = selectedIds.includes(log.id);
+          return (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => handleSelectOne(log.id)}
+              style={{ cursor: "pointer" }}
+              aria-label={`Select log ${log.id}`}
+            />
+          );
+        },
+      },
+      {
+        key: "recipient",
+        label: "Recipient",
+        minWidth: "220px",
+        render: (_, log) => (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div
+              style={{
+                width: "30px",
+                height: "30px",
+                borderRadius: "6px",
+                background: "#f3f4f6",
+                display: "grid",
+                placeItems: "center",
+                color: "#4b5563",
+                flexShrink: 0,
+              }}
+            >
+              <Mail size={15} />
+            </div>
+            <div>
+              <div
+                style={{
+                  fontWeight: 600,
+                  color: "#111827",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span>{log.recipient}</span>
+                <Button
+                  variant="plain"
+                  onClick={() => handleCopy(log.recipient, "email")}
+                  title="Copy email address"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                    color: copiedField === "email" ? "#16a34a" : "#9ca3af",
+                  }}
+                >
+                  {copiedField === "email" ? <Check size={12} /> : <Copy size={12} />}
+                </Button>
+              </div>
+              {log.user_name && (
+                <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                  {log.user_name}
+                </div>
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: "subject",
+        label: "Subject",
+        minWidth: "220px",
+        maxWidth: "340px",
+        render: (_, log) => (
+          <div>
+            <div
+              style={{
+                fontWeight: 600,
+                color: "#1f2937",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+              title={log.subject}
+            >
+              {log.subject}
+            </div>
+            {log.preview_text && (
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "#6b7280",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  marginTop: "2px",
+                }}
+              >
+                {log.preview_text}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: "email_type",
+        label: "Type",
+        minWidth: "130px",
+        render: (_, log) => renderTypeBadge(log.email_type),
+      },
+      {
+        key: "status",
+        label: "Status",
+        minWidth: "130px",
+        render: (_, log) => (
+          <div>
+            {renderStatusBadge(log.status)}
+            {log.error_message && (
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "#ef4444",
+                  marginTop: "2px",
+                  maxWidth: "150px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                title={log.error_message}
+              >
+                {log.error_message}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: "created_at",
+        label: "Timestamp",
+        minWidth: "140px",
+        render: (_, log) => {
+          const dateObj = new Date(log.created_at);
+          const formattedDate = dateObj.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+          const formattedTime = dateObj.toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          });
+          return (
+            <div style={{ color: "#4b5563" }}>
+              <div style={{ fontWeight: 500 }}>{formattedDate}</div>
+              <div style={{ fontSize: "11px", color: "#9ca3af" }}>{formattedTime}</div>
+            </div>
+          );
+        },
+      },
+    ],
+    [isAllSelected, selectedIds, copiedField]
+  );
+
   return (
     <div style={{ padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
       {/* Page Header */}
@@ -531,258 +711,41 @@ export default function EmailLogList() {
         </div>
       </div>
 
-      {/* Main Table Container */}
-      <div
-        style={{
-          background: "#ffffff",
-          borderRadius: "12px",
-          border: "1px solid #e5e7eb",
-          overflow: "hidden",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-        }}
-      >
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              textAlign: "left",
-              fontSize: "13px",
-            }}
-          >
-            <thead>
-              <tr
-                style={{
-                  background: "#f9fafb",
-                  borderBottom: "1px solid #e5e7eb",
-                  color: "#4b5563",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                <th style={{ padding: "14px 16px", width: "40px" }}>
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    onChange={handleSelectAll}
-                    style={{ cursor: "pointer" }}
-                  />
-                </th>
-                <th style={{ padding: "14px 16px" }}>Recipient</th>
-                <th style={{ padding: "14px 16px" }}>Subject</th>
-                <th style={{ padding: "14px 16px" }}>Type</th>
-                <th style={{ padding: "14px 16px" }}>Status</th>
-                <th style={{ padding: "14px 16px" }}>Timestamp</th>
-                <th style={{ padding: "14px 16px", textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loadingLogs ? (
-                <Skeleton variant="table-rows" rows={6} columns={7} />
-              ) : rawLogs.length === 0 ? (
-                <tr>
-                  <td colSpan="7" style={{ padding: "60px 20px", textAlign: "center", color: "#6b7280" }}>
-                    <Inbox size={40} style={{ margin: "0 auto 12px", color: "#9ca3af" }} />
-                    <div style={{ fontWeight: 600, fontSize: "15px", color: "#374151" }}>
-                      No Email Logs Found
-                    </div>
-                    <div style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}>
-                      {search || typeFilter !== "all" || statusFilter !== "all"
-                        ? "Try adjusting your filters or search terms."
-                        : "Sent emails and verification codes will automatically be logged here."}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                rawLogs.map((log) => {
-                  const isSelected = selectedIds.includes(log.id);
-                  const dateObj = new Date(log.created_at);
-                  const formattedDate = dateObj.toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  });
-                  const formattedTime = dateObj.toLocaleTimeString("en-IN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  });
+      {/* EMAIL LOGS DATA TABLE */}
+      <DataTable
+        loading={loadingLogs || isFetching}
+        data={rawLogs}
+        columns={columns}
+        emptyMessage="No email logs found."
+        renderActions={(log) => (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedLogId(log.id);
+                setPreviewTab("preview");
+              }}
+              title="View complete email"
+              style={{ height: "32px", padding: "0 10px", fontSize: "12px" }}
+            >
+              <Eye size={14} />
+              View
+            </Button>
 
-                  return (
-                    <tr
-                      key={log.id}
-                      style={{
-                        borderBottom: "1px solid #f3f4f6",
-                        background: isSelected ? "#f0fdf4" : "transparent",
-                        transition: "background-color 0.15s",
-                      }}
-                    >
-                      <td style={{ padding: "14px 16px" }}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleSelectOne(log.id)}
-                          style={{ cursor: "pointer" }}
-                        />
-                      </td>
+            <Button
+              variant="danger"
+              onClick={() => setSingleDeleteId(log.id)}
+              title="Delete email log"
+              style={{ height: "32px", padding: "0 10px" }}
+            >
+              <Trash2 size={14} />
+            </Button>
+          </div>
+        )}
+      />
 
-                      {/* Recipient */}
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <div
-                            style={{
-                              width: "30px",
-                              height: "30px",
-                              borderRadius: "6px",
-                              background: "#f3f4f6",
-                              display: "grid",
-                              placeItems: "center",
-                              color: "#4b5563",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Mail size={15} />
-                          </div>
-                          <div>
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                color: "#111827",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                              }}
-                            >
-                              <span>{log.recipient}</span>
-                              <Button
-                                variant="plain"
-                                onClick={() => handleCopy(log.recipient, "email")}
-                                title="Copy email address"
-                                style={{
-                                  background: "none",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  padding: 0,
-                                  color: copiedField === "email" ? "#16a34a" : "#9ca3af",
-                                }}
-                              >
-                                {copiedField === "email" ? <Check size={12} /> : <Copy size={12} />}
-                              </Button>
-                            </div>
-                            {log.user_name && (
-                              <div style={{ fontSize: "11px", color: "#6b7280" }}>
-                                {log.user_name}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Subject */}
-                      <td style={{ padding: "14px 16px", maxWidth: "280px" }}>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            color: "#1f2937",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={log.subject}
-                        >
-                          {log.subject}
-                        </div>
-                        {log.preview_text && (
-                          <div
-                            style={{
-                              fontSize: "11px",
-                              color: "#6b7280",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              marginTop: "2px",
-                            }}
-                          >
-                            {log.preview_text}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Type Badge */}
-                      <td style={{ padding: "14px 16px" }}>
-                        {renderTypeBadge(log.email_type)}
-                      </td>
-
-                      {/* Status Badge */}
-                      <td style={{ padding: "14px 16px" }}>
-                        {renderStatusBadge(log.status)}
-                        {log.error_message && (
-                          <div
-                            style={{
-                              fontSize: "10px",
-                              color: "#ef4444",
-                              marginTop: "2px",
-                              maxWidth: "150px",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                            title={log.error_message}
-                          >
-                            {log.error_message}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Timestamp */}
-                      <td style={{ padding: "14px 16px", color: "#4b5563" }}>
-                        <div style={{ fontWeight: 500 }}>{formattedDate}</div>
-                        <div style={{ fontSize: "11px", color: "#9ca3af" }}>{formattedTime}</div>
-                      </td>
-
-                      {/* Actions */}
-                      <td style={{ padding: "14px 16px", textAlign: "right" }}>
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedLogId(log.id);
-                              setPreviewTab("preview");
-                            }}
-                            title="View complete email"
-                            style={{ height: "32px", padding: "0 10px", fontSize: "12px" }}
-                          >
-                            <Eye size={14} />
-                            View
-                          </Button>
-
-                          <Button
-                            variant="danger"
-                            onClick={() => setSingleDeleteId(log.id)}
-                            title="Delete email log"
-                            style={{ height: "32px", padding: "0 10px" }}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Integrated Pagination */}
+      {/* Integrated Pagination */}
+      <div style={{ marginTop: "16px" }}>
         <Pagination
           page={page}
           totalPages={pagination.totalPages || 1}

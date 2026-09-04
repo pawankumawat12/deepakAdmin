@@ -124,6 +124,22 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["BlockedRequests", "Customers"],
     }),
+    updateProfile: build.mutation({
+      query: (body) => ({
+        url: "/auth/profile",
+        method: "PUT",
+        body,
+      }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data?.user) {
+            dispatch(setUser(data.user));
+          }
+        } catch {}
+      },
+      invalidatesTags: ["Auth"],
+    }),
   }),
 });
 
@@ -143,4 +159,5 @@ export const {
   useToggleCustomerStatusMutation,
   useGetBlockedSupportRequestsQuery,
   useResolveBlockedSupportRequestMutation,
+  useUpdateProfileMutation,
 } = authApi;

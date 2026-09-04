@@ -1,5 +1,4 @@
-import React from "react";
-import { X, Banknote, MapPin, User, ShoppingBag, Receipt, Truck, Tag } from "lucide-react";
+import { X, Banknote, MapPin, User, ShoppingBag, Receipt, Truck, Tag, FileText } from "lucide-react";
 import Button from "../components/ui/Button";
 
 const OrderDetailsModal = ({
@@ -143,7 +142,6 @@ const OrderDetailsModal = ({
             <div className="d-flex align-items-center gap-2">
               <Button
                 variant="plain"
-                className="btn-close"
                 onClick={onClose}
                 aria-label="Close"
               >
@@ -291,6 +289,43 @@ const OrderDetailsModal = ({
               </div>
 
             </OrderSection>
+
+
+            {/* ================= ORDER NOTE / SPECIAL INSTRUCTIONS ================= */}
+            {order.notes && order.notes.trim() ? (
+              <div
+                className="mb-4 p-3 rounded-3 border"
+                style={{
+                  backgroundColor: "#fffbeb",
+                  borderColor: "#fde68a",
+                }}
+              >
+                <div
+                  className="d-flex align-items-center gap-2 mb-1"
+                  style={{
+                    color: "#92400e",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  <FileText size={15} />
+                  <span>Customer Note / Special Instructions</span>
+                </div>
+                <div
+                  style={{
+                    color: "#78350f",
+                    fontSize: "13.5px",
+                    fontWeight: 500,
+                    whiteSpace: "pre-line",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  "{order.notes.trim()}"
+                </div>
+              </div>
+            ) : null}
 
 
             {/* ================= PRICING ================= */}
@@ -684,25 +719,34 @@ const Info = ({
   label,
   value,
   badge = false,
-}) => (
-  <div className="col-6">
+}) => {
+  const getBadgeClass = (val) => {
+    const s = String(val || "").toLowerCase();
+    if (s.includes("delivered")) return "badge bg-success";
+    if (s.includes("preparing")) return "badge bg-primary";
+    if (s.includes("out for delivery")) return "badge bg-info text-dark";
+    if (s.includes("cancel") || s.includes("failed")) return "badge bg-danger";
+    return "badge bg-warning text-dark";
+  };
 
-    <div className="small text-muted">
-      {label}
-    </div>
-
-    {badge ? (
-      <span className="badge bg-primary mt-1">
-        {value || "-"}
-      </span>
-    ) : (
-      <div className="small fw-semibold mt-1">
-        {value ?? "-"}
+  return (
+    <div className="col-6">
+      <div className="small text-muted">
+        {label}
       </div>
-    )}
 
-  </div>
-);
+      {badge ? (
+        <span className={`${getBadgeClass(value)} mt-1`}>
+          {value || "-"}
+        </span>
+      ) : (
+        <div className="small fw-semibold mt-1">
+          {value ?? "-"}
+        </div>
+      )}
+    </div>
+  );
+};
 
 
 const StatusBadge = ({

@@ -18,7 +18,6 @@ export default function DataTable({
   // Optional
   showSerialNumber = false,
 }) {
-  console.log('data: ', data);
   const handleSort = (column) => {
     // Only sortable columns can trigger sorting
     if (!column.sortable || !onSort) return;

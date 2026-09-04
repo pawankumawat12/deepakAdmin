@@ -25,6 +25,7 @@ import toast from "react-hot-toast";
 import { getAdminSocket } from "../../services/socket";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import Pagination from "../../components/ui/Pagination";
+import DataTable from "../../components/common/DataTable";
 
 export default function CustomerList() {
   const [activeTab, setActiveTab] = useState("customers"); // "customers" | "requests"
@@ -209,6 +210,197 @@ export default function CustomerList() {
     }
   };
 
+  const customerColumns = [
+    {
+      key: "name",
+      label: "Customer",
+      render: (_, c) => (
+        <div style={{ maxWidth: "200px" }}>
+          <div
+            style={{
+              fontWeight: 600,
+              color: "#111827",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={c.name || "Customer"}
+          >
+            {c.name || "Customer"}
+          </div>
+          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+            ID: #{c.id}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "email",
+      label: "Contact",
+      render: (_, c) => (
+        <div style={{ maxWidth: "220px" }}>
+          <div
+            style={{
+              color: "#374151",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={c.email || ""}
+          >
+            {c.email || "-"}
+          </div>
+          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+            {c.phone || "-"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "orders_count",
+      label: "Orders",
+      render: (val) => (
+        <span
+          style={{
+            background: "#f3f4f6",
+            padding: "3px 8px",
+            borderRadius: "6px",
+            fontWeight: 600,
+          }}
+        >
+          {Number(val || 0)}
+        </span>
+      ),
+    },
+    {
+      key: "total_spent",
+      label: "Total Spent",
+      render: (val) => (
+        <span
+          style={{
+            fontWeight: 600,
+            color: "#059669",
+          }}
+        >
+          ₹{Number(val || 0).toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+    {
+      key: "is_blocked",
+      label: "Status",
+      render: (isBlocked) =>
+        Boolean(isBlocked) ? (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#fee2e2",
+              color: "#dc2626",
+              padding: "3px 8px",
+              borderRadius: "9999px",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            <Ban size={12} /> Blocked
+          </span>
+        ) : (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#d1fae5",
+              color: "#059669",
+              padding: "3px 8px",
+              borderRadius: "9999px",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            <CheckCircle size={12} /> Active
+          </span>
+        ),
+    },
+    {
+      key: "created_at",
+      label: "Joined",
+      render: (val) => (
+        <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>
+          {new Date(val).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })}
+        </span>
+      ),
+    },
+  ];
+
+  const renderCustomerActions = (c) => {
+    const isBlocked = Boolean(c.is_blocked);
+    return (
+      <div style={{ display: "inline-flex", gap: "6px", justifyContent: "flex-end" }}>
+        {/* EDIT */}
+        <button
+          type="button"
+          title="Edit Customer"
+          onClick={() => handleOpenEdit(c)}
+          style={{
+            padding: "6px",
+            borderRadius: "8px",
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            color: "#374151",
+            cursor: "pointer",
+          }}
+        >
+          <Edit2 size={15} />
+        </button>
+
+        {/* BLOCK / UNBLOCK */}
+        <button
+          type="button"
+          title={isBlocked ? "Unblock Account" : "Block Account"}
+          onClick={() => handleOpenBlockModal(c)}
+          style={{
+            padding: "6px",
+            borderRadius: "8px",
+            border: "1px solid #e5e7eb",
+            background: isBlocked ? "#10b981" : "#ef4444",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          {isBlocked ? (
+            <CheckCircle size={15} />
+          ) : (
+            <Ban size={15} />
+          )}
+        </button>
+
+        {/* DELETE */}
+        <button
+          type="button"
+          title="Delete Customer"
+          onClick={() => handleOpenDeleteModal(c)}
+          style={{
+            padding: "6px",
+            borderRadius: "8px",
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            color: "#dc2626",
+            cursor: "pointer",
+          }}
+        >
+          <Trash2 size={15} />
+        </button>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="section-head">
@@ -295,21 +487,7 @@ export default function CustomerList() {
             />
           </div>
 
-          {loadingCustomers ? (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "48px",
-                color: "#6b7280",
-                gap: "8px",
-              }}
-            >
-              <LoaderCircle size={20} className="animate-spin" />
-              <span>Loading customers...</span>
-            </div>
-          ) : errorCustomers ? (
+          {errorCustomers ? (
             <div
               style={{
                 padding: "24px",
@@ -319,250 +497,15 @@ export default function CustomerList() {
             >
               Failed to load customers list.
             </div>
-          ) : rawCustomers.length === 0 ? (
-            <div
-              style={{
-                padding: "48px",
-                textAlign: "center",
-                color: "#6b7280",
-              }}
-            >
-              <Users
-                size={32}
-                style={{ margin: "0 auto 8px auto", opacity: 0.5 }}
-              />
-              <p style={{ fontWeight: 600 }}>No customers found.</p>
-            </div>
           ) : (
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: "16px",
-                border: "1px solid #e5e7eb",
-                overflow: "hidden",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-              }}
-            >
-              <div style={{ overflowX: "auto" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    textAlign: "left",
-                    fontSize: "13.5px",
-                  }}
-                >
-                  <thead>
-                    <tr
-                      style={{
-                        background: "#f9fafb",
-                        borderBottom: "1px solid #e5e7eb",
-                        color: "#6b7280",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        fontSize: "11.5px",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      <th style={{ padding: "12px 16px" }}>Customer</th>
-                      <th style={{ padding: "12px 16px" }}>Contact</th>
-                      <th style={{ padding: "12px 16px" }}>Orders</th>
-                      <th style={{ padding: "12px 16px" }}>Total Spent</th>
-                      <th style={{ padding: "12px 16px" }}>Status</th>
-                      <th style={{ padding: "12px 16px" }}>Joined</th>
-                      <th style={{ padding: "12px 16px", textAlign: "right" }}>
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rawCustomers.map((c) => {
-                      const isBlocked = Boolean(c.is_blocked);
-                      return (
-                        <tr
-                          key={c.id}
-                          style={{
-                            borderBottom: "1px solid #f3f4f6",
-                            background: isBlocked ? "#fef2f2" : "transparent",
-                          }}
-                        >
-                          <td style={{ padding: "12px 16px", maxWidth: "200px" }}>
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                color: "#111827",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                              title={c.name || "Customer"}
-                            >
-                              {c.name || "Customer"}
-                            </div>
-                            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                              ID: #{c.id}
-                            </div>
-                          </td>
-                          <td style={{ padding: "12px 16px", maxWidth: "220px" }}>
-                            <div
-                              style={{
-                                color: "#374151",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                              title={c.email || ""}
-                            >
-                              {c.email || "-"}
-                            </div>
-                            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                              {c.phone || "-"}
-                            </div>
-                          </td>
-                          <td style={{ padding: "12px 16px" }}>
-                            <span
-                              style={{
-                                background: "#f3f4f6",
-                                padding: "3px 8px",
-                                borderRadius: "6px",
-                                fontWeight: 600,
-                              }}
-                            >
-                              {Number(c.orders_count || 0)}
-                            </span>
-                          </td>
-                          <td
-                            style={{
-                              padding: "12px 16px",
-                              fontWeight: 600,
-                              color: "#059669",
-                            }}
-                          >
-                            ₹{Number(c.total_spent || 0).toLocaleString("en-IN")}
-                          </td>
-                          <td style={{ padding: "12px 16px" }}>
-                            {isBlocked ? (
-                              <span
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  background: "#fee2e2",
-                                  color: "#dc2626",
-                                  padding: "3px 8px",
-                                  borderRadius: "9999px",
-                                  fontSize: "12px",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <Ban size={12} /> Blocked
-                              </span>
-                            ) : (
-                              <span
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  background: "#d1fae5",
-                                  color: "#059669",
-                                  padding: "3px 8px",
-                                  borderRadius: "9999px",
-                                  fontSize: "12px",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <CheckCircle size={12} /> Active
-                              </span>
-                            )}
-                          </td>
-                          <td
-                            style={{
-                              padding: "12px 16px",
-                              fontSize: "12px",
-                              color: "#6b7280",
-                            }}
-                          >
-                            {new Date(c.created_at).toLocaleDateString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </td>
-                          <td
-                            style={{
-                              padding: "12px 16px",
-                              textAlign: "right",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "inline-flex",
-                                gap: "6px",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              {/* EDIT */}
-                              <button
-                                type="button"
-                                title="Edit Customer"
-                                onClick={() => handleOpenEdit(c)}
-                                style={{
-                                  padding: "6px",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e5e7eb",
-                                  background: "#fff",
-                                  color: "#374151",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                <Edit2 size={15} />
-                              </button>
-
-                              {/* BLOCK / UNBLOCK */}
-                              <button
-                                type="button"
-                                title={isBlocked ? "Unblock Account" : "Block Account"}
-                                onClick={() => handleOpenBlockModal(c)}
-                                style={{
-                                  padding: "6px",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e5e7eb",
-                                  background: isBlocked ? "#10b981" : "#ef4444",
-                                  color: "#fff",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                {isBlocked ? (
-                                  <CheckCircle size={15} />
-                                ) : (
-                                  <Ban size={15} />
-                                )}
-                              </button>
-
-                              {/* DELETE */}
-                              <button
-                                type="button"
-                                title="Delete Customer"
-                                onClick={() => handleOpenDeleteModal(c)}
-                                style={{
-                                  padding: "6px",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e5e7eb",
-                                  background: "#fff",
-                                  color: "#dc2626",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+            <div className="d-flex flex-column gap-3">
+              <DataTable
+                loading={loadingCustomers}
+                data={rawCustomers}
+                columns={customerColumns}
+                renderActions={renderCustomerActions}
+                emptyMessage="No customers found."
+              />
               <Pagination
                 page={customerPagination?.page || page}
                 totalPages={customerPagination?.totalPages || 1}

@@ -34,7 +34,19 @@ import {
   RefreshCw,
   Gift,
   Target,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
+
+const getImageSrc = (imageUrl) => {
+  if (!imageUrl || /^(?:blob:|data:|https?:\/\/)/i.test(imageUrl)) return imageUrl;
+  const backendUrl = (
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    ""
+  ).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
+  return `${backendUrl}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
+};
 
 export default function OfferList() {
   const [search, setSearch] = useState("");
@@ -51,6 +63,8 @@ export default function OfferList() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [copiedCode, setCopiedCode] = useState(null);
   const [statusMessage, setStatusMessage] = useState({ text: "", type: "" });
+  const [bannerImageFile, setBannerImageFile] = useState(null);
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState("");
 
   // Form State
   const initialForm = {
@@ -119,6 +133,8 @@ export default function OfferList() {
   const openCreateModal = () => {
     setEditingOffer(null);
     setFormData(initialForm);
+    setBannerImageFile(null);
+    setBannerPreviewUrl("");
     setStatusMessage({ text: "", type: "" });
     setModalOpen(true);
   };
@@ -146,8 +162,23 @@ export default function OfferList() {
       auto_apply: Boolean(offer.auto_apply),
       priority: offer.priority ?? 0,
     });
+    setBannerImageFile(null);
+    setBannerPreviewUrl(offer.banner_image || "");
     setStatusMessage({ text: "", type: "" });
     setModalOpen(true);
+  };
+
+  const handleBannerImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerImageFile(file);
+    setBannerPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleRemoveBannerImage = () => {
+    setBannerImageFile(null);
+    setBannerPreviewUrl("");
+    setFormData((prev) => ({ ...prev, banner_image: "" }));
   };
 
   const handleStatusToggle = async (offer) => {
@@ -215,11 +246,28 @@ export default function OfferList() {
       end_date: formData.end_date || null,
     };
 
+    let submitBody;
+    if (bannerImageFile instanceof File) {
+      const fd = new FormData();
+      Object.entries(payload).forEach(([key, val]) => {
+        if (key === "banner_image") return;
+        if (Array.isArray(val)) {
+          fd.append(key, JSON.stringify(val));
+        } else if (val !== null && val !== undefined) {
+          fd.append(key, String(val));
+        }
+      });
+      fd.append("banner_image", bannerImageFile);
+      submitBody = fd;
+    } else {
+      submitBody = payload;
+    }
+
     try {
       if (editingOffer) {
-        await updateOffer({ id: editingOffer.id, body: payload }).unwrap();
+        await updateOffer({ id: editingOffer.id, body: submitBody }).unwrap();
       } else {
-        await createOffer(payload).unwrap();
+        await createOffer(submitBody).unwrap();
       }
       setModalOpen(false);
     } catch (err) {
@@ -1168,24 +1216,66 @@ export default function OfferList() {
                   />
                 </div>
 
-                {/* Banner Image URL */}
+                {/* Banner Image File Upload */}
                 <div>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px", color: "#374151" }}>
-                    Banner Image URL
+                    Offer Banner Image
                   </label>
                   <input
-                    type="text"
-                    value={formData.banner_image}
-                    onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBannerImageChange}
                     style={{
                       width: "100%",
-                      padding: "8px 12px",
+                      padding: "6px 10px",
                       borderRadius: "10px",
                       border: "1px solid #e5e7eb",
                       fontSize: "12px",
+                      background: "#ffffff",
                     }}
                   />
+                  <small style={{ color: "#6b7280", fontSize: "11px", display: "block", marginTop: "4px" }}>
+                    Select JPG, PNG, or WEBP banner image
+                  </small>
+
+                  {bannerPreviewUrl && (
+                    <div style={{ marginTop: "8px", position: "relative", display: "inline-block" }}>
+                      <img
+                        src={getImageSrc(bannerPreviewUrl)}
+                        alt="Offer banner preview"
+                        style={{
+                          width: "120px",
+                          height: "60px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
+                          display: "block",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveBannerImage}
+                        style={{
+                          position: "absolute",
+                          top: "-6px",
+                          right: "-6px",
+                          background: "#ef4444",
+                          color: "#ffffff",
+                          borderRadius: "50%",
+                          width: "20px",
+                          height: "20px",
+                          display: "grid",
+                          placeItems: "center",
+                          border: "none",
+                          cursor: "pointer",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                        }}
+                        title="Remove banner"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Priority */}

@@ -16,14 +16,15 @@ import {
   Utensils,
   Star,
   MessageSquare,
-  ChevronRight,
   Flame,
   Activity,
   Layers,
   Sparkles,
+  Truck,
 } from "lucide-react";
 import { useGetDashboardOverviewQuery } from "../../services/dashboardApi";
 import Button from "../../components/ui/Button";
+import DataTable from "../../components/common/DataTable";
 
 function formatRupee(num) {
   if (num == null) return "0";
@@ -161,6 +162,44 @@ export default function Dashboard() {
         </span>
       );
     }
+    if (s === "out for delivery") {
+      return (
+        <span
+          style={{
+            background: "#ffedd5",
+            color: "#c2410c",
+            padding: "3px 8px",
+            borderRadius: "9999px",
+            fontSize: "11px",
+            fontWeight: 700,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <Truck size={12} /> Out for Delivery
+        </span>
+      );
+    }
+    if (s === "preparing") {
+      return (
+        <span
+          style={{
+            background: "#dbeafe",
+            color: "#1e40af",
+            padding: "3px 8px",
+            borderRadius: "9999px",
+            fontSize: "11px",
+            fontWeight: 700,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <Flame size={12} /> Preparing
+        </span>
+      );
+    }
     if (s === "cancelled") {
       return (
         <span
@@ -194,10 +233,61 @@ export default function Dashboard() {
           gap: "4px",
         }}
       >
-        <Clock size={12} /> {status || "Preparing"}
+        <Clock size={12} /> {status || "Pending"}
       </span>
     );
   };
+
+  const recentOrderColumns = [
+    {
+      key: "orderNumber",
+      label: "Order #",
+      render: (val) => (
+        <span
+          style={{ fontWeight: 800, color: "#1f2937", cursor: "pointer" }}
+          onClick={() => navigate("/orders")}
+        >
+          {val}
+        </span>
+      ),
+    },
+    {
+      key: "customerName",
+      label: "Customer",
+      render: (_, ord) => (
+        <div onClick={() => navigate("/orders")} style={{ cursor: "pointer" }}>
+          <div style={{ fontWeight: 600, color: "#374151" }}>{ord.customerName}</div>
+          <div style={{ fontSize: "10px", color: "#9ca3af" }}>{ord.customerEmail}</div>
+        </div>
+      ),
+    },
+    {
+      key: "totalAmount",
+      label: "Amount",
+      render: (val) => (
+        <span style={{ fontWeight: 800, color: "#111827" }}>
+          ₹{formatRupee(val)}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (val) => getStatusBadge(val),
+    },
+    {
+      key: "createdAt",
+      label: "Date",
+      render: (val) => (
+        <span style={{ color: "#6b7280", fontSize: "11px", whiteSpace: "nowrap" }}>
+          {new Date(val).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+          })}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px", paddingBottom: "32px" }}>
@@ -1195,60 +1285,12 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid #e5e7eb", textAlign: "left", color: "#6b7280" }}>
-                  <th style={{ padding: "8px 10px", fontWeight: 700 }}>Order #</th>
-                  <th style={{ padding: "8px 10px", fontWeight: 700 }}>Customer</th>
-                  <th style={{ padding: "8px 10px", fontWeight: 700 }}>Amount</th>
-                  <th style={{ padding: "8px 10px", fontWeight: 700 }}>Status</th>
-                  <th style={{ padding: "8px 10px", fontWeight: 700 }}>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "#9ca3af" }}>
-                      No orders placed yet
-                    </td>
-                  </tr>
-                ) : (
-                  recentOrders.map((ord) => (
-                    <tr
-                      key={ord.id}
-                      onClick={() => navigate("/orders")}
-                      style={{
-                        borderBottom: "1px solid #f8fafc",
-                        cursor: "pointer",
-                        transition: "background 0.15s ease",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#fbfdf8")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <td style={{ padding: "10px", fontWeight: 800, color: "#1f2937" }}>
-                        {ord.orderNumber}
-                      </td>
-                      <td style={{ padding: "10px" }}>
-                        <div style={{ fontWeight: 600, color: "#374151" }}>{ord.customerName}</div>
-                        <div style={{ fontSize: "10px", color: "#9ca3af" }}>{ord.customerEmail}</div>
-                      </td>
-                      <td style={{ padding: "10px", fontWeight: 800, color: "#111827" }}>
-                        ₹{formatRupee(ord.totalAmount)}
-                      </td>
-                      <td style={{ padding: "10px" }}>{getStatusBadge(ord.status)}</td>
-                      <td style={{ padding: "10px", color: "#6b7280", fontSize: "11px" }}>
-                        {new Date(ord.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                        })}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            data={recentOrders}
+            columns={recentOrderColumns}
+            loading={isLoading || isFetching}
+            emptyMessage="No orders placed yet"
+          />
         </div>
 
         {/* LIVE CUSTOMER ACTIVITY FEED */}

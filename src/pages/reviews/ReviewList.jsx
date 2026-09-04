@@ -24,6 +24,7 @@ import {
 import toast from "react-hot-toast";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import Pagination from "../../components/ui/Pagination";
+import DataTable from "../../components/common/DataTable";
 
 export default function ReviewList() {
   const [activeTab, setActiveTab] = useState("all"); // "all" | "product" | "site" | "hidden"
@@ -133,6 +134,227 @@ export default function ReviewList() {
         >
           {rating}/5
         </span>
+      </div>
+    );
+  };
+
+  const columns = [
+    {
+      key: "user_name",
+      label: "Customer",
+      render: (_, rev) => (
+        <div style={{ maxWidth: "200px" }}>
+          <div
+            style={{
+              fontWeight: 600,
+              color: "#111827",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={rev.user_name || "Customer"}
+          >
+            {rev.user_name || "Customer"}
+          </div>
+          <div
+            style={{
+              fontSize: "11.5px",
+              color: "#6b7280",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={rev.user_email || `User #${rev.user_id}`}
+          >
+            {rev.user_email || `User #${rev.user_id}`}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "type",
+      label: "Target",
+      render: (_, rev) =>
+        rev.type === "site" ? (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#f3e8ff",
+              color: "#7e22ce",
+              padding: "3px 8px",
+              borderRadius: "6px",
+              fontSize: "11.5px",
+              fontWeight: 700,
+            }}
+          >
+            <Store size={12} /> Store Review
+          </span>
+        ) : (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#eff6ff",
+              color: "#1d4ed8",
+              padding: "3px 8px",
+              borderRadius: "6px",
+              fontSize: "11.5px",
+              fontWeight: 700,
+            }}
+          >
+            <Package size={12} /> {rev.product_name || `Product #${rev.product_id}`}
+          </span>
+        ),
+    },
+    {
+      key: "rating",
+      label: "Rating",
+      render: (rating) => renderStars(rating),
+    },
+    {
+      key: "comment",
+      label: "Review / Comment",
+      maxWidth: "380px",
+      render: (_, rev) => (
+        <div>
+          {rev.title && (
+            <div
+              style={{
+                fontWeight: 700,
+                color: "#111827",
+                marginBottom: "2px",
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+              }}
+              title={rev.title}
+            >
+              {rev.title}
+            </div>
+          )}
+          <p
+            style={{
+              margin: 0,
+              color: "#4b5563",
+              fontSize: "13px",
+              lineHeight: "1.4",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
+            }}
+            title={rev.comment}
+          >
+            {rev.comment}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "is_hidden",
+      label: "Status",
+      render: (isHidden) =>
+        isHidden ? (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#fee2e2",
+              color: "#b91c1c",
+              padding: "3px 8px",
+              borderRadius: "9999px",
+              fontSize: "11.5px",
+              fontWeight: 700,
+            }}
+          >
+            <EyeOff size={11} /> Hidden
+          </span>
+        ) : (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#d1fae5",
+              color: "#065f46",
+              padding: "3px 8px",
+              borderRadius: "9999px",
+              fontSize: "11.5px",
+              fontWeight: 700,
+            }}
+          >
+            <CheckCircle size={11} /> Published
+          </span>
+        ),
+    },
+    {
+      key: "created_at",
+      label: "Date",
+      render: (val) => (
+        <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>
+          {new Date(val).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })}
+        </span>
+      ),
+    },
+  ];
+
+  const renderActions = (rev) => {
+    const isHidden = Boolean(rev.is_hidden);
+    return (
+      <div style={{ display: "inline-flex", gap: "6px", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          title={
+            isHidden
+              ? "Unhide & Publish to Customers"
+              : "Hide from Customers"
+          }
+          onClick={() => handleToggleVisibility(rev)}
+          style={{
+            padding: "6px 10px",
+            borderRadius: "8px",
+            border: "1px solid #e5e7eb",
+            background: isHidden ? "#10b981" : "#fff",
+            color: isHidden ? "#fff" : "#4b5563",
+            fontWeight: 600,
+            fontSize: "12px",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          {isHidden ? (
+            <>
+              <Eye size={14} /> Unhide
+            </>
+          ) : (
+            <>
+              <EyeOff size={14} /> Hide
+            </>
+          )}
+        </button>
+
+        <button
+          type="button"
+          title="Delete Review"
+          onClick={() => handleOpenDelete(rev)}
+          style={{
+            padding: "6px",
+            borderRadius: "8px",
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            color: "#dc2626",
+            cursor: "pointer",
+          }}
+        >
+          <Trash2 size={14} />
+        </button>
       </div>
     );
   };
@@ -384,334 +606,19 @@ export default function ReviewList() {
       </div>
 
       {/* REVIEWS TABLE */}
-      {isLoading ? (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "48px",
-            color: "#6b7280",
-            gap: "8px",
-          }}
-        >
-          <LoaderCircle size={20} className="animate-spin" />
-          <span>Loading reviews...</span>
-        </div>
-      ) : isError ? (
+      {isError ? (
         <div style={{ padding: "32px", textAlign: "center", color: "#dc2626" }}>
           Failed to load reviews.
         </div>
-      ) : reviews.length === 0 ? (
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: "16px",
-            border: "1px solid #e5e7eb",
-            padding: "48px",
-            textAlign: "center",
-            color: "#6b7280",
-          }}
-        >
-          <MessageSquare
-            size={36}
-            style={{ margin: "0 auto 8px auto", opacity: 0.4 }}
-          />
-          <p style={{ fontWeight: 600, color: "#111827" }}>No reviews found</p>
-          <p style={{ fontSize: "13px" }}>
-            No customer reviews match the selected filters.
-          </p>
-        </div>
       ) : (
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: "16px",
-            border: "1px solid #e5e7eb",
-            overflow: "hidden",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-          }}
-        >
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                textAlign: "left",
-                fontSize: "13.5px",
-              }}
-            >
-              <thead>
-                <tr
-                  style={{
-                    background: "#f9fafb",
-                    borderBottom: "1px solid #e5e7eb",
-                    color: "#6b7280",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    fontSize: "11px",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  <th style={{ padding: "12px 16px" }}>Customer</th>
-                  <th style={{ padding: "12px 16px" }}>Target</th>
-                  <th style={{ padding: "12px 16px" }}>Rating</th>
-                  <th style={{ padding: "12px 16px", width: "35%" }}>
-                    Review / Comment
-                  </th>
-                  <th style={{ padding: "12px 16px" }}>Status</th>
-                  <th style={{ padding: "12px 16px" }}>Date</th>
-                  <th style={{ padding: "12px 16px", textAlign: "right" }}>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {reviews.map((rev) => {
-                  const isHidden = Boolean(rev.is_hidden);
-                  return (
-                    <tr
-                      key={rev.id}
-                      style={{
-                        borderBottom: "1px solid #f3f4f6",
-                        background: isHidden ? "#fffbeb" : "transparent",
-                      }}
-                    >
-                      {/* CUSTOMER */}
-                      <td style={{ padding: "12px 16px", maxWidth: "180px" }}>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            color: "#111827",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={rev.user_name || "Customer"}
-                        >
-                          {rev.user_name || "Customer"}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "11.5px",
-                            color: "#6b7280",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={rev.user_email || `User #${rev.user_id}`}
-                        >
-                          {rev.user_email || `User #${rev.user_id}`}
-                        </div>
-                      </td>
-
-                      {/* TARGET */}
-                      <td style={{ padding: "12px 16px" }}>
-                        {rev.type === "site" ? (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              background: "#f3e8ff",
-                              color: "#7e22ce",
-                              padding: "3px 8px",
-                              borderRadius: "6px",
-                              fontSize: "11.5px",
-                              fontWeight: 700,
-                            }}
-                          >
-                            <Store size={12} /> Store Review
-                          </span>
-                        ) : (
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <span
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                background: "#eff6ff",
-                                color: "#1d4ed8",
-                                padding: "3px 8px",
-                                borderRadius: "6px",
-                                fontSize: "11.5px",
-                                fontWeight: 700,
-                              }}
-                            >
-                              <Package size={12} />{" "}
-                              {rev.product_name || `Product #${rev.product_id}`}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* RATING */}
-                      <td style={{ padding: "12px 16px" }}>
-                        {renderStars(rev.rating)}
-                      </td>
-
-                      {/* COMMENT */}
-                      <td style={{ padding: "12px 16px", maxWidth: "340px" }}>
-                        {rev.title && (
-                          <div
-                            style={{
-                              fontWeight: 700,
-                              color: "#111827",
-                              marginBottom: "2px",
-                              overflowWrap: "anywhere",
-                              wordBreak: "break-word",
-                            }}
-                            title={rev.title}
-                          >
-                            {rev.title}
-                          </div>
-                        )}
-                        <p
-                          style={{
-                            margin: 0,
-                            color: "#4b5563",
-                            fontSize: "13px",
-                            lineHeight: "1.4",
-                            overflowWrap: "anywhere",
-                            wordBreak: "break-word",
-                          }}
-                          title={rev.comment}
-                        >
-                          {rev.comment}
-                        </p>
-                      </td>
-
-                      {/* STATUS */}
-                      <td style={{ padding: "12px 16px" }}>
-                        {isHidden ? (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              background: "#fee2e2",
-                              color: "#b91c1c",
-                              padding: "3px 8px",
-                              borderRadius: "9999px",
-                              fontSize: "11.5px",
-                              fontWeight: 700,
-                            }}
-                          >
-                            <EyeOff size={11} /> Hidden
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              background: "#d1fae5",
-                              color: "#065f46",
-                              padding: "3px 8px",
-                              borderRadius: "9999px",
-                              fontSize: "11.5px",
-                              fontWeight: 700,
-                            }}
-                          >
-                            <CheckCircle size={11} /> Published
-                          </span>
-                        )}
-                      </td>
-
-                      {/* DATE */}
-                      <td
-                        style={{
-                          padding: "12px 16px",
-                          fontSize: "12px",
-                          color: "#6b7280",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {new Date(rev.created_at).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-
-                      {/* ACTIONS */}
-                      <td
-                        style={{
-                          padding: "12px 16px",
-                          textAlign: "right",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            gap: "6px",
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                          {/* HIDE / UNHIDE */}
-                          <button
-                            type="button"
-                            title={
-                              isHidden
-                                ? "Unhide & Publish to Customers"
-                                : "Hide from Customers"
-                            }
-                            onClick={() => handleToggleVisibility(rev)}
-                            style={{
-                              padding: "6px 10px",
-                              borderRadius: "8px",
-                              border: "1px solid #e5e7eb",
-                              background: isHidden ? "#10b981" : "#fff",
-                              color: isHidden ? "#fff" : "#4b5563",
-                              fontWeight: 600,
-                              fontSize: "12px",
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                            }}
-                          >
-                            {isHidden ? (
-                              <>
-                                <Eye size={14} /> Unhide
-                              </>
-                            ) : (
-                              <>
-                                <EyeOff size={14} /> Hide
-                              </>
-                            )}
-                          </button>
-
-                          {/* DELETE */}
-                          <button
-                            type="button"
-                            title="Delete Review"
-                            onClick={() => handleOpenDelete(rev)}
-                            style={{
-                              padding: "6px",
-                              borderRadius: "8px",
-                              border: "1px solid #e5e7eb",
-                              background: "#fff",
-                              color: "#dc2626",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="d-flex flex-column gap-3">
+          <DataTable
+            loading={isLoading}
+            data={reviews}
+            columns={columns}
+            renderActions={renderActions}
+            emptyMessage="No customer reviews match the selected filters."
+          />
 
           {/* PAGINATION */}
           <Pagination
