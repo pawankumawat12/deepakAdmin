@@ -33,6 +33,7 @@ import {
   Sliders,
   RefreshCw,
   Gift,
+  Target,
 } from "lucide-react";
 
 export default function OfferList() {
@@ -289,6 +290,9 @@ export default function OfferList() {
             {row.auto_apply && (
               <span
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
                   fontSize: "10px",
                   fontWeight: 700,
                   background: "#ede9fe",
@@ -297,7 +301,7 @@ export default function OfferList() {
                   borderRadius: "4px",
                 }}
               >
-                ⚡ Auto-Apply
+                <Zap size={11} /> Auto-Apply
               </span>
             )}
           </div>
@@ -1225,7 +1229,7 @@ export default function OfferList() {
                       color: "#92400e",
                     }}
                   >
-                    🎯 Select Target Product for BOGO * (Required)
+                    <Target size={14} className="inline mr-1 text-amber-700" /> Select Target Product for BOGO * (Required)
                   </label>
                   <select
                     value={(formData.target_product_ids && formData.target_product_ids[0]) || ""}
@@ -1307,7 +1311,10 @@ export default function OfferList() {
                             cursor: "pointer",
                           }}
                         >
-                          {isSelected ? "✓ " : ""}{prod.name} (₹{prod.price})
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            {isSelected && <Check size={12} />}
+                            <span>{prod.name} (₹{prod.price})</span>
+                          </span>
                         </button>
                       );
                     })}
@@ -1344,7 +1351,10 @@ export default function OfferList() {
                             cursor: "pointer",
                           }}
                         >
-                          {isSelected ? "✓ " : ""}{cat.name}
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            {isSelected && <Check size={12} />}
+                            <span>{cat.name}</span>
+                          </span>
                         </button>
                       );
                     })}
@@ -1390,8 +1400,8 @@ export default function OfferList() {
                     onChange={(e) => setFormData({ ...formData, auto_apply: e.target.checked })}
                     style={{ width: "16px", height: "16px", accentColor: "#7c3aed" }}
                   />
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#374151" }}>
-                    ⚡ Auto-Apply (Automatically applied if eligible)
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: 700, color: "#374151" }}>
+                    <Zap size={13} className="text-purple-600" /> Auto-Apply (Automatically applied if eligible)
                   </span>
                 </label>
 

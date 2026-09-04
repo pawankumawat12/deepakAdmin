@@ -83,13 +83,13 @@ export default function CustomerList() {
       toast(
         (t) => (
           <div className="flex flex-col gap-1">
-            <b>📩 New Unblock Request</b>
+            <b>New Unblock Request</b>
             <span className="text-xs">
               {data.name} ({data.email}): {data.message}
             </span>
           </div>
         ),
-        { icon: "🛡️", duration: 6000 }
+        { duration: 6000 }
       );
       refetchRequests();
     };

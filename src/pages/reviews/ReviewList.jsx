@@ -374,11 +374,11 @@ export default function ReviewList() {
             }}
           >
             <option value="">All Ratings</option>
-            <option value="5">5 Stars ★★★★★</option>
-            <option value="4">4 Stars ★★★★☆</option>
-            <option value="3">3 Stars ★★★☆☆</option>
-            <option value="2">2 Stars ★★☆☆☆</option>
-            <option value="1">1 Star ★☆☆☆☆</option>
+            <option value="5">5 Stars</option>
+            <option value="4">4 Stars</option>
+            <option value="3">3 Stars</option>
+            <option value="2">2 Stars</option>
+            <option value="1">1 Star</option>
           </select>
         </div>
       </div>

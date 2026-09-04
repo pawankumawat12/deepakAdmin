@@ -8,17 +8,17 @@ const initialState = {
     { id: 'cat-desserts', name: 'Desserts', description: 'Sweet endings', status: 'Active' },
   ],
   products: [
-    { id: 'prod-naan', name: 'Classic Butter Naan', categoryId: 'cat-breads', price: 45, stock: 128, status: 'Active', image: '🥖' },
-    { id: 'prod-paneer', name: 'Paneer Butter Masala', categoryId: 'cat-main', price: 280, stock: 43, status: 'Active', image: '🍛' },
-    { id: 'prod-chai', name: 'Masala Chai', categoryId: 'cat-beverages', price: 60, stock: 86, status: 'Active', image: '☕' },
-    { id: 'prod-jamun', name: 'Gulab Jamun', categoryId: 'cat-desserts', price: 120, stock: 0, status: 'Out of stock', image: '🍮' },
+    { id: 'prod-naan', name: 'Classic Butter Naan', categoryId: 'cat-breads', price: 45, stock: 128, status: 'Active', image: '' },
+    { id: 'prod-paneer', name: 'Paneer Butter Masala', categoryId: 'cat-main', price: 280, stock: 43, status: 'Active', image: '' },
+    { id: 'prod-chai', name: 'Masala Chai', categoryId: 'cat-beverages', price: 60, stock: 86, status: 'Active', image: '' },
+    { id: 'prod-jamun', name: 'Gulab Jamun', categoryId: 'cat-desserts', price: 120, stock: 0, status: 'Out of stock', image: '' },
   ],
 }
 
 const catalogSlice = createSlice({
   name: 'catalog', initialState,
   reducers: {
-    createProduct: { reducer: (state, action) => { state.products.unshift(action.payload) }, prepare: (product) => ({ payload: { ...product, id: nanoid(), image: '🍽️' } }) },
+    createProduct: { reducer: (state, action) => { state.products.unshift(action.payload) }, prepare: (product) => ({ payload: { ...product, id: nanoid(), image: '' } }) },
     updateProduct: (state, action) => { const index = state.products.findIndex((item) => item.id === action.payload.id); if (index >= 0) state.products[index] = { ...state.products[index], ...action.payload } },
     deleteProduct: (state, action) => { state.products = state.products.filter((item) => item.id !== action.payload) },
     createCategory: { reducer: (state, action) => { state.categories.unshift(action.payload) }, prepare: (category) => ({ payload: { ...category, id: nanoid() } }) },

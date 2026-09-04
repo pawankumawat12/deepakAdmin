@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Filter, Plus, Trash2, Pencil, X } from "lucide-react";
+import { Filter, Plus, Trash2, Pencil, X, Zap, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../components/common/DataTable";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -212,11 +212,11 @@ export default function ProductList() {
               render: (value, item) => (
                 item.availability_type === "MADE_TO_ORDER" ? (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "#fef3eb", color: "#e86b1a" }}>
-                    ⚡ Made to Order
+                    <Zap size={12} /> Made to Order
                   </span>
                 ) : (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "#f0fdf4", color: "#16a34a" }}>
-                    📦 In Stock ({item.stock})
+                    <Package size={12} /> In Stock ({item.stock})
                   </span>
                 )
               ),

@@ -96,7 +96,7 @@ export default function MessageList() {
         admin_notes: editNotes,
       }).unwrap();
 
-      toast.success("Inquiry updated successfully! ✨");
+      toast.success("Inquiry updated successfully!");
       handleCloseDetailModal();
     } catch (err) {
       toast.error(err?.data?.message || "Failed to update inquiry");
@@ -208,8 +208,8 @@ export default function MessageList() {
             {row.email}
           </div>
           {row.phone && (
-            <div style={{ fontSize: "11px", color: "#9ca3af" }}>
-              📞 {row.phone}
+            <div style={{ fontSize: "11px", color: "#9ca3af", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Phone size={11} /> {row.phone}
             </div>
           )}
         </div>

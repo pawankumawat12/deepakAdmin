@@ -40,6 +40,7 @@ import {
   ThumbsDown,
   AlertTriangle,
   Search,
+  Zap,
 } from "lucide-react";
 import OrderDetailsModal from "../../modals/OrderDetailsModal";
 
@@ -105,7 +106,7 @@ export default function OrderList() {
     const handleNewOrder = (data) => {
       setLiveAlert({
         type: "order",
-        title: "🔔 New Order Received!",
+        title: "New Order Received!",
         message: `Order #${data.order?.order_number || data.order?.id} from ${data.order?.customer_name} (₹${data.order?.total_amount})`,
         order: data.order,
       });
@@ -115,7 +116,7 @@ export default function OrderList() {
     const handleNewMessage = (data) => {
       setLiveAlert({
         type: "message",
-        title: `💬 New Message on #${data.orderNumber}`,
+        title: `New Message on #${data.orderNumber}`,
         message: `${data.customerName}: "${data.message?.message?.substring(0, 50)}..."`,
         orderId: data.orderId,
       });
@@ -404,21 +405,25 @@ export default function OrderList() {
                 >
                   {item.customer_phone || item.customer_email}
                 </div>
-                {item.deliveryAddress && (
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      color: "#6b7280",
-                      marginTop: "2px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                    title={item.deliveryAddress}
-                  >
-                    📍 {item.deliveryAddress}
-                  </div>
-                )}
+                  {item.deliveryAddress && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "11px",
+                        color: "#6b7280",
+                        maxWidth: "180px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={item.deliveryAddress}
+                    >
+                      <MapPin size={11} className="shrink-0 text-gray-400" />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{item.deliveryAddress}</span>
+                    </div>
+                  )}
               </div>
             ),
           },
@@ -446,6 +451,9 @@ export default function OrderList() {
                         it.production_status === "PRODUCED" ? (
                           <span
                             style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "3px",
                               background: "#dcfce7",
                               color: "#166534",
                               fontSize: "10px",
@@ -454,7 +462,7 @@ export default function OrderList() {
                               borderRadius: "4px",
                             }}
                           >
-                            ✓ Produced
+                            <Check size={11} /> Produced
                           </span>
                         ) : (
                           <button
@@ -462,6 +470,9 @@ export default function OrderList() {
                             disabled={isMarking}
                             onClick={() => handleItemProduced(it.id)}
                             style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "3px",
                               background: "#ffedd5",
                               color: "#c2410c",
                               border: "1px solid #fdba74",
@@ -473,7 +484,7 @@ export default function OrderList() {
                             }}
                             title="Click to mark this made-to-order item as produced"
                           >
-                            ⚡ Mark Produced
+                            <Zap size={11} /> Mark Produced
                           </button>
                         )
                       )}
