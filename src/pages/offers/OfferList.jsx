@@ -71,10 +71,10 @@ export default function OfferList() {
     title: "",
     code: "",
     description: "",
-    badge: "HOT DEAL",
-    type: "PERCENTAGE",
-    discount_value: 20,
-    min_order_amount: 199,
+    badge: "",
+    type: "",
+    discount_value: 0,
+    min_order_amount: 0 ,
     max_discount_amount: "",
     target_product_ids: [],
     target_category_ids: [],
@@ -1055,7 +1055,6 @@ export default function OfferList() {
                   </label>
                   <input
                     type="number"
-                    required
                     min="0"
                     max={formData.type === "PERCENTAGE" || formData.type === "PRODUCT" || formData.type === "CATEGORY" ? "100" : undefined}
                     value={formData.discount_value}

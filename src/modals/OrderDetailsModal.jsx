@@ -246,23 +246,22 @@ const OrderDetailsModal = ({
                         </div>
 
                         <div className="small mt-1">
-                          {item.quantity} × {money(item.price)}
+                          {Number(item.free_quantity) > 0 ? (
+                            <span>
+                              {item.paid_quantity ?? item.quantity} paid + <strong className="text-success">+{item.free_quantity} free</strong> (Total: {item.quantity}) × {money(item.price)}
+                            </span>
+                          ) : (
+                            `${item.quantity} × ${money(item.price)}`
+                          )}
                         </div>
 
-                        {/* <div className="mt-2 d-flex gap-2 flex-wrap">
-
-                          <span className="badge bg-light text-dark border">
-                            {item.availability_type}
-                          </span>
-
-                          {item.production_status && (
-                            <span className="badge bg-warning text-dark">
-                              Production: {item.production_status}
+                        {Number(item.free_quantity) > 0 && (
+                          <div className="mt-1">
+                            <span className="badge bg-success-subtle text-success border border-success-subtle">
+                              BOGO: +{item.free_quantity} Free Item(s)
                             </span>
-                          )}
-
-                        </div> */}
-
+                          </div>
+                        )}
                       </div>
 
                       <div className="text-end">
