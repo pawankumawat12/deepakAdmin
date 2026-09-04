@@ -1265,7 +1265,7 @@ export default function OfferList() {
                         gap: "6px",
                       }}
                     >
-                      <span>🔥 Deal Summary:</span>
+                      <span> Deal Summary:</span>
                       <span>
                         Buy {formData.buy_qty || 1}{" "}
                         <strong>

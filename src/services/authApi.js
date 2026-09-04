@@ -11,10 +11,13 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
     sendOtp: build.mutation({
-      query: (email) => ({
+      query: (payload) => ({
         url: "/auth/send-otp",
         method: "POST",
-        body: { email },
+        body:
+          typeof payload === "string"
+            ? { email: payload, role: "admin", type: "login" }
+            : { role: "admin", type: "login", ...payload },
       }),
     }),
     verifyOtp: build.mutation({

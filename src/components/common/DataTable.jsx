@@ -1,4 +1,5 @@
 import { FaSort, FaSortDown, FaSortUp } from "react-icons/fa";
+import Skeleton from "../ui/Skeleton";
 
 export default function DataTable({
   columns,
@@ -94,20 +95,7 @@ export default function DataTable({
 
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={totalColumns} className="text-center py-5">
-                  <div
-                    className="spinner-border spinner-border-sm text-primary me-2"
-                    role="status"
-                  >
-                    <span className="visually-hidden">
-                      Loading...
-                    </span>
-                  </div>
-
-                  Loading...
-                </td>
-              </tr>
+              <Skeleton variant="table-rows" rows={6} columns={totalColumns} />
             ) : data.length > 0 ? (
               data.map((row, index) => (
                 <tr key={row.id || row._id || index}>

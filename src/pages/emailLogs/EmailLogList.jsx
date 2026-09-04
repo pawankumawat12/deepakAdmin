@@ -19,6 +19,7 @@ import toast from "react-hot-toast";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Button from "../../components/ui/Button";
+import Skeleton from "../../components/ui/Skeleton";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import {
   useGetEmailLogsQuery,
@@ -30,7 +31,7 @@ import {
 
 export default function EmailLogList() {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -579,14 +580,7 @@ export default function EmailLogList() {
             </thead>
             <tbody>
               {loadingLogs ? (
-                <tr>
-                  <td colSpan="7" style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}>
-                      <LoaderCircle size={20} className="animate-spin text-blue-600" />
-                      <span>Loading email logs...</span>
-                    </div>
-                  </td>
-                </tr>
+                <Skeleton variant="table-rows" rows={6} columns={7} />
               ) : rawLogs.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ padding: "60px 20px", textAlign: "center", color: "#6b7280" }}>
