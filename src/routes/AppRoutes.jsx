@@ -25,6 +25,7 @@ import EmailTemplateList from "../pages/emailTemplates/EmailTemplateList";
 import EmailTemplateCreate from "../pages/emailTemplates/EmailTemplateCreate";
 import EmailTemplateEdit from "../pages/emailTemplates/EmailTemplateEdit";
 import EmailTemplateView from "../pages/emailTemplates/EmailTemplateView";
+import HeroSliderList from "../pages/heroSliders/HeroSliderList";
 
 export default function AppRoutes() {
   return (
@@ -56,6 +57,7 @@ export default function AppRoutes() {
           <Route path="email-templates/create" element={<EmailTemplateCreate />} />
           <Route path="email-templates/:id/edit" element={<EmailTemplateEdit />} />
           <Route path="email-templates/:id" element={<EmailTemplateView />} />
+          <Route path="hero-sliders" element={<HeroSliderList />} />
           <Route path="favourites" element={<FavouriteList />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />

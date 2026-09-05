@@ -30,6 +30,7 @@ import {
   CheckCheck,
   Clock,
   ExternalLink,
+  SlidersHorizontal,
 } from "lucide-react";
 import { baseApi } from "../services/baseApi";
 import {
@@ -41,19 +42,92 @@ import {
 import { getAdminSocket } from "../services/socket";
 import { toAssetUrl } from "../utils/assetUrl";
 
-const navigation = [
-  ["Dashboard", "/", LayoutDashboard],
-  ["Customers", "/customers", Users],
-  ["Products", "/products", Package],
-  ["Categories", "/categories", Tags],
-  ["Orders", "/orders", ShoppingBag],
-  ["Offers", "/offers", BadgePercent],
-  ["Reviews", "/reviews", Star],
-  ["Messages", "/messages", MessageSquare],
-  ["Email Logs", "/email-logs", Mail],
-  ["Email Templates", "/email-templates", FileText],
-  ["Settings", "/settings", Settings],
+const navigationItems = [
+  { type: "link", label: "Dashboard", to: "/", icon: LayoutDashboard },
+  {
+    type: "group",
+    id: "catalog",
+    label: "Menu & Catalog",
+    icon: Package,
+    children: [
+      { label: "Products", to: "/products", icon: Package },
+      { label: "Categories", to: "/categories", icon: Tags },
+    ],
+  },
+  {
+    type: "group",
+    id: "storefront",
+    label: "Storefront Display",
+    icon: SlidersHorizontal,
+    children: [{ label: "Hero Sliders", to: "/hero-sliders", icon: SlidersHorizontal }],
+  },
+  {
+    type: "group",
+    id: "sales",
+    label: "Orders & Deals",
+    icon: ShoppingBag,
+    children: [
+      { label: "All Orders", to: "/orders", icon: ShoppingBag },
+      { label: "Offers & Deals", to: "/offers", icon: BadgePercent },
+    ],
+  },
+  {
+    type: "group",
+    id: "customers",
+    label: "Customers & CRM",
+    icon: Users,
+    children: [
+      { label: "Customer Accounts", to: "/customers", icon: Users },
+      { label: "Customer Reviews", to: "/reviews", icon: Star },
+      { label: "Contact Messages", to: "/messages", icon: MessageSquare },
+    ],
+  },
+  {
+    type: "group",
+    id: "email",
+    label: "Email Management",
+    icon: Mail,
+    children: [
+      { label: "Email Templates", to: "/email-templates", icon: FileText },
+      { label: "Email Activity Logs", to: "/email-logs", icon: Mail },
+    ],
+  },
+  {
+    type: "group",
+    id: "system",
+    label: "System & Settings",
+    icon: Settings,
+    children: [
+      { label: "General Settings", to: "/settings", icon: Settings },
+      { label: "Admin Profile", to: "/profile", icon: UserRound },
+      { label: "Favourites", to: "/favourites", icon: Heart },
+    ],
+  },
 ];
+
+const getPageTitle = (pathname) => {
+  if (pathname === "/") return "Dashboard";
+  if (pathname.startsWith("/products/create")) return "Add Product";
+  if (pathname.startsWith("/products") && pathname.includes("/edit")) return "Edit Product";
+  if (pathname.startsWith("/products")) return "Products";
+  if (pathname.startsWith("/categories/create")) return "Add Category";
+  if (pathname.startsWith("/categories") && pathname.includes("/edit")) return "Edit Category";
+  if (pathname.startsWith("/categories")) return "Categories";
+  if (pathname.startsWith("/orders")) return "Orders";
+  if (pathname.startsWith("/customers")) return "Customers";
+  if (pathname.startsWith("/offers")) return "Offers";
+  if (pathname.startsWith("/reviews")) return "Reviews";
+  if (pathname.startsWith("/messages")) return "Messages";
+  if (pathname.startsWith("/hero-sliders")) return "Hero Sliders";
+  if (pathname.startsWith("/email-logs")) return "Email Logs";
+  if (pathname.startsWith("/email-templates/create")) return "Create Email Template";
+  if (pathname.startsWith("/email-templates") && pathname.includes("/edit")) return "Edit Email Template";
+  if (pathname.startsWith("/email-templates")) return "Email Templates";
+  if (pathname.startsWith("/favourites")) return "Favourites";
+  if (pathname.startsWith("/settings")) return "Settings";
+  if (pathname.startsWith("/profile")) return "Profile";
+  return "Administration";
+};
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
@@ -69,9 +143,29 @@ export default function AdminLayout() {
   const [logoutRequest, { isLoading: isSigningOut }] = useLogoutMutation();
   const location = useLocation();
 
-  const title =
-    navigation.find((item) => item[1] === location.pathname)?.[0] ||
-    "Admin panel";
+  const isChildActive = (to) => {
+    if (to === "/") return location.pathname === "/";
+    return location.pathname === to || location.pathname.startsWith(to + "/");
+  };
+
+  const isGroupActive = (children) => {
+    return children.some((child) => isChildActive(child.to));
+  };
+
+  const activeParentId = navigationItems.find(
+    (item) => item.type === "group" && isGroupActive(item.children)
+  )?.id;
+  const [openMenuId, setOpenMenuId] = useState(activeParentId || null);
+
+  useEffect(() => {
+    setOpenMenuId(activeParentId || null);
+  }, [activeParentId, location.pathname]);
+
+  const toggleGroup = (groupId) => {
+    setOpenMenuId((currentId) => (currentId === groupId ? null : groupId));
+  };
+
+  const title = getPageTitle(location.pathname);
 
   // Notifications API & Mutations
   const { data: notifData, refetch: refetchNotifs } = useGetAdminNotificationsQuery({
@@ -234,31 +328,128 @@ export default function AdminLayout() {
 
   return (
     <div className="app-shell">
+      {open && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setOpen(false)}
+          aria-label="Close menu"
+        />
+      )}
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="sidebar-brand">
-          <img src="/images/logo.png" style={{ width: "40px" }} alt="SFC Cafe" />
-          <Button variant="plain" className="close-nav" onClick={() => setOpen(false)}>
-            <X />
+          <div className="sidebar-brand-inner">
+            <img
+              src="/images/logo.png"
+              style={{ width: "36px", height: "36px", objectFit: "contain" }}
+              alt="SFC Cafe"
+            />
+            <div className="sidebar-brand-text">
+              <span className="brand-title">SFC Cafe</span>
+              <span className="brand-badge">ADMIN PANEL</span>
+            </div>
+          </div>
+          <Button
+            variant="plain"
+            className="close-nav"
+            onClick={() => setOpen(false)}
+            aria-label="Close navigation"
+          >
+            <X size={18} />
           </Button>
         </div>
-        <nav>
-          {navigation.map(([label, to, Icon]) => (
-            <NavLink
-              end={to === "/"}
-              key={to}
-              to={to}
-              onClick={() => setOpen(false)}
-              className="nav-link"
-            >
-              <Icon size={19} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+
+        <nav className="sidebar-nav">
+          {navigationItems.map((item) => {
+            if (item.type === "link") {
+                  const active = isChildActive(item.to);
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      end={item.to === "/"}
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setOpen(false)}
+                      className={`sidebar-nav-link ${active ? "active" : ""}`}
+                    >
+                      <Icon size={18} />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  );
+              }
+
+              if (item.type === "group") {
+                  const isExpanded = openMenuId === item.id;
+                  const hasActiveChild = isGroupActive(item.children);
+                  const Icon = item.icon;
+
+                  return (
+                    <div key={item.id} className="sidebar-group">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(item.id)}
+                        className={`sidebar-group-btn ${
+                          hasActiveChild ? "has-active-child" : ""
+                        }`}
+                        aria-expanded={isExpanded}
+                      >
+                        <div className="group-content">
+                          <Icon size={18} className="group-icon" />
+                          <span>{item.label}</span>
+                        </div>
+                        <span
+                          className={`group-arrow ${
+                            isExpanded ? "rotated" : ""
+                          }`}
+                        >
+                          <ChevronDown size={15} />
+                        </span>
+                      </button>
+
+                      <div
+                        className={`sidebar-submenu ${
+                          isExpanded ? "expanded" : ""
+                        }`}
+                      >
+                        {item.children.map((child) => {
+                          const childActive = isChildActive(child.to);
+
+                          return (
+                            <NavLink
+                              key={child.to}
+                              to={child.to}
+                              onClick={() => setOpen(false)}
+                              className={`sidebar-sublink ${
+                                childActive ? "active" : ""
+                              }`}
+                            >
+                              <span className="sublink-dot" />
+                              <span>{child.label}</span>
+                            </NavLink>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+              }
+
+              return null;
+          })}
         </nav>
-        <div className="sidebar-help">
-          <p>Need help?</p>
-          <span>Reach your support team</span>
-          <Button>Contact support</Button>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-help">
+            <p>Need help?</p>
+            <span>Reach your support team</span>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                navigate("/messages");
+              }}
+            >
+              Contact support
+            </button>
+          </div>
         </div>
       </aside>
 
