@@ -19,6 +19,7 @@ import {
   Star,
   MessageSquare,
   Mail,
+  FileText,
   Heart,
   Settings,
   UserRound,
@@ -50,6 +51,7 @@ const navigation = [
   ["Reviews", "/reviews", Star],
   ["Messages", "/messages", MessageSquare],
   ["Email Logs", "/email-logs", Mail],
+  ["Email Templates", "/email-templates", FileText],
   ["Settings", "/settings", Settings],
 ];
 

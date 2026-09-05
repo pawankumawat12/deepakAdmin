@@ -145,6 +145,7 @@ export const baseApi = createApi({
     "Notification",
     "Dashboard",
     "EmailLogs",
+    "EmailTemplates",
   ],
   endpoints: () => ({}),
 });

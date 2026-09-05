@@ -21,6 +21,10 @@ import Settings from "../pages/settings/Settings";
 import Profile from "../pages/profile/Profile";
 import ReviewList from "../pages/reviews/ReviewList";
 import EmailLogList from "../pages/emailLogs/EmailLogList";
+import EmailTemplateList from "../pages/emailTemplates/EmailTemplateList";
+import EmailTemplateCreate from "../pages/emailTemplates/EmailTemplateCreate";
+import EmailTemplateEdit from "../pages/emailTemplates/EmailTemplateEdit";
+import EmailTemplateView from "../pages/emailTemplates/EmailTemplateView";
 
 export default function AppRoutes() {
   return (
@@ -48,6 +52,10 @@ export default function AppRoutes() {
           <Route path="reviews" element={<ReviewList />} />
           <Route path="messages" element={<MessageList />} />
           <Route path="email-logs" element={<EmailLogList />} />
+          <Route path="email-templates" element={<EmailTemplateList />} />
+          <Route path="email-templates/create" element={<EmailTemplateCreate />} />
+          <Route path="email-templates/:id/edit" element={<EmailTemplateEdit />} />
+          <Route path="email-templates/:id" element={<EmailTemplateView />} />
           <Route path="favourites" element={<FavouriteList />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
