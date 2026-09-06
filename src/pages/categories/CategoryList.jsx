@@ -294,6 +294,7 @@ export default function CategoryList() {
               key: "image",
               label: "IMAGE",
               render: (value) => {
+                
                 if (!value) {
                   return <span className="muted">No image</span>;
                 }
