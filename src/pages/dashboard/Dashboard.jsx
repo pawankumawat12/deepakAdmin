@@ -294,6 +294,7 @@ export default function Dashboard() {
     <div style={{ display: "flex", flexDirection: "column", gap: "24px", paddingBottom: "32px" }}>
       {/* 1. TOP HEADER & TIMEFRAME BAR */}
       <div
+        className="dashboard-header-card"
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -344,7 +345,7 @@ export default function Dashboard() {
         </div>
 
         {/* Timeframe selector & Refresh */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%" }}>
           <div
             style={{
               display: "flex",
@@ -352,6 +353,8 @@ export default function Dashboard() {
               padding: "3px",
               borderRadius: "10px",
               border: "1px solid #e5e7eb",
+              overflowX: "auto",
+              maxWidth: "100%",
             }}
           >
             {[
@@ -365,12 +368,13 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => setTimeframe(tf.id)}
                 style={{
-                  padding: "6px 12px",
+                  padding: "6px 10px",
                   borderRadius: "7px",
                   border: "none",
                   fontSize: "12px",
                   fontWeight: 700,
                   cursor: "pointer",
+                  whiteSpace: "nowrap",
                   background: timeframe === tf.id ? "#ffffff" : "transparent",
                   color: timeframe === tf.id ? "#4f7d16" : "#6b7280",
                   boxShadow: timeframe === tf.id ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
@@ -397,18 +401,19 @@ export default function Dashboard() {
               placeItems: "center",
               cursor: "pointer",
               color: "#374151",
+              flexShrink: 0,
             }}
           >
-            <RefreshCw size={15} className={isFetching ? "animate-spin" : ""} />
+            <RefreshCw size={16} className={isFetching ? "spin" : ""} />
           </button>
         </div>
       </div>
 
       {/* 2. DYNAMIC KPI CARDS GRID (7 CARDS) */}
       <div
+        className="dashboard-kpis-grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           gap: "16px",
         }}
       >
@@ -678,9 +683,10 @@ export default function Dashboard() {
       </div>
 
       {/* 3. INTERACTIVE CHARTS SECTION (2 COLUMNS) */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px" }}>
+      <div className="dashboard-two-col dashboard-two-col-chart" style={{ display: "grid", gap: "20px" }}>
         {/* REVENUE & ORDERS TRENDS GRAPH */}
         <div
+          className="dashboard-card"
           style={{
             background: "#ffffff",
             padding: "24px",
@@ -863,6 +869,7 @@ export default function Dashboard() {
 
         {/* ORDER STATUS DISTRIBUTION */}
         <div
+          className="dashboard-card"
           style={{
             background: "#ffffff",
             padding: "24px",
@@ -1020,9 +1027,10 @@ export default function Dashboard() {
       </div>
 
       {/* 4. TOP SELLING PRODUCTS & CATEGORY SALES SECTION */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "20px" }}>
+      <div className="dashboard-two-col dashboard-two-col-products" style={{ display: "grid", gap: "20px" }}>
         {/* TOP SELLING PRODUCTS */}
         <div
+          className="dashboard-card"
           style={{
             background: "#ffffff",
             padding: "24px",
@@ -1072,6 +1080,7 @@ export default function Dashboard() {
               {topProducts.map((p) => (
                 <div
                   key={p.id || p.rank}
+                  className="dashboard-product-row"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -1148,6 +1157,7 @@ export default function Dashboard() {
 
         {/* CATEGORY SALES DISTRIBUTION */}
         <div
+          className="dashboard-card"
           style={{
             background: "#ffffff",
             padding: "24px",
@@ -1243,9 +1253,10 @@ export default function Dashboard() {
       </div>
 
       {/* 5. RECENT ORDERS & LIVE CUSTOMER ACTIVITY */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "20px" }}>
+      <div className="dashboard-two-col dashboard-two-col-orders" style={{ display: "grid", gap: "20px" }}>
         {/* RECENT ORDERS TABLE */}
         <div
+          className="dashboard-card"
           style={{
             background: "#ffffff",
             padding: "24px",
@@ -1296,6 +1307,7 @@ export default function Dashboard() {
 
         {/* LIVE CUSTOMER ACTIVITY FEED */}
         <div
+          className="dashboard-card"
           style={{
             background: "#ffffff",
             padding: "24px",
@@ -1331,6 +1343,7 @@ export default function Dashboard() {
               {recentActivities.map((act, i) => (
                 <div
                   key={i}
+                  className="dashboard-activity-row"
                   style={{
                     display: "flex",
                     alignItems: "flex-start",

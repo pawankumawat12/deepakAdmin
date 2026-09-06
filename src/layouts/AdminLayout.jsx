@@ -458,12 +458,12 @@ export default function AdminLayout() {
           <Button variant="plain" className="mobile-menu" onClick={() => setOpen(true)}>
             <Menu />
           </Button>
-          <div>
+          <div className="topbar-title-wrap">
             <p className="eyebrow">ADMINISTRATION</p>
             <h2>{title}</h2>
           </div>
           <div className="top-actions">
-            <SearchInput placeholder="Search anything..." />
+            <SearchInput placeholder="Search anything..." className="topbar-search" />
 
             {/* Notification Bell with Badge & Dropdown */}
             <div style={{ position: "relative" }} ref={notifRef}>
@@ -518,6 +518,7 @@ export default function AdminLayout() {
               {/* Notification Dropdown Panel */}
               {notificationsOpen && (
                 <div
+                  className="notification-dropdown"
                   style={{
                     position: "absolute",
                     right: 0,

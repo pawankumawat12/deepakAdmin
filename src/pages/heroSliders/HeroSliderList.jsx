@@ -300,8 +300,8 @@ export default function HeroSliderList() {
         )}
 
         {/* Sliders Table */}
-        <div className="table-container" style={{ overflowX: "auto" }}>
-          <table className="data-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="table-responsive table-container">
+          <table className="data-table" style={{ width: "100%", minWidth: "760px", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f8fafc", textAlign: "left", fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 <th style={{ padding: "12px 16px", width: "100px" }}>Order</th>

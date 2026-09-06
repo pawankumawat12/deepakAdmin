@@ -319,7 +319,7 @@ export default function AdminOrderChatModal({ order, onClose }) {
         alignItems: "center",
         justifyContent: "center",
         zIndex: 9999,
-        padding: "16px",
+        padding: "min(16px, 2vw)",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -329,7 +329,8 @@ export default function AdminOrderChatModal({ order, onClose }) {
         style={{
           width: "100%",
           maxWidth: "460px",
-          height: "680px",
+          height: "min(680px, calc(100dvh - 20px))",
+          maxHeight: "calc(100dvh - 16px)",
           backgroundColor: "#efeae2",
           borderRadius: "24px",
           overflow: "hidden",

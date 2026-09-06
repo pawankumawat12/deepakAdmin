@@ -4,16 +4,28 @@
     box-sizing: border-box
 }
 
+html,
 body {
-    margin: 0;
-    background: #f7f7fb;
-    color: #222238;
-    font-family: 'DM Sans', sans-serif
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    -webkit-tap-highlight-color: transparent;
 }
 
-p, h1, h2, h3, h4, h5, h6, span, a, label, li{
+#root,
+.app-shell {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+p, h1, h2, h3, h4, h5, h6, span, a, label, li {
     overflow-wrap: break-word;
     word-break: normal;
+}
+
+img, svg {
+    max-width: 100%;
 }
 
 button,
@@ -36,14 +48,46 @@ a {
 
 .table-responsive {
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     width: 100%;
+    max-width: 100%;
+    display: block;
+    scrollbar-width: thin;
+    scrollbar-color: #8b7cf7 #f1f5f9;
+    padding-bottom: 4px;
 }
 
+.table-responsive::-webkit-scrollbar {
+    height: 9px;
+    width: 9px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 9999px;
+    margin: 0 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #9d91f8;
+    border-radius: 9999px;
+    border: 2px solid #f1f5f9;
+    transition: background-color 0.2s ease;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #6253e8;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:active {
+    background: #4f3fd5;
+}
 
 .modal-container {
-    max-width: min(92vw, 680px);
-    max-height: 90vh;
+    max-width: min(94vw, 680px);
+    max-height: 90dvh;
     overflow-y: auto;
     overflow-wrap: break-word;
 }
