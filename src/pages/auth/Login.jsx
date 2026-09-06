@@ -30,9 +30,9 @@ export default function Login() {
   const [getMe] = useLazyGetMeQuery();
   const [apiError, setApiError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [otpDigits, setOtpDigits] = useState(["", "", "", ""]);
-  const [resendTimer, setResendTimer] = useState(0);
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [resendCount, setResendCount] = useState(0);
+  const [resendTimer, setResendTimer] = useState(0);
   const otpRefs = useRef([]);
 
   const emailForm = useForm({
@@ -61,11 +61,9 @@ export default function Login() {
   const handleRequestOtp = async (data) => {
     try {
       setApiError("");
-  const res =  await adminLogin({ email: data.email, password: data.password }).unwrap();
-  console.log(res, 'Check drsonasdlkfasdflaksj')
+      const res = await adminLogin({ email: data.email, password: data.password }).unwrap();
       setPendingEmail(data.email);
       setOtpSent(true);
-      setResendCount(0);
       setResendTimer(RESEND_COOLDOWN_SECONDS);
       toast.success("Credentials verified! Verification OTP sent to your email.");
     } catch (error) {
@@ -81,11 +79,10 @@ export default function Login() {
       setApiError("");
       const res = await verifyOtp({ email: pendingEmail, otp: data.otp }).unwrap();
       const token = res?.accessToken || res?.token || res?.user?.token;
-      if (token) {
-        localStorage.setItem("accessToken", token);
-      }
+      
+      // Token held in Redux memory (no localStorage)
       if (res?.user) {
-        dispatch(setUser(res.user));
+        dispatch(setUser({ ...res.user, accessToken: token }));
       }
 
       toast.success("Welcome back! Logged in successfully.");
@@ -102,15 +99,15 @@ export default function Login() {
     next[index] = value.replace(/\D/g, "").slice(-1);
     setOtpDigits(next);
     otpForm.setValue("otp", next.join(""), { shouldValidate: true });
-    if (next[index] && index < 3) otpRefs.current[index + 1]?.focus();
+    if (next[index] && index < 5) otpRefs.current[index + 1]?.focus();
   };
   const pasteOtp = (event) => {
     event.preventDefault();
     const value = event.clipboardData
       .getData("text")
       .replace(/\D/g, "")
-      .slice(0, 4);
-    const next = ["", "", "", ""];
+      .slice(0, 6);
+    const next = ["", "", "", "", "", ""];
     value.split("").forEach((digit, index) => {
       next[index] = digit;
     });
@@ -119,8 +116,6 @@ export default function Login() {
   };
   const useAnotherEmail = () => {
     otpForm.reset({ otp: "" });
-    emailForm.reset({ email: "", password: "" });
-    setOtpDigits(["", "", "", ""]);
     setResendTimer(0);
     setResendCount(0);
     setPendingEmail("");
@@ -131,7 +126,6 @@ export default function Login() {
     <main className="login-page">
       <section className="login-card">
         <p className="eyebrow">SFC CAFE</p>
-
         <h1>{otpSent ? "Verify your login" : "Welcome back"}</h1>
 
         <p className="muted">

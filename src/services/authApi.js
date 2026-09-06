@@ -30,11 +30,10 @@ export const authApi = baseApi.injectEndpoints({
         try {
           const { data } = await queryFulfilled;
           const token = data?.accessToken || data?.token || data?.user?.token;
-          if (token && typeof window !== "undefined") {
-            localStorage.setItem("accessToken", token);
-          }
           if (data?.user) {
-            dispatch(setUser(data.user));
+            dispatch(setUser({ ...data.user, accessToken: token }));
+          } else if (token) {
+            dispatch(setUser({ accessToken: token }));
           }
         } catch {
           // Handled in component
@@ -109,6 +108,22 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Customers"],
     }),
+    bulkUpdateCustomerStatus: build.mutation({
+      query: ({ ids, isBlocked, blockReason }) => ({
+        url: "/auth/customers/bulk-status",
+        method: "POST",
+        body: { ids, isBlocked, blockReason },
+      }),
+      invalidatesTags: ["Customers"],
+    }),
+    bulkDeleteCustomers: build.mutation({
+      query: ({ ids }) => ({
+        url: "/auth/customers/bulk-delete",
+        method: "POST",
+        body: { ids },
+      }),
+      invalidatesTags: ["Customers"],
+    }),
     getBlockedSupportRequests: build.query({
       query: (params) => ({
         url: "/auth/blocked-support-requests",
@@ -157,6 +172,8 @@ export const {
   useEditCustomerMutation,
   useDeleteCustomerMutation,
   useToggleCustomerStatusMutation,
+  useBulkUpdateCustomerStatusMutation,
+  useBulkDeleteCustomersMutation,
   useGetBlockedSupportRequestsQuery,
   useResolveBlockedSupportRequestMutation,
   useUpdateProfileMutation,

@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { signOut, setUser } from "../context/authSlice";
+import { updateAdminSocketToken, disconnectAdminSocket } from "./socket";
 
 class SimpleMutex {
   constructor() {
@@ -52,8 +53,8 @@ const getNormalizedBaseUrl = () => {
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: getNormalizedBaseUrl(),
   credentials: "include",
-  prepareHeaders: (headers) => {
-    const accessToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  prepareHeaders: (headers, { getState }) => {
+    const accessToken = getState()?.auth?.accessToken;
     if (accessToken) {
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
@@ -95,13 +96,14 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
           const newAccessToken =
             refreshResult.data.accessToken || refreshResult.data.token;
 
-          if (typeof window !== "undefined" && newAccessToken) {
-            localStorage.setItem("accessToken", newAccessToken);
-          }
+          updateAdminSocketToken(newAccessToken);
 
-          if (refreshResult.data?.user) {
-            api.dispatch(setUser(refreshResult.data.user));
-          }
+          api.dispatch(
+            setUser({
+              ...(refreshResult.data?.user || {}),
+              accessToken: newAccessToken,
+            })
+          );
 
           result = await rawBaseQuery(args, api, extraOptions);
         } else {
@@ -109,6 +111,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
           if (typeof window !== "undefined") {
             localStorage.removeItem("accessToken");
           }
+          disconnectAdminSocket();
           api.dispatch(signOut());
         }
       } finally {
@@ -116,11 +119,8 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       }
     } else {
       await mutex.waitForUnlock();
-      // Only retry if a new token was successfully stored by the refresh call
-      const tokenAfterUnlock =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
+      // Only retry if a new token was successfully stored in Redux by the refresh call
+      const tokenAfterUnlock = api.getState()?.auth?.accessToken;
       if (tokenAfterUnlock) {
         result = await rawBaseQuery(args, api, extraOptions);
       }
@@ -147,6 +147,7 @@ export const baseApi = createApi({
     "EmailLogs",
     "EmailTemplates",
     "HeroSliders",
+    "Favourites",
   ],
   endpoints: () => ({}),
 });

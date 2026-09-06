@@ -67,6 +67,22 @@ export const categoryApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/categories/${id}`, method: "DELETE" }),
       invalidatesTags: ["Category"],
     }),
+    bulkUpdateCategoryStatus: build.mutation({
+      query: ({ ids, isActive }) => ({
+        url: "/categories/bulk-status",
+        method: "POST",
+        body: { ids, isActive },
+      }),
+      invalidatesTags: ["Category"],
+    }),
+    bulkDeleteCategories: build.mutation({
+      query: ({ ids }) => ({
+        url: "/categories/bulk-delete",
+        method: "POST",
+        body: { ids },
+      }),
+      invalidatesTags: ["Category"],
+    }),
   }),
 });
 
@@ -76,4 +92,6 @@ export const {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
+  useBulkUpdateCategoryStatusMutation,
+  useBulkDeleteCategoriesMutation,
 } = categoryApi;

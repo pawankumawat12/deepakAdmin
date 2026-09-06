@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { store } from "../context/store";
 
 const SOCKET_URL = (
   import.meta.env.VITE_BACKEND_URL ||
@@ -10,11 +11,13 @@ const SOCKET_URL = (
 let socket = null;
 
 export function getAdminSocket() {
+  const token = store.getState()?.auth?.accessToken || null;
+
   if (!socket) {
     socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
-      query: {
-        role: "admin",
+      auth: {
+        token: token || "",
       },
       autoConnect: true,
       reconnection: true,
@@ -26,12 +29,34 @@ export function getAdminSocket() {
       console.log("[Socket.IO] Admin connected:", socket.id);
     });
 
+    socket.on("connect_error", (err) => {
+      console.warn("[Socket.IO] Admin auth/connect error:", err.message);
+    });
+
     socket.on("disconnect", (reason) => {
       console.log("[Socket.IO] Admin disconnected:", reason);
     });
+  } else if (token && socket.auth?.token !== token) {
+    // Token updated, refresh socket authentication
+    socket.auth = { token };
+    if (socket.connected) {
+      socket.disconnect().connect();
+    }
   }
 
   return socket;
+}
+
+/**
+ * Dynamically update the admin socket auth token on token refresh
+ */
+export function updateAdminSocketToken(newToken) {
+  if (socket && newToken) {
+    socket.auth = { token: newToken };
+    if (socket.connected) {
+      socket.disconnect().connect();
+    }
+  }
 }
 
 export function disconnectAdminSocket() {
@@ -40,4 +65,3 @@ export function disconnectAdminSocket() {
     socket = null;
   }
 }
-

@@ -53,12 +53,21 @@ export const orderApi = baseApi.injectEndpoints({
       query: (id) => `/orders/${id}`,
       providesTags: (_res, _err, id) => [{ type: "Order", id }],
     }),
+    bulkUpdateOrderStatus: build.mutation({
+      query: ({ ids, status, cancelReason }) => ({
+        url: "/orders/bulk-status",
+        method: "POST",
+        body: { ids, status, cancelReason },
+      }),
+      invalidatesTags: ["Order", "Product"],
+    }),
   }),
 });
 
 export const {
   useGetAdminOrdersQuery,
   useUpdateOrderStatusMutation,
+  useBulkUpdateOrderStatusMutation,
   useMarkItemProducedMutation,
   useUpdateOrderPaymentStatusMutation,
   useAcceptOrderMutation,

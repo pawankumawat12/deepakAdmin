@@ -1,17 +1,13 @@
 import { useState, useEffect } from "react";
 import {
   X,
-  Upload,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Sparkles,
   ArrowRight,
   Leaf,
-  Layers,
   Eye,
 } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
+import Select from "../../components/ui/Select";
 import { toAssetUrl } from "../../utils/assetUrl";
 
 export default function HeroSliderModal({
@@ -209,20 +205,22 @@ export default function HeroSliderModal({
           </Button>
         </div>
 
-        {/* Scrollable Form Body */}
+        {/* Scrollable Form Body using common entity-form */}
         <form
+          className="entity-form"
           onSubmit={handleSubmit}
           style={{
             overflowY: "auto",
-            padding: "20px 24px",
+            padding: "24px",
             display: "flex",
             flexDirection: "column",
-            gap: "18px",
+            gap: "20px",
           }}
         >
           {/* Validation & Server Errors */}
           {(validationError || apiError) && (
             <div
+              className="error"
               style={{
                 background: "#fef2f2",
                 border: "1px solid #fecaca",
@@ -236,19 +234,19 @@ export default function HeroSliderModal({
             </div>
           )}
 
-          {/* Row 1: Tag & Order */}
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: "14px" }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
-              <span>Badge / Tag</span>
+          <div className="form-grid">
+            <label>
+              Badge / Tag
               <Input
                 value={formData.tag}
                 onChange={(e) => handleChange("tag", e.target.value)}
                 placeholder="e.g. FRESH & DELICIOUS"
               />
+              <small className="muted">Top pill badge label</small>
             </label>
 
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
-              <span>Display Order</span>
+            <label>
+              Display Order
               <Input
                 type="number"
                 min="1"
@@ -256,269 +254,131 @@ export default function HeroSliderModal({
                 onChange={(e) => handleChange("display_order", e.target.value)}
                 placeholder="1"
               />
+              <small className="muted">Lower numbers appear first</small>
             </label>
 
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
-              <span>Status</span>
-              <div
-                onClick={() => handleChange("is_active", !formData.is_active)}
-                style={{
-                  height: "40px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "0 14px",
-                  borderRadius: "8px",
-                  border: "1px solid var(--border-color, #e2e8f0)",
-                  cursor: "pointer",
-                  background: formData.is_active ? "#f0fdf4" : "#fef2f2",
-                  borderColor: formData.is_active ? "#bbf7d0" : "#fecaca",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "0.82rem",
-                    fontWeight: 700,
-                    color: formData.is_active ? "#15803d" : "#b91c1c",
-                  }}
-                >
-                  {formData.is_active ? "Active" : "Inactive"}
-                </span>
-                <span
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    background: formData.is_active ? "#22c55e" : "#ef4444",
-                  }}
-                />
-              </div>
-            </label>
-          </div>
-
-          {/* Row 2: Title & Highlight */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
-              <span>
-                Title (Serif Accent) <span style={{ color: "#ef4444" }}>*</span>
-              </span>
+            <label>
+              Title (Serif Accent) *
               <Input
                 value={formData.title}
                 onChange={(e) => handleChange("title", e.target.value)}
                 placeholder="e.g. Good Food,"
                 required
               />
-              <small style={{ color: "#94a3b8", fontSize: "0.74rem" }}>
-                Displays in italic serif font (e.g. &quot;Good Food,&quot; or &quot;Taste That&quot;)
-              </small>
+              <small className="muted">Displays in italic serif font</small>
             </label>
 
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
-              <span>
-                Highlight (Main Bold Headline) <span style={{ color: "#ef4444" }}>*</span>
-              </span>
+            <label>
+              Highlight (Main Headline) *
               <Input
                 value={formData.highlight}
                 onChange={(e) => handleChange("highlight", e.target.value)}
                 placeholder="e.g. Good Mood."
                 required
               />
-              <small style={{ color: "#94a3b8", fontSize: "0.74rem" }}>
-                Displays in large uppercase bold text (e.g. &quot;Good Mood.&quot;)
-              </small>
+              <small className="muted">Large bold uppercase title</small>
             </label>
-          </div>
 
-          {/* Row 3: Subtitle */}
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
-            <span>Subtitle / Description</span>
-            <textarea
-              value={formData.subtitle}
-              onChange={(e) => handleChange("subtitle", e.target.value)}
-              placeholder="Freshly prepared fast food made with quality ingredients..."
-              rows={2}
-              style={{
-                borderRadius: "8px",
-                padding: "10px 12px",
-                border: "1px solid var(--border-color, #e2e8f0)",
-                fontSize: "0.88rem",
-                fontFamily: "inherit",
-                resize: "vertical",
-              }}
-            />
-          </label>
+            <label className="full">
+              Subtitle / Description
+              <textarea
+                value={formData.subtitle}
+                onChange={(e) => handleChange("subtitle", e.target.value)}
+                placeholder="Freshly prepared fast food made with quality ingredients..."
+                rows={3}
+              />
+            </label>
 
-          {/* Row 4: Call to Actions */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-            {/* Primary CTA */}
-            <div
-              style={{
-                border: "1px solid #e2e8f0",
-                padding: "12px",
-                borderRadius: "10px",
-                background: "#f8fafc",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
-            >
-              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#334155" }}>
-                Primary Button (Green)
-              </span>
+            <label>
+              Primary Button Label
               <Input
                 value={formData.cta}
                 onChange={(e) => handleChange("cta", e.target.value)}
-                placeholder="Button Label (e.g. Order Now)"
+                placeholder="e.g. Order Now"
               />
+            </label>
+
+            <label>
+              Primary Button Link
               <Input
                 value={formData.href}
                 onChange={(e) => handleChange("href", e.target.value)}
-                placeholder="Link URL (e.g. /menu)"
+                placeholder="e.g. /menu"
               />
-            </div>
+            </label>
 
-            {/* Secondary CTA */}
-            <div
-              style={{
-                border: "1px solid #e2e8f0",
-                padding: "12px",
-                borderRadius: "10px",
-                background: "#f8fafc",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
-            >
-              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#334155" }}>
-                Secondary Button (Glassmorphism)
-              </span>
+            <label>
+              Secondary Button Label
               <Input
                 value={formData.secondary_cta}
                 onChange={(e) => handleChange("secondary_cta", e.target.value)}
-                placeholder="Button Label (e.g. View Menu)"
+                placeholder="e.g. View Menu"
               />
+            </label>
+
+            <label>
+              Secondary Button Link
               <Input
                 value={formData.secondary_href}
                 onChange={(e) => handleChange("secondary_href", e.target.value)}
-                placeholder="Link URL (e.g. /menu or /about)"
+                placeholder="e.g. /menu or /about"
               />
-            </div>
-          </div>
+            </label>
 
-          {/* Row 5: Background Image Upload or URL */}
-          <div
-            style={{
-              border: "1px solid #e2e8f0",
-              padding: "14px",
-              borderRadius: "12px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "0.88rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
-                <ImageIcon size={17} /> Background Image <span style={{ color: "#ef4444" }}>*</span>
-              </span>
+            <label>
+              Status
+              <Select
+                value={formData.is_active ? "true" : "false"}
+                onChange={(e) => handleChange("is_active", e.target.value === "true")}
+              >
+                <option value="true">Active (Visible)</option>
+                <option value="false">Inactive (Hidden)</option>
+              </Select>
+            </label>
 
-              {/* Mode Switcher */}
-              <div
-                style={{
-                  display: "inline-flex",
-                  background: "#f1f5f9",
-                  padding: "3px",
-                  borderRadius: "8px",
-                  gap: "3px",
+            <label>
+              Image Source Mode
+              <Select
+                value={imageMode}
+                onChange={(e) => {
+                  const mode = e.target.value;
+                  setImageMode(mode);
+                  if (mode === "url" && imageUrl) setPreviewUrl(imageUrl.trim());
+                  if (mode === "file" && imageFile) setPreviewUrl(URL.createObjectURL(imageFile));
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => setImageMode("file")}
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "6px",
-                    fontSize: "0.76rem",
-                    fontWeight: 600,
-                    border: "none",
-                    background: imageMode === "file" ? "#ffffff" : "transparent",
-                    boxShadow: imageMode === "file" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <Upload size={13} /> Upload File
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImageMode("url");
-                    if (imageUrl) setPreviewUrl(imageUrl.trim());
-                  }}
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "6px",
-                    fontSize: "0.76rem",
-                    fontWeight: 600,
-                    border: "none",
-                    background: imageMode === "url" ? "#ffffff" : "transparent",
-                    boxShadow: imageMode === "url" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <LinkIcon size={13} /> Image URL
-                </button>
-              </div>
-            </div>
+                <option value="file">Upload File</option>
+                <option value="url">Direct Image URL</option>
+              </Select>
+            </label>
 
-            {imageMode === "file" ? (
-              <div>
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    padding: "18px",
-                    border: "2px dashed #cbd5e1",
-                    borderRadius: "10px",
-                    cursor: "pointer",
-                    background: "#f8fafc",
-                    transition: "border-color 0.2s",
-                  }}
-                >
-                  <Upload size={22} style={{ color: "#64748b" }} />
-                  <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#334155" }}>
-                    {imageFile ? imageFile.name : "Click to select or drop background image"}
-                  </span>
-                  <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>
-                    Recommended: 1400×700 or high-res JPG, PNG, WEBP (Max 10 MB)
-                  </span>
-                  <input
+            <label className="full">
+              Background Image *
+              {imageMode === "file" ? (
+                <div>
+                  <Input
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/jpg"
                     onChange={handleFileChange}
-                    style={{ display: "none" }}
                   />
-                </label>
-              </div>
-            ) : (
-              <div>
-                <Input
-                  value={imageUrl}
-                  onChange={(e) => handleUrlChange(e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-..."
-                />
-                <small style={{ color: "#94a3b8", fontSize: "0.74rem", marginTop: "4px", display: "block" }}>
-                  Direct URL to image (e.g. Unsplash, CDN, or cloud storage)
-                </small>
-              </div>
-            )}
+                  <small className="muted" style={{ display: "block", marginTop: "6px" }}>
+                    Recommended: 1400×700 or high-resolution JPG, PNG, WEBP (Max 10 MB).
+                  </small>
+                </div>
+              ) : (
+                <div>
+                  <Input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(e) => handleUrlChange(e.target.value)}
+                    placeholder="https://images.unsplash.com/photo-..."
+                  />
+                  <small className="muted" style={{ display: "block", marginTop: "6px" }}>
+                    Direct link to public image (Unsplash, CDN, or Cloudinary).
+                  </small>
+                </div>
+              )}
+            </label>
           </div>
 
           {/* Row 6: Live Hero Slide Preview */}

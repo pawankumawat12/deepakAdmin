@@ -8,12 +8,9 @@ import { LoaderCircle } from "lucide-react";
 export default function PublicRoute() {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const hasToken =
-    typeof window !== "undefined" &&
-    Boolean(localStorage.getItem("accessToken"));
 
   const { data, isLoading, isError } = useGetMeQuery(undefined, {
-    skip: !hasToken,
+    refetchOnMountOrArgChange: false,
   });
 
   useEffect(() => {

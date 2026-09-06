@@ -16,16 +16,6 @@ export default function ProtectedRoute() {
     }
   );
 
-  // If accessToken is removed in another tab or directly via DevTools, revalidate immediately
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === "accessToken" && !e.newValue) {
-        refetch();
-      }
-    };
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [refetch]);
 
   useEffect(() => {
     if (data?.user) {

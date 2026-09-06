@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import DataTable from "../../components/common/DataTable";
+import BulkActionBar from "../../components/common/BulkActionBar";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Button from "../../components/ui/Button";
 import Select from "../../components/ui/Select";
 import Pagination from "../../components/ui/Pagination";
 import SearchInput from "../../components/ui/SearchInput";
 import useDebouncedValue from "../../utils/useDebouncedValue";
+import { exportToCsv } from "../../utils/csvExport";
+import toast from "react-hot-toast";
 import {
   useGetAdminOrdersQuery,
   useUpdateOrderStatusMutation,
+  useBulkUpdateOrderStatusMutation,
   useMarkItemProducedMutation,
   useUpdateOrderPaymentStatusMutation,
   useAcceptOrderMutation,
@@ -42,11 +48,13 @@ import {
   Search,
   Zap,
   FileText,
+  Download,
 } from "lucide-react";
 import OrderDetailsModal from "../../modals/OrderDetailsModal";
 
 export default function OrderList() {
   const location = useLocation();
+  const accessToken = useSelector((state) => state.auth?.accessToken);
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -76,11 +84,19 @@ export default function OrderList() {
     search: debouncedSearch.trim() || undefined,
   });
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+  const [bulkUpdateStatus, { isLoading: isBulkUpdating }] = useBulkUpdateOrderStatusMutation();
   const [updatePaymentStatus, { isLoading: isUpdatingPayment }] =
     useUpdateOrderPaymentStatusMutation();
   const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
   const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
   const [markProduced, { isLoading: isMarking }] = useMarkItemProducedMutation();
+
+  // Selection & Bulk State
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkStatusTarget, setBulkStatusTarget] = useState("Preparing");
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkCancelReason, setBulkCancelReason] = useState("Cancelled by store administrator");
+  const [isExportingAll, setIsExportingAll] = useState(false);
 
   // Fetch the specific order when a notification click brought us here
   const { data: pendingChatOrderData } = useGetAdminOrderByIdQuery(pendingChatOrderId, {
@@ -141,10 +157,21 @@ export default function OrderList() {
   }, [refetch]);
 
   const handleStatusChange = async (orderId, newStatus) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (
+      order &&
+      order.payment_method === "Online Payment" &&
+      order.payment_status !== "Paid" &&
+      ["Preparing", "Out for Delivery", "Delivered"].includes(newStatus)
+    ) {
+      alert(`Cannot set status to '${newStatus}': Online payment is still pending from customer.`);
+      return;
+    }
     try {
       await updateStatus({ id: orderId, status: newStatus }).unwrap();
     } catch (err) {
       console.error("Failed to update order status:", err);
+      alert(err?.data?.message || err?.message || "Failed to update order status");
     }
   };
 
@@ -164,6 +191,14 @@ export default function OrderList() {
 
   const handleAcceptOrderSubmit = async () => {
     if (!acceptModalOrder) return;
+    if (
+      acceptModalOrder.payment_method === "Online Payment" &&
+      acceptModalOrder.payment_status !== "Paid"
+    ) {
+      alert("Cannot accept order: Online payment is still pending from customer.");
+      setAcceptModalOrder(null);
+      return;
+    }
     try {
       await acceptOrder({
         id: acceptModalOrder.id,
@@ -173,6 +208,7 @@ export default function OrderList() {
       refetch();
     } catch (err) {
       console.error("Failed to accept order:", err);
+      alert(err?.data?.message || err?.message || "Failed to accept order");
     }
   };
 
@@ -266,6 +302,134 @@ export default function OrderList() {
     };
   });
 
+  const orderExportColumns = [
+    { key: "orderNumber", label: "Order Number" },
+    { key: "customer_name", label: "Customer Name" },
+    { key: "customer_email", label: "Customer Email" },
+    { key: "customer_phone", label: "Customer Phone" },
+    { key: "itemsSummary", label: "Items Summary" },
+    { key: "subtotal", label: "Subtotal (₹)" },
+    { key: "delivery_fee", label: "Delivery Fee (₹)" },
+    { key: "total_amount", label: "Total Amount (₹)" },
+    { key: "payment_method", label: "Payment Method" },
+    { key: "payment_status", label: "Payment Status" },
+    { key: "status", label: "Order Status" },
+    {
+      key: "created_at",
+      label: "Order Date",
+      getValue: (o) => (o.created_at ? new Date(o.created_at).toLocaleString() : ""),
+    },
+  ];
+
+  const handleSelectAll = (checked, pageIds) => {
+    setSelectedIds((prev) =>
+      checked
+        ? [...new Set([...prev, ...pageIds])]
+        : prev.filter((id) => !pageIds.includes(id))
+    );
+  };
+
+  const handleSelectRow = (id, checked) => {
+    setSelectedIds((prev) =>
+      checked ? [...prev, id] : prev.filter((i) => i !== id)
+    );
+  };
+
+  const handleBulkStatusApply = () => {
+    if (selectedIds.length === 0) return;
+
+    if (["Preparing", "Out for Delivery", "Delivered"].includes(bulkStatusTarget)) {
+      const unpaidSelected = rows.filter(
+        (r) =>
+          selectedIds.includes(r.id) &&
+          r.payment_method === "Online Payment" &&
+          r.payment_status !== "Paid"
+      );
+      if (unpaidSelected.length === selectedIds.length) {
+        toast.error(
+          "All selected orders are unpaid online orders! Online payment must be completed before orders can be prepared or delivered."
+        );
+        return;
+      }
+    }
+
+    setBulkConfirmOpen(true);
+  };
+
+  const confirmBulkStatusChange = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await bulkUpdateStatus({
+        ids: selectedIds,
+        status: bulkStatusTarget,
+        cancelReason: bulkStatusTarget === "Cancelled" ? bulkCancelReason : undefined,
+      }).unwrap();
+
+      if (res.skippedUnpaidOnline?.length > 0) {
+        toast(
+          `Updated ${res.updatedCount} order(s). ${res.skippedUnpaidOnline.length} unpaid online order(s) were protected and skipped.`,
+          { icon: "⚠️", duration: 6000 }
+        );
+      } else {
+        toast.success(res.message || `Updated ${res.updatedCount} order(s)`);
+      }
+
+      setSelectedIds([]);
+      setBulkConfirmOpen(false);
+      refetch();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to update order statuses");
+    }
+  };
+
+  const handleExportSelected = () => {
+    if (selectedIds.length === 0) return;
+    const selectedRows = rows.filter((r) => selectedIds.includes(r.id));
+    exportToCsv({
+      filename: `orders-selected-${new Date().toISOString().slice(0, 10)}`,
+      columns: orderExportColumns,
+      data: selectedRows,
+    });
+    toast.success(`Exported ${selectedRows.length} selected order(s) to CSV`);
+  };
+
+  const handleExportAll = async () => {
+    try {
+      setIsExportingAll(true);
+      const queryParams = new URLSearchParams({
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+      });
+
+      const response = await fetch(`/api/v1/orders/export?${queryParams.toString()}`, {
+        credentials: "include",
+        headers: {
+          Authorization: accessToken ? `Bearer ${accessToken}` : "",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to export orders");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Orders exported successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export orders CSV");
+    } finally {
+      setIsExportingAll(false);
+    }
+  };
+
   return (
     <>
       <div className="section-head">
@@ -274,6 +438,15 @@ export default function OrderList() {
           <p>Track and manage customer orders, payments, pricing breakdowns, and kitchen fulfillment.</p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          <Button
+            variant="outline"
+            onClick={handleExportAll}
+            disabled={isExportingAll}
+            loading={isExportingAll}
+            title="Export orders matching current filters as CSV"
+          >
+            <Download size={16} /> Export Orders (CSV)
+          </Button>
           <SearchInput
             value={search}
             onChange={(e) => {
@@ -361,7 +534,53 @@ export default function OrderList() {
         </p>
       )}
 
+      <BulkActionBar
+        selectedCount={selectedIds.length}
+        onClearSelection={() => setSelectedIds([])}
+      >
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <select
+            value={bulkStatusTarget}
+            onChange={(e) => setBulkStatusTarget(e.target.value)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              border: "1px solid var(--color-border, #d1d5db)",
+              fontSize: "13px",
+              background: "#fff",
+              color: "#374151",
+              fontWeight: 500,
+            }}
+          >
+            <option value="">-- Choose Status --</option>
+            <option value="Preparing">Mark as Preparing</option>
+            <option value="Out for Delivery">Mark as Out for Delivery</option>
+            <option value="Delivered">Mark as Delivered</option>
+            <option value="Cancelled">Mark as Cancelled</option>
+          </select>
+          {/* <Button
+            size="sm"
+            disabled={!bulkStatusTarget || isBulkUpdating}
+            loading={isBulkUpdating}
+            onClick={() => setBulkConfirmOpen(true)}
+          >
+            Apply Status
+          </Button> */}
+          {/* <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExportSelected}
+          >
+            <Download size={14} /> Export Selected ({selectedIds.length})
+          </Button> */}
+        </div>
+      </BulkActionBar>
+
       <DataTable
+        selectable={true}
+        selectedIds={selectedIds}
+        onSelectAll={handleSelectAll}
+        onSelectRow={handleSelectRow}
         loading={isLoading}
         data={rows}
         emptyMessage="No orders found."
@@ -467,47 +686,7 @@ export default function OrderList() {
                       <span>
                         {it.quantity}x {it.product_name}
                       </span>
-                      {it.availability_type === "MADE_TO_ORDER" && (
-                        it.production_status === "PRODUCED" ? (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "3px",
-                              background: "#dcfce7",
-                              color: "#166534",
-                              fontSize: "10px",
-                              fontWeight: 700,
-                              padding: "1px 6px",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            <Check size={11} /> Produced
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={isMarking}
-                            onClick={() => handleItemProduced(it.id)}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "3px",
-                              background: "#ffedd5",
-                              color: "#c2410c",
-                              border: "1px solid #fdba74",
-                              fontSize: "10px",
-                              fontWeight: 700,
-                              padding: "1px 6px",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                            }}
-                            title="Click to mark this made-to-order item as produced"
-                          >
-                            <Zap size={11} /> Mark Produced
-                          </button>
-                        )
-                      )}
+                    
                     </div>
                   ))}
                 </div>
@@ -661,105 +840,147 @@ export default function OrderList() {
           {
             key: "status",
             label: "ORDER STATUS",
-            render: (value, item) => (
-              <Select
-                value={value}
-                disabled={isUpdating}
-                onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                style={{
-                  fontSize: "12px",
-                  padding: "4px 8px",
-                  borderRadius: "8px",
-                  fontWeight: 700,
-                  width: "140px",
-                  backgroundColor:
-                    value === "Pending" || value === "Order Placed" || value === "Pending Payment"
-                      ? "#fef3c7"
-                      : value === "Preparing"
-                        ? "#dbeafe"
-                        : value === "Out for Delivery"
-                          ? "#ffedd5"
-                          : value === "Delivered"
-                            ? "#dcfce7"
-                            : value === "Cancelled"
-                              ? "#fee2e2"
-                              : "#ffffff",
-                  color:
-                    value === "Pending" || value === "Order Placed" || value === "Pending Payment"
-                      ? "#b45309"
-                      : value === "Preparing"
-                        ? "#1e40af"
-                        : value === "Out for Delivery"
-                          ? "#c2410c"
-                          : value === "Delivered"
-                            ? "#15803d"
-                            : value === "Cancelled"
-                              ? "#b91c1c"
-                              : "#374151",
-                }}
-              >
-                <option value="Pending">Pending</option>
-                <option value="Preparing">Preparing</option>
-                <option value="Out for Delivery">Out for Delivery</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Cancelled">Cancelled</option>
-              </Select>
-            ),
+            render: (value, item) => {
+              const isUnpaidOnline =
+                item.payment_method === "Online Payment" && item.payment_status !== "Paid";
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <Select
+                    value={value}
+                    disabled={isUpdating || (isUnpaidOnline && value === "Pending Payment")}
+                    onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                    style={{
+                      fontSize: "12px",
+                      padding: "4px 8px",
+                      borderRadius: "8px",
+                      fontWeight: 700,
+                      width: "140px",
+                      backgroundColor:
+                        value === "Pending" || value === "Order Placed" || value === "Pending Payment"
+                          ? "#fef3c7"
+                          : value === "Preparing"
+                            ? "#dbeafe"
+                            : value === "Out for Delivery"
+                              ? "#ffedd5"
+                              : value === "Delivered"
+                                ? "#dcfce7"
+                                : value === "Cancelled"
+                                  ? "#fee2e2"
+                                  : "#ffffff",
+                      color:
+                        value === "Pending" || value === "Order Placed" || value === "Pending Payment"
+                          ? "#b45309"
+                          : value === "Preparing"
+                            ? "#1e40af"
+                            : value === "Out for Delivery"
+                              ? "#c2410c"
+                              : value === "Delivered"
+                                ? "#15803d"
+                                : value === "Cancelled"
+                                  ? "#b91c1c"
+                                  : "#374151",
+                    }}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Preparing" disabled={isUnpaidOnline}>
+                      Preparing {isUnpaidOnline ? "(Requires Payment)" : ""}
+                    </option>
+                    <option value="Out for Delivery" disabled={isUnpaidOnline}>
+                      Out for Delivery {isUnpaidOnline ? "(Requires Payment)" : ""}
+                    </option>
+                    <option value="Delivered" disabled={isUnpaidOnline}>
+                      Delivered {isUnpaidOnline ? "(Requires Payment)" : ""}
+                    </option>
+                    <option value="Cancelled">Cancelled</option>
+                  </Select>
+                  {isUnpaidOnline && (
+                    <span style={{ fontSize: "10px", color: "#b45309", fontWeight: 600 }}>
+                      Payment Pending
+                    </span>
+                  )}
+                </div>
+              );
+            },
           },
           {
             key: "actions",
             label: "VERIFICATION & CHAT",
-            render: (_val, item) => (
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {(item.status === "Pending" || item.status === "Order Placed" || item.status === "Pending Payment") && (
-                  <div style={{ display: "flex", gap: "4px" }}>
-                    <button
-                      type="button"
-                      disabled={isAccepting}
-                      onClick={() => setAcceptModalOrder(item)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        padding: "4px 8px",
-                        borderRadius: "6px",
-                        border: "1px solid #86efac",
-                        backgroundColor: "#dcfce7",
-                        color: "#166534",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                      title="Accept order and start food preparation"
-                    >
-                      <ThumbsUp size={11} /> Accept
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isRejecting}
-                      onClick={() => setRejectModalOrder(item)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        padding: "4px 8px",
-                        borderRadius: "6px",
-                        border: "1px solid #fca5a5",
-                        backgroundColor: "#fee2e2",
-                        color: "#991b1b",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                      title="Reject order and restore stock"
-                    >
-                      <ThumbsDown size={11} /> Reject
-                    </button>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setActiveChatOrder(item)}
+            render: (_val, item) => {
+              const isUnpaidOnline =
+                item.payment_method === "Online Payment" && item.payment_status !== "Paid";
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {(item.status === "Pending" || item.status === "Order Placed" || item.status === "Pending Payment") && (
+                    <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                      {isUnpaidOnline ? (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "3px",
+                            padding: "4px 7px",
+                            borderRadius: "6px",
+                            border: "1px solid #fde68a",
+                            backgroundColor: "#fef3c7",
+                            color: "#92400e",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                          }}
+                          title="Customer selected Online Payment but payment is not complete. Cannot accept or prepare."
+                        >
+                          ⚠️ Awaiting Payment
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isAccepting}
+                          onClick={() => setAcceptModalOrder(item)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            border: "1px solid #86efac",
+                            backgroundColor: "#dcfce7",
+                            color: "#166534",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                          title="Accept order and start food preparation"
+                        >
+                          <ThumbsUp size={11} /> Accept
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={isRejecting}
+                        onClick={() => setRejectModalOrder(item)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          border: "1px solid #fca5a5",
+                          backgroundColor: "#fee2e2",
+                          color: "#991b1b",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                        title={isUnpaidOnline ? "Cancel unpaid order" : "Reject order and restore stock"}
+                      >
+                        <ThumbsDown size={11} /> {isUnpaidOnline ? "Cancel" : "Reject"}
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setActiveChatOrder(item)}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -779,8 +1000,9 @@ export default function OrderList() {
                   <MessageCircle size={11} /> Chat
                 </button>
               </div>
-            ),
+            );
           },
+        },
           { key: "createdAtFormatted", label: "TIME" },
           // {
           //   key: "actions",
@@ -1079,7 +1301,55 @@ export default function OrderList() {
           onClose={() => setActiveChatOrder(null)}
         />
       )}
+
+      {/* BULK STATUS CONFIRMATION DIALOG */}
+      {bulkConfirmOpen && (
+      <ConfirmDialog
+        isOpen={bulkConfirmOpen}
+        title={`Update Status of ${selectedIds.length} Order(s)`}
+        message={
+          <div>
+            <p>
+              Are you sure you want to change the status of <strong>{selectedIds.length}</strong> selected order(s) to <strong>"{bulkStatusTarget}"</strong>?
+            </p>
+            {bulkStatusTarget === "Cancelled" && (
+              <div style={{ marginTop: "12px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>
+                  Cancellation Reason (Optional):
+                </label>
+                <textarea
+                  value={bulkCancelReason}
+                  onChange={(e) => setBulkCancelReason(e.target.value)}
+                  placeholder="e.g. Batch cancelled due to kitchen closure or inventory unavailability"
+                  rows={3}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "13px",
+                  }}
+                />
+              </div>
+            )}
+            {["Preparing", "Out for Delivery", "Delivered"].includes(bulkStatusTarget) && (
+              <p style={{ marginTop: "8px", fontSize: "12px", color: "#b45309" }}>
+                ⚠️ Notice: Unpaid online-payment orders cannot be advanced to fulfillment states and will be automatically skipped to protect order integrity.
+              </p>
+            )}
+          </div>
+        }
+        confirmLabel={isBulkUpdating ? "Updating..." : "Confirm Update"}
+        onConfirm={confirmBulkStatusChange}
+        onCancel={() => {
+          setBulkConfirmOpen(false);
+          setBulkCancelReason("");
+        }}
+        isDestructive={bulkStatusTarget === "Cancelled"}
+      />
+      )}
     </>
   );
 }
+
 

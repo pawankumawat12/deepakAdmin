@@ -1,4 +1,7 @@
-import { X, Banknote, MapPin, User, ShoppingBag, Receipt, Truck, Tag, FileText } from "lucide-react";
+import { useState } from "react";
+import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
+import { X, Banknote, MapPin, User, ShoppingBag, Receipt, Truck, Tag, FileText, AlertTriangle, Download, LoaderCircle } from "lucide-react";
 import Button from "../components/ui/Button";
 
 const OrderDetailsModal = ({
@@ -7,6 +10,42 @@ const OrderDetailsModal = ({
   onPaymentStatusChange,
   isUpdatingPayment,
 }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const accessToken = useSelector((state) => state.auth?.accessToken);
+
+  const handleDownloadInvoice = async () => {
+    if (!order?.id) return;
+    try {
+      setIsDownloading(true);
+      const res = await fetch(`/api/v1/orders/${order.id}/invoice`, {
+        credentials: "include",
+        headers: {
+          Authorization: accessToken ? `Bearer ${accessToken}` : "",
+        },
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.message || "Failed to download invoice");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${order.order_number || order.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Invoice downloaded successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to download invoice");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (!order) return null;
 
   const p = order.parsedPricing || {};
@@ -152,6 +191,41 @@ const OrderDetailsModal = ({
           </div>
 
           <div className="modal-body px-4">
+
+            {/* Online Payment Pending Warning */}
+            {order.payment_method === "Online Payment" && order.payment_status !== "Paid" && (
+              <div
+                className="mb-4 p-3 rounded-3 border"
+                style={{
+                  backgroundColor: "#fffbeb",
+                  borderColor: "#fde68a",
+                }}
+              >
+                <div
+                  className="d-flex align-items-center gap-2 mb-1"
+                  style={{
+                    color: "#92400e",
+                    fontWeight: 800,
+                    fontSize: "12px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  <AlertTriangle size={16} />
+                  <span>Online Payment Pending</span>
+                </div>
+                <div
+                  style={{
+                    color: "#78350f",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    lineHeight: "1.5",
+                  }}
+                >
+                  This customer selected Online Payment, but payment has not been received or confirmed yet. Stock has NOT been deducted, and this order must NOT be prepared or dispatched until payment is verified.
+                </div>
+              </div>
+            )}
 
             {/* ================= ORDER OVERVIEW ================= */}
             <OrderSection
@@ -651,7 +725,17 @@ const OrderDetailsModal = ({
 
 
           {/* ================= FOOTER ================= */}
-          <div className="modal-footer">
+          <div className="modal-footer d-flex justify-content-between">
+            <button
+              type="button"
+              onClick={handleDownloadInvoice}
+              disabled={isDownloading}
+              className="btn btn-outline-primary d-inline-flex align-items-center gap-2"
+              style={{ fontSize: "0.85rem", fontWeight: 600 }}
+            >
+              {isDownloading ? <LoaderCircle size={15} className="animate-spin" /> : <Download size={15} />}
+              {isDownloading ? "Generating Invoice..." : "Download Invoice"}
+            </button>
             <Button
               variant="outline"
               onClick={onClose}

@@ -4,6 +4,8 @@ import {
   useEditCustomerMutation,
   useDeleteCustomerMutation,
   useToggleCustomerStatusMutation,
+  useBulkUpdateCustomerStatusMutation,
+  useBulkDeleteCustomersMutation,
   useGetBlockedSupportRequestsQuery,
   useResolveBlockedSupportRequestMutation,
 } from "../../services/authApi";
@@ -20,12 +22,16 @@ import {
   Search,
   Check,
   X,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAdminSocket } from "../../services/socket";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import Pagination from "../../components/ui/Pagination";
 import DataTable from "../../components/common/DataTable";
+import BulkActionBar from "../../components/common/BulkActionBar";
+import Button from "../../components/ui/Button";
+import { exportToCsv } from "../../utils/csvExport";
 
 export default function CustomerList() {
   const [activeTab, setActiveTab] = useState("customers"); // "customers" | "requests"
@@ -63,6 +69,16 @@ export default function CustomerList() {
     useToggleCustomerStatusMutation();
   const [resolveBlockedRequest, { isLoading: isResolving }] =
     useResolveBlockedSupportRequestMutation();
+  const [bulkUpdateStatus, { isLoading: isBulkUpdating }] =
+    useBulkUpdateCustomerStatusMutation();
+  const [bulkDeleteCustomers, { isLoading: isBulkDeleting }] =
+    useBulkDeleteCustomersMutation();
+
+  // Selection & Bulk State
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkBlockModalOpen, setBulkBlockModalOpen] = useState(false);
+  const [bulkBlockReason, setBulkBlockReason] = useState("");
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -208,6 +224,106 @@ export default function CustomerList() {
     } catch (err) {
       toast.error(err?.data?.message || "Failed to resolve request.");
     }
+  };
+
+  const customerExportColumns = [
+    { key: "id", label: "Customer ID" },
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "phone", label: "Phone" },
+    { key: "orders_count", label: "Orders Count" },
+    { key: "total_spent", label: "Total Spent (₹)" },
+    {
+      key: "is_blocked",
+      label: "Account Status",
+      getValue: (c) => (c.is_blocked ? `Blocked (${c.block_reason || "Admin"})` : "Active"),
+    },
+    {
+      key: "created_at",
+      label: "Joined At",
+      getValue: (c) => (c.created_at ? new Date(c.created_at).toLocaleString() : ""),
+    },
+  ];
+
+  const handleSelectAll = (checked, pageIds) => {
+    setSelectedIds((prev) =>
+      checked
+        ? [...new Set([...prev, ...pageIds])]
+        : prev.filter((id) => !pageIds.includes(id))
+    );
+  };
+
+  const handleSelectRow = (id, checked) => {
+    setSelectedIds((prev) =>
+      checked ? [...prev, id] : prev.filter((i) => i !== id)
+    );
+  };
+
+  const handleBulkUnblock = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await bulkUpdateStatus({
+        ids: selectedIds,
+        isBlocked: false,
+      }).unwrap();
+      toast.success(res.message || `Unblocked ${selectedIds.length} customer(s)`);
+      setSelectedIds([]);
+      refetchCustomers();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to unblock customers");
+    }
+  };
+
+  const handleBulkBlockSubmit = async (e) => {
+    e?.preventDefault();
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await bulkUpdateStatus({
+        ids: selectedIds,
+        isBlocked: true,
+        blockReason: bulkBlockReason.trim() || "Account blocked by administrator.",
+      }).unwrap();
+      toast.success(res.message || `Blocked ${selectedIds.length} customer(s)`);
+      setSelectedIds([]);
+      setBulkBlockModalOpen(false);
+      setBulkBlockReason("");
+      refetchCustomers();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to block customers");
+    }
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await bulkDeleteCustomers({ ids: selectedIds }).unwrap();
+      toast.success(res.message || `Deleted ${selectedIds.length} customer(s)`);
+      setSelectedIds([]);
+      setBulkDeleteConfirmOpen(false);
+      refetchCustomers();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete customers");
+    }
+  };
+
+  const handleExportSelected = () => {
+    if (selectedIds.length === 0) return;
+    const selectedRows = rawCustomers.filter((c) => selectedIds.includes(c.id));
+    exportToCsv({
+      filename: `customers-selected-${new Date().toISOString().slice(0, 10)}`,
+      columns: customerExportColumns,
+      data: selectedRows,
+    });
+    toast.success(`Exported ${selectedRows.length} selected customer(s) to CSV`);
+  };
+
+  const handleExportAll = () => {
+    exportToCsv({
+      filename: `customers-export-${new Date().toISOString().slice(0, 10)}`,
+      columns: customerExportColumns,
+      data: rawCustomers,
+    });
+    toast.success(`Exported ${rawCustomers.length} customer(s) to CSV`);
   };
 
   const customerColumns = [
@@ -455,36 +571,54 @@ export default function CustomerList() {
       {/* TAB 1: CUSTOMERS DIRECTORY */}
       {activeTab === "customers" && (
         <div style={{ marginTop: "16px" }}>
-          {/* Search Bar */}
+          {/* Toolbar: Search and Export */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: "12px",
-              padding: "8px 14px",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "12px",
               marginBottom: "16px",
-              maxWidth: "400px",
             }}
           >
-            <Search size={18} color="#9ca3af" />
-            <input
-              type="text"
-              placeholder="Search by name, email, or phone..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1);
-              }}
+            <div
               style={{
-                border: "none",
-                outline: "none",
-                fontSize: "14px",
-                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "12px",
+                padding: "8px 14px",
+                maxWidth: "400px",
+                flex: 1,
               }}
-            />
+            >
+              <Search size={18} color="#9ca3af" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  fontSize: "14px",
+                  width: "100%",
+                }}
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleExportAll}
+              title="Export all visible customers as CSV"
+            >
+              <Download size={16} /> Export Customers (CSV)
+            </Button>
           </div>
 
           {errorCustomers ? (
@@ -499,8 +633,54 @@ export default function CustomerList() {
             </div>
           ) : (
             <div className="d-flex flex-column gap-3">
+              {selectedIds.length > 0 && (
+                <BulkActionBar
+                  selectedCount={selectedIds.length}
+                  onClearSelection={() => setSelectedIds([])}
+                  itemLabel="customers"
+                >
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setBulkBlockReason("");
+                      setBulkBlockModalOpen(true);
+                    }}
+                    disabled={isBulkUpdating}
+                    style={{ fontSize: "13px", padding: "5px 10px" }}
+                  >
+                    <Ban size={14} color="#dc2626" /> Block Selected
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleBulkUnblock}
+                    disabled={isBulkUpdating}
+                    style={{ fontSize: "13px", padding: "5px 10px" }}
+                  >
+                    <CheckCircle size={14} color="#16a34a" /> Unblock Selected
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportSelected}
+                    style={{ fontSize: "13px", padding: "5px 10px" }}
+                  >
+                    <Download size={14} /> Export Selected
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => setBulkDeleteConfirmOpen(true)}
+                    disabled={isBulkDeleting}
+                    style={{ fontSize: "13px", padding: "5px 10px" }}
+                  >
+                    <Trash2 size={14} /> Delete Selected
+                  </Button>
+                </BulkActionBar>
+              )}
               <DataTable
                 loading={loadingCustomers}
+                selectable={true}
+                selectedIds={selectedIds}
+                onSelectAll={handleSelectAll}
+                onSelectRow={handleSelectRow}
                 data={rawCustomers}
                 columns={customerColumns}
                 renderActions={renderCustomerActions}
@@ -1092,6 +1272,233 @@ export default function CustomerList() {
                 }}
               >
                 {isDeleting ? "Deleting..." : "Delete Permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK BLOCK MODAL */}
+      {bulkBlockModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "24px",
+              maxWidth: "460px",
+              width: "100%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  background: "#fee2e2",
+                  color: "#dc2626",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ban size={22} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700 }}>
+                  Block {selectedIds.length} Customer(s)
+                </h3>
+                <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#6b7280" }}>
+                  Blocked customers will be prevented from placing orders or logging in.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleBulkBlockSubmit}>
+              <div style={{ marginBottom: "16px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#374151",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Block Reason (Visible to customers)
+                </label>
+                <textarea
+                  rows={3}
+                  value={bulkBlockReason}
+                  onChange={(e) => setBulkBlockReason(e.target.value)}
+                  placeholder="e.g. Account suspended due to terms violation."
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "13.5px",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkBlockModalOpen(false);
+                    setBulkBlockReason("");
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid #e5e7eb",
+                    background: "#fff",
+                    color: "#374151",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isBulkUpdating}
+                  style={{
+                    padding: "8px 18px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#dc2626",
+                    color: "#fff",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {isBulkUpdating ? "Blocking..." : `Confirm Block (${selectedIds.length})`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BULK DELETE CONFIRM MODAL */}
+      {bulkDeleteConfirmOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "24px",
+              maxWidth: "440px",
+              width: "100%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "12px",
+              }}
+            >
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  background: "#fee2e2",
+                  color: "#dc2626",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Trash2 size={22} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700 }}>
+                Delete {selectedIds.length} Customers?
+              </h3>
+            </div>
+            <p style={{ fontSize: "14px", color: "#4b5563", margin: "0 0 20px 0" }}>
+              Are you sure you want to permanently delete {selectedIds.length} selected customer account(s)? This action cannot be undone.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setBulkDeleteConfirmOpen(false)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #e5e7eb",
+                  background: "#fff",
+                  color: "#374151",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isBulkDeleting}
+                onClick={confirmBulkDelete}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#dc2626",
+                  color: "#fff",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {isBulkDeleting ? "Deleting..." : `Delete Permanently (${selectedIds.length})`}
               </button>
             </div>
           </div>
