@@ -62,13 +62,26 @@ export default function Login() {
     try {
       setApiError("");
       const res = await adminLogin({ email: data.email, password: data.password }).unwrap();
+
+      // Direct login completed without OTP (when IS_EMAIL_VERIFY=false)
+      if (res?.accessToken || res?.token || (res?.user && !res?.requiresOtp)) {
+        const token = res?.accessToken || res?.token || res?.user?.token;
+        if (res?.user) {
+          dispatch(setUser({ ...res.user, accessToken: token }));
+        }
+        toast.success(res?.message || "Welcome back! Logged in successfully.");
+        navigate("/", { replace: true });
+        return;
+      }
+
+      // Otherwise OTP is required (when IS_EMAIL_VERIFY=true)
       setPendingEmail(data.email);
       setOtpSent(true);
       setResendTimer(RESEND_COOLDOWN_SECONDS);
-      toast.success("Credentials verified! Verification OTP sent to your email.");
+      toast.success(res?.message || "Credentials verified! Verification OTP sent to your email.");
     } catch (error) {
       const errorMsg =
-        error?.data?.message || "Unable to send OTP. Please try again.";
+        error?.data?.message || "Unable to sign in. Please try again.";
       setApiError(errorMsg);
       toast.error(errorMsg);
     }
@@ -200,7 +213,7 @@ export default function Login() {
 
             <Button type="submit" disabled={sendingOtp}>
               <LockKeyhole size={18} />
-              {sendingOtp ? "Sending..." : "Send OTP"}
+              {sendingOtp ? "Signing in..." : "Sign In"}
             </Button>
             <Link
               to="/forgot-password"
