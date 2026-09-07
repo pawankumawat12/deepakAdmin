@@ -62,11 +62,11 @@ export default function EmailTemplateList() {
             { key: "isActive", label: "STATUS", render: (value) => <em className={value ? "active" : "inactive"}>{value ? "Active" : "Inactive"}</em> },
           ]}
           renderActions={(template) => (
-            <>
-              <Button variant="plain" aria-label={`View ${template.name}`} onClick={() => navigate(`/email-templates/${template.id}`)}><Eye size={16} /></Button>
-              <Button variant="plain" aria-label={`Edit ${template.name}`} onClick={() => navigate(`/email-templates/${template.id}/edit`)}><Pencil size={16} /></Button>
-              <Button variant="plain" aria-label={`Delete ${template.name}`} onClick={() => setTemplateToDelete(template)}><Trash2 size={16} /></Button>
-            </>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <Button variant="view" title={`View ${template.name}`} aria-label={`View ${template.name}`} onClick={() => navigate(`/email-templates/${template.id}`)}><Eye size={15} /></Button>
+              <Button variant="edit" title={`Edit ${template.name}`} aria-label={`Edit ${template.name}`} onClick={() => navigate(`/email-templates/${template.id}/edit`)}><Pencil size={15} /></Button>
+              <Button variant="delete" title={`Delete ${template.name}`} aria-label={`Delete ${template.name}`} onClick={() => setTemplateToDelete(template)}><Trash2 size={15} /></Button>
+            </div>
           )}
         />
         <Pagination page={pagination?.page || page} totalPages={pagination?.totalPages || 1} total={pagination?.total || 0} limit={10} onPageChange={setPage} itemLabel="templates" />

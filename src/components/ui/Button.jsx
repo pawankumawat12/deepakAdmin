@@ -8,6 +8,10 @@ const variantClass = {
   text: "text-btn",
   icon: "icon-btn",
   plain: "dots",
+  action: "action-btn",
+  edit: "action-btn action-btn-edit",
+  delete: "action-btn action-btn-delete",
+  view: "action-btn action-btn-view",
 };
 
 const Button = forwardRef(function Button(

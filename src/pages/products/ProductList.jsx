@@ -408,22 +408,24 @@ export default function ProductList() {
           data={rows}
           emptyMessage="No products found."
           renderActions={(product) => (
-            <>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
               <Button
-                variant="plain"
+                variant="edit"
+                title={`Edit ${product.name}`}
                 aria-label={`Edit ${product.name}`}
                 onClick={() => navigate(`/products/${product.id}/edit`)}
               >
-                <Pencil size={16} />
+                <Pencil size={15} />
               </Button>
               <Button
-                variant="plain"
+                variant="delete"
+                title={`Delete ${product.name}`}
                 aria-label={`Delete ${product.name}`}
                 onClick={() => setProductToDelete(product)}
               >
-                <Trash2 size={16} />
+                <Trash2 size={15} />
               </Button>
-            </>
+            </div>
           )}
         />
         <Pagination

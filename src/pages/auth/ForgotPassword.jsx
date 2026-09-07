@@ -33,7 +33,7 @@ export default function ForgotPassword() {
   return (
     <main className="login-page">
       <section className="login-card">
-        <p className="eyebrow">SFC CAFE</p>
+        <p className="eyebrow">SFC BAKERS</p>
         <h1>Forgot password?</h1>
         <p className="muted">Enter your email and we’ll send a reset link.</p>
         <form className="login-form" onSubmit={handleSubmit(submit)}>

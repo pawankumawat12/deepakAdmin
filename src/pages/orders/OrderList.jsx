@@ -537,6 +537,7 @@ export default function OrderList() {
       <BulkActionBar
         selectedCount={selectedIds.length}
         onClearSelection={() => setSelectedIds([])}
+        itemLabel="orders"
       >
         <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
           <select
@@ -550,6 +551,7 @@ export default function OrderList() {
               background: "#fff",
               color: "#374151",
               fontWeight: 500,
+              cursor: "pointer",
             }}
           >
             <option value="">-- Choose Status --</option>
@@ -558,21 +560,21 @@ export default function OrderList() {
             <option value="Delivered">Mark as Delivered</option>
             <option value="Cancelled">Mark as Cancelled</option>
           </select>
-          {/* <Button
-            size="sm"
+          <Button
             disabled={!bulkStatusTarget || isBulkUpdating}
             loading={isBulkUpdating}
-            onClick={() => setBulkConfirmOpen(true)}
+            onClick={handleBulkStatusApply}
+            style={{ fontSize: "13px", padding: "6px 12px" }}
           >
             Apply Status
-          </Button> */}
-          {/* <Button
-            size="sm"
+          </Button>
+          <Button
             variant="outline"
             onClick={handleExportSelected}
+            style={{ fontSize: "13px", padding: "6px 12px" }}
           >
             <Download size={14} /> Export Selected ({selectedIds.length})
-          </Button> */}
+          </Button>
         </div>
       </BulkActionBar>
 
@@ -1018,6 +1020,16 @@ export default function OrderList() {
           //   ),
           // }
         ]}
+        renderActions={(item) => (
+          <Button
+            variant="view"
+            title="View Order Details"
+            aria-label="View Order Details"
+            onClick={() => setSelectedOrderDetails(item)}
+          >
+            <Eye size={15} />
+          </Button>
+        )}
       />
 
       <Pagination

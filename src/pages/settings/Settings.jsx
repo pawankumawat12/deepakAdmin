@@ -384,7 +384,7 @@ export default function Settings() {
     user: "",
     password: "",
     from_email: "",
-    from_name: "SFC Cafe",
+    from_name: "SFC Bakers",
     is_enabled: true,
   });
 
@@ -403,7 +403,7 @@ export default function Settings() {
         user: smtpResponse.data.user || "",
         password: smtpResponse.data.password || "",
         from_email: smtpResponse.data.from_email || "",
-        from_name: smtpResponse.data.from_name || "SFC Cafe",
+        from_name: smtpResponse.data.from_name || "SFC Bakers",
         is_enabled: smtpResponse.data.is_enabled !== false,
       });
       if (!testEmailRecipient && smtpResponse.data.user) {
@@ -501,7 +501,7 @@ export default function Settings() {
       key: "email",
       label: "Email",
       icon: Mail,
-      placeholder: "hello@sfccafe.com",
+      placeholder: "hello@sfcbakers.com",
     },
     {
       key: "location",
@@ -1100,7 +1100,7 @@ export default function Settings() {
               type="email"
               value={smtpForm.from_email}
               onChange={handleSmtpChange("from_email")}
-              placeholder="e.g. noreply@sfccafe.com"
+              placeholder="e.g. noreply@sfcbakers.com"
               style={inputStyle}
             />
           </div>
@@ -1123,7 +1123,7 @@ export default function Settings() {
               type="text"
               value={smtpForm.from_name}
               onChange={handleSmtpChange("from_name")}
-              placeholder="e.g. SFC Cafe"
+              placeholder="e.g. SFC Bakers"
               style={inputStyle}
             />
           </div>

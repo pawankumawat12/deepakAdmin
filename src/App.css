@@ -4,6 +4,7 @@
   --line: #ececf3;
   --purple: #6253e8;
   --purple-soft: #f0efff;
+  --topbar-height: 84px;
 }
 
 .app-shell {
@@ -307,18 +308,22 @@
 .close-nav,
 .mobile-menu {
   display: none;
+  display: none !important;
 }
 
 .main-area {
   width: calc(100% - 254px);
   margin-left: 254px;
+  min-height: 100vh;
 }
 
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 254px;
+  right: 0;
   z-index: 900;
-  height: 84px;
+  height: var(--topbar-height);
   padding: 0 38px;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(10px);
@@ -413,18 +418,81 @@
   border: 1px solid white;
 }
 
+.notif-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.notif-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.notif-btn.active {
+  background: #f4f8ec;
+  color: #4f7d16;
+  border-color: #c9e29d;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 .profile {
   display: flex;
   align-items: center;
   gap: 9px;
   background: white;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 10px;
+  cursor: pointer;
   text-align: left;
+  transition: background 0.15s ease;
+  height: auto;
+  width: auto;
+  min-width: 0;
+}
+
+.profile:hover {
+  background: #f4f5f7;
 }
 
 .profile>span,
 .order-avatar {
   width: 35px;
   height: 35px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -432,6 +500,7 @@
   color: #7f4430;
   font-size: 11px;
   font-weight: bold;
+  flex-shrink: 0;
 }
 
 .profile strong,
@@ -440,10 +509,26 @@
   font-size: 12px;
 }
 
+.profile strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
 .profile small {
   color: var(--muted);
   font-size: 10px;
   margin-top: 2px;
+  color: #6b7280;
+  font-size: 11px;
+  margin-top: 1px;
+  line-height: 1.2;
+}
+
+.profile svg {
+  color: #9ca3af;
+  flex-shrink: 0;
 }
 
 .profile-wrap {
@@ -453,27 +538,44 @@
 .profile-menu {
   position: absolute;
   right: 0;
-  top: 45px;
-  width: 175px;
+  top: 48px;
+  width: 180px;
   background: #fff;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 9px;
-  box-shadow: 0 10px 28px #3332;
-  z-index: 4;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.profile-menu button {
-  background: white;
+.profile-menu button,
+.profile-menu div {
+  background: transparent;
   width: 100%;
   display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 10px;
-  font-size: 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #374151;
   text-align: left;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.profile-menu button:hover,
+.profile-menu div:hover {
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .content {
+  margin-top: var(--topbar-height);
   padding: 31px 38px 50px;
   max-width: 1500px;
 }
@@ -941,9 +1043,83 @@ td>b {
   font-size: 17px;
 }
 
+.dots,
 .dots {
   background: none;
+  border: none;
   color: #999;
+  cursor: pointer;
+  padding: 0;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.dots:hover,
+.action-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn-edit,
+.action-btn.edit {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+
+.action-btn-edit:hover,
+.action-btn.edit:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.action-btn-delete,
+.action-btn-danger,
+.action-btn.delete {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.action-btn-delete:hover,
+.action-btn-danger:hover,
+.action-btn.delete:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.action-btn-view,
+.action-btn.view {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #7c3aed;
+}
+
+.action-btn-view:hover,
+.action-btn.view:hover {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  color: #6d28d9;
 }
 
 .inactive {
@@ -1685,6 +1861,10 @@ td>b {
 /* ========================================================= */
 
 @media (max-width: 950px) {
+  :root {
+    --topbar-height: 68px;
+  }
+
   .app-shell {
     position: relative;
     width: 100%;
@@ -1757,11 +1937,13 @@ td>b {
   }
 
   .topbar {
-    padding: 0 16px;
-    height: 68px;
-    justify-content: space-between;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
+    padding: 0 16px;
+    height: var(--topbar-height);
+    justify-content: space-between;
     z-index: 900;
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(10px);
@@ -1809,13 +1991,17 @@ td>b {
 }
 
 @media (max-width: 768px) {
+  :root {
+    --topbar-height: 62px;
+  }
+
   .topbar .topbar-search,
   .top-actions .topbar-search {
     display: none !important;
   }
 
   .topbar {
-    height: 62px;
+    height: var(--topbar-height);
     padding: 0 12px;
   }
 
@@ -1910,12 +2096,16 @@ td>b {
 }
 
 @media (max-width: 560px) {
+  :root {
+    --topbar-height: 58px;
+  }
+
   .eyebrow {
     display: none;
   }
 
   .topbar {
-    height: 58px;
+    height: var(--topbar-height);
     padding: 0 10px;
   }
 
@@ -2137,3 +2327,5 @@ td>b {
     gap: 8px !important;
   }
 }
+
+

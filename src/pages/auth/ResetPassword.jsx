@@ -54,7 +54,7 @@ export default function ResetPassword() {
   return (
     <main className="login-page">
       <section className="login-card">
-        <p className="eyebrow">SFC CAFE</p>
+        <p className="eyebrow">SFC BAKERS</p>
         <h1>Reset password</h1>
         <p className="muted">Choose a new password for your account.</p>
         {tokenState === "checking" && (

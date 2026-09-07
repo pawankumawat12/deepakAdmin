@@ -558,7 +558,9 @@ export default function HeroSliderList() {
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
                           <Button
                             variant="plain"
+                            variant="edit"
                             onClick={() => handleOpenEdit(slider)}
+                            title="Edit Slider"
                             aria-label="Edit Slider"
                             style={{ padding: "6px", borderRadius: "6px" }}
                           >
@@ -567,11 +569,13 @@ export default function HeroSliderList() {
 
                           <Button
                             variant="plain"
+                            variant="delete"
                             onClick={() => setSliderToDelete(slider)}
+                            title="Delete Slider"
                             aria-label="Delete Slider"
                             style={{ padding: "6px", borderRadius: "6px", color: "#ef4444" }}
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={15} />
                           </Button>
                         </div>
                       </td>

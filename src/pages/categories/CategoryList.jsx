@@ -323,22 +323,24 @@ export default function CategoryList() {
           data={categories}
           emptyMessage="No categories found."
           renderActions={(category) => (
-            <>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
               <Button
-                variant="plain"
+                variant="edit"
+                title={`Edit ${category.name}`}
                 aria-label={`Edit ${category.name}`}
                 onClick={() => navigate(`/categories/${category.id}/edit`)}
               >
-                <Pencil size={16} />
+                <Pencil size={15} />
               </Button>
               <Button
-                variant="plain"
+                variant="delete"
+                title={`Delete ${category.name}`}
                 aria-label={`Delete ${category.name}`}
                 onClick={() => setCategoryToDelete(category)}
               >
-                <Trash2 size={16} />
+                <Trash2 size={15} />
               </Button>
-            </>
+            </div>
           )}
         />
         <Pagination

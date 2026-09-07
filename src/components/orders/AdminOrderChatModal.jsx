@@ -202,7 +202,7 @@ export default function AdminOrderChatModal({ order, onClose }) {
     socket.emit("typing_start", {
       orderId,
       senderRole: "admin",
-      senderName: "SFC Cafe",
+      senderName: "SFC Bakers",
     });
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);

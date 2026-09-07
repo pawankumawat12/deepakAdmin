@@ -136,6 +136,7 @@ export default function AdminLayout() {
   const [showSignOut, setShowSignOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const notifRef = useRef(null);
+  const profileRef = useRef(null);
 
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
@@ -267,16 +268,36 @@ export default function AdminLayout() {
     };
   }, [refetchNotifs, refetchUnreadCount, navigate]);
 
-  // Click outside to close notification panel
+  // Click outside to close notification panel & profile dropdown
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) {
         setNotificationsOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setNotificationsOpen(false);
+        setProfileOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
+
+  useEffect(() => {
+    setProfileOpen(false);
+    setNotificationsOpen(false);
+  }, [location.pathname]);
 
   const handleNotificationClick = async (notif) => {
     if (!notif.is_read) {
@@ -341,15 +362,16 @@ export default function AdminLayout() {
             <img
               src="/images/logo.png"
               style={{ width: "36px", height: "36px", objectFit: "contain" }}
-              alt="SFC Cafe"
+              alt="SFC Bakers"
             />
             <div className="sidebar-brand-text">
-              <span className="brand-title">SFC Cafe</span>
+              <span className="brand-title">SFC Bakers</span>
               <span className="brand-badge">ADMIN PANEL</span>
             </div>
           </div>
           <Button
             variant="plain"
+            type="button"
             className="close-nav"
             onClick={() => setOpen(false)}
             aria-label="Close navigation"
@@ -455,9 +477,15 @@ export default function AdminLayout() {
 
       <div className="main-area">
         <header className="topbar">
-          <Button variant="plain" className="mobile-menu" onClick={() => setOpen(true)}>
-            <Menu />
-          </Button>
+   
+          <button
+            type="button"
+            className="mobile-menu"
+            onClick={() => setOpen(true)}
+            aria-label="Open navigation"
+          >
+            <Menu size={20} />
+          </button>
           <div className="topbar-title-wrap">
             <p className="eyebrow">ADMINISTRATION</p>
             <h2>{title}</h2>
@@ -469,6 +497,8 @@ export default function AdminLayout() {
             <div style={{ position: "relative" }} ref={notifRef}>
               <Button
                 variant="plain"
+                type="button"
+                className={`notif-btn ${notificationsOpen ? "active" : ""}`}
                 onClick={() => {
                   setNotificationsOpen(!notificationsOpen);
                   setProfileOpen(false);
@@ -487,9 +517,11 @@ export default function AdminLayout() {
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
+                aria-label="Notifications"
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (
+                  <>
                   <span
                     style={{
                       position: "absolute",
@@ -510,8 +542,12 @@ export default function AdminLayout() {
                       boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
                     }}
                   >
+                  </span>
+                  
+                  <span className="notif-badge">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
+                  </>
                 )}
               </Button>
 
@@ -682,14 +718,16 @@ export default function AdminLayout() {
             </div>
 
             {/* Profile Menu */}
-            <div className="profile-wrap">
-              <Button
+            <div className="profile-wrap" ref={profileRef}>
+              <div
                 variant="plain"
+                type="button"
                 className="profile"
                 onClick={() => {
                   setProfileOpen(!profileOpen);
                   setNotificationsOpen(false);
                 }}
+                aria-expanded={profileOpen}
               >
                 {user?.image ? (
                   <img
@@ -707,25 +745,29 @@ export default function AdminLayout() {
                 ) : (
                   <span>{user?.name?.slice(0, 2).toUpperCase() || "AD"}</span>
                 )}
-                <div>
+                {/* <div>
                   <strong>{user?.name}</strong>
                   <small>{user?.role}</small>
-                </div>
+            
+                </div> */}
                 <ChevronDown size={16} />
-              </Button>
+              </div>
+
               {profileOpen && (
                 <div className="profile-menu">
-                  <Button
+                  <div
                     variant="plain"
+                    type="button"
                     onClick={() => {
                       setProfileOpen(false);
                       navigate("/profile");
                     }}
                   >
                     <UserRound size={16} /> My profile
-                  </Button>
-                  <Button
+                  </div>
+                  <div
                     variant="plain"
+                    type="button"
                     onClick={() => {
                       setSignOutError("");
                       setProfileOpen(false);
@@ -733,7 +775,7 @@ export default function AdminLayout() {
                     }}
                   >
                     <LogOut size={16} /> Sign out
-                  </Button>
+                  </div>
                 </div>
               )}
             </div>

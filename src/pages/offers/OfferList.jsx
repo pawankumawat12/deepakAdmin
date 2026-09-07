@@ -550,7 +550,9 @@ export default function OfferList() {
               color: "#374151",
               cursor: "pointer",
             }}
+            className="action-btn action-btn-edit"
             title="Edit Offer"
+            aria-label="Edit Offer"
           >
             <Edit2 size={14} />
           </button>
@@ -565,7 +567,9 @@ export default function OfferList() {
               color: "#dc2626",
               cursor: "pointer",
             }}
+            className="action-btn action-btn-delete"
             title="Delete Offer"
+            aria-label="Delete Offer"
           >
             <Trash2 size={14} />
           </button>

@@ -721,24 +721,30 @@ export default function EmailLogList() {
           <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
             <Button
               variant="outline"
+              variant="view"
               onClick={() => {
                 setSelectedLogId(log.id);
                 setPreviewTab("preview");
               }}
               title="View complete email"
               style={{ height: "32px", padding: "0 10px", fontSize: "12px" }}
+              aria-label="View complete email"
             >
               <Eye size={14} />
+              <Eye size={15} />
               View
+              <Eye size={15} />
             </Button>
 
             <Button
               variant="danger"
+              variant="delete"
               onClick={() => setSingleDeleteId(log.id)}
               title="Delete email log"
               style={{ height: "32px", padding: "0 10px" }}
+              aria-label="Delete email log"
             >
-              <Trash2 size={14} />
+              <Trash2 size={15} />
             </Button>
           </div>
         )}

@@ -463,6 +463,7 @@ export default function CustomerList() {
         <button
           type="button"
           title="Edit Customer"
+          className="action-btn action-btn-edit"
           onClick={() => handleOpenEdit(c)}
           style={{
             padding: "6px",
@@ -481,6 +482,7 @@ export default function CustomerList() {
           type="button"
           title={isBlocked ? "Unblock Account" : "Block Account"}
           onClick={() => handleOpenBlockModal(c)}
+          className="action-btn"
           style={{
             padding: "6px",
             borderRadius: "8px",
@@ -488,7 +490,11 @@ export default function CustomerList() {
             background: isBlocked ? "#10b981" : "#ef4444",
             color: "#fff",
             cursor: "pointer",
+            background: isBlocked ? "#dcfce7" : "#fef2f2",
+            borderColor: isBlocked ? "#86efac" : "#fecaca",
+            color: isBlocked ? "#166534" : "#dc2626",
           }}
+          onClick={() => handleOpenBlockModal(c)}
         >
           {isBlocked ? (
             <CheckCircle size={15} />
@@ -501,6 +507,7 @@ export default function CustomerList() {
         <button
           type="button"
           title="Delete Customer"
+          className="action-btn action-btn-delete"
           onClick={() => handleOpenDeleteModal(c)}
           style={{
             padding: "6px",

@@ -138,7 +138,7 @@ export default function Login() {
   return (
     <main className="login-page">
       <section className="login-card">
-        <p className="eyebrow">SFC CAFE</p>
+        <p className="eyebrow">SFC BAKERS</p>
         <h1>{otpSent ? "Verify your login" : "Welcome back"}</h1>
 
         <p className="muted">

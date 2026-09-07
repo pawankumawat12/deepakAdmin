@@ -343,6 +343,7 @@ export default function ReviewList() {
         <button
           type="button"
           title="Delete Review"
+          className="action-btn action-btn-delete"
           onClick={() => handleOpenDelete(rev)}
           style={{
             padding: "6px",

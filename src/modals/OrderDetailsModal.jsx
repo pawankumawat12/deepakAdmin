@@ -17,11 +17,27 @@ const OrderDetailsModal = ({
     if (!order?.id) return;
     try {
       setIsDownloading(true);
-      const res = await fetch(`/api/v1/orders/${order.id}/invoice`, {
+      const backendUrl = (
+        import.meta.env?.VITE_BACKEND_URL ||
+        import.meta.env?.VITE_API_BASE_URL?.replace(/\/api\/v1\/?$/, "") ||
+        "http://localhost:5000"
+      ).replace(/\/+$/, "");
+      const apiUrl = backendUrl.endsWith("/api/v1") ? backendUrl : `${backendUrl}/api/v1`;
+
+      const token =
+        accessToken ||
+        localStorage.getItem("adminToken") ||
+        localStorage.getItem("token") ||
+        "";
+
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${apiUrl}/orders/${order.id}/invoice`, {
         credentials: "include",
-        headers: {
-          Authorization: accessToken ? `Bearer ${accessToken}` : "",
-        },
+        headers,
       });
 
       if (!res.ok) {

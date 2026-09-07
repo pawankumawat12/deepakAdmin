@@ -585,9 +585,11 @@ export default function MessageList() {
             </Button>
             <Button
               variant="danger"
+              variant="delete"
               onClick={() => setDeleteConfirmId(row.id)}
               title="Delete Inquiry"
               style={{ width: "30px", height: "30px", padding: 0, justifyContent: "center" }}
+              aria-label="Delete Inquiry"
             >
               <Trash2 size={13} />
             </Button>
