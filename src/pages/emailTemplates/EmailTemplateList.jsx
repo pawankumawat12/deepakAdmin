@@ -69,7 +69,7 @@ export default function EmailTemplateList() {
             </div>
           )}
         />
-        <Pagination page={pagination?.page || page} totalPages={pagination?.totalPages || 1} total={pagination?.total || 0} limit={10} onPageChange={setPage} itemLabel="templates" />
+        <Pagination page={pagination?.page || page} totalPages={pagination?.totalPages || 1} total={pagination?.total || 0} limit={1} onPageChange={setPage} itemLabel="templates" />
       </div>
       {templateToDelete && <ConfirmDialog title="Delete email template?" message={`Delete ${templateToDelete.name}? This cannot be undone.`} confirmLabel="Delete" onConfirm={confirmDelete} onClose={() => setTemplateToDelete(null)} isLoading={isDeleting} error={deleteError?.data?.message} />}
     </>

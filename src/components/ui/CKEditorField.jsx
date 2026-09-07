@@ -40,12 +40,21 @@ export default function CKEditorField({ value, onChange, label = "Email body" })
         const editor = CKEDITOR.replace(textareaRef.current, {
           height: 360,
           removePlugins: "exportpdf,uploadimage,uploadwidget,notificationaggregator",
-          toolbar: [
-            ["Format", "Bold", "Italic", "Underline", "RemoveFormat"],
-            ["NumberedList", "BulletedList", "Outdent", "Indent"],
-            ["Link", "Blockquote", "Table"],
-            ["Undo", "Redo", "Source"],
-          ],
+        
+  toolbar: [
+    ["Source"],
+    ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord"],
+    ["Undo", "Redo"],
+    ["Bold", "Italic", "Underline", "Strike", "Subscript", "Superscript"],
+    ["RemoveFormat"],
+    ["NumberedList", "BulletedList", "Outdent", "Indent"],
+    ["JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"],
+    ["Link", "Unlink", "Anchor"],
+    ["Blockquote"],
+    ["Table"],
+    ["HorizontalRule", "SpecialChar"],
+    ["Format", "Styles"],
+  ],
         });
         editorRef.current = editor;
         editor.on("instanceReady", () => editor.setData(value || ""));

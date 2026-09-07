@@ -37,16 +37,19 @@ export default function FavouriteList() {
 
   const debouncedQuery = useDebouncedValue(searchText);
 
+  const cleanSearch =
+    typeof debouncedQuery === "string" ? debouncedQuery.trim() : "";
+
   const queryParams = useMemo(
     () => ({
       page,
       limit,
       sortBy,
       sortOrder,
-      ...(debouncedQuery.trim() ? { search: debouncedQuery.trim() } : {}),
+      ...(cleanSearch ? { search: cleanSearch } : {}),
       ...(selectedCategory ? { category: selectedCategory } : {}),
     }),
-    [page, limit, sortBy, sortOrder, debouncedQuery, selectedCategory]
+    [page, limit, sortBy, sortOrder, cleanSearch, selectedCategory]
   );
 
   const {
@@ -505,7 +508,8 @@ export default function FavouriteList() {
           <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, minWidth: "260px" }}>
             <SearchInput
               value={searchText}
-              onChange={(val) => {
+              onChange={(e) => {
+                const val = typeof e === "string" ? e : e?.target?.value ?? "";
                 setSearchText(val);
                 setPage(1);
               }}
@@ -516,15 +520,20 @@ export default function FavouriteList() {
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             {/* Category Select */}
             <div style={{ minWidth: "160px" }}>
-              <Select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setPage(1);
-                }}
-                options={categoryOptions}
-              />
-            </div>
+            <Select
+  value={selectedCategory}
+  onChange={(e) => {
+    setSelectedCategory(e.target.value);
+    setPage(1);
+  }}
+>
+  {categoryOptions.map((option) => (
+    <option key={option.value} value={option.value}>
+      {option.label}
+    </option>
+  ))}
+</Select>
+</div>
 
             {/* Clear Filters */}
             {(searchText || selectedCategory) && (
@@ -532,9 +541,8 @@ export default function FavouriteList() {
                 variant="ghost"
                 size="sm"
                 onClick={handleClearFilters}
-                style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding:"5px", borderRadius: "4px", background:"#333", color:"white" }}
               >
-                <X size={14} />
                 <span>Reset</span>
               </Button>
             )}

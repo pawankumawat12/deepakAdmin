@@ -1275,7 +1275,7 @@ export default function Dashboard() {
           >
             <div>
               <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "#111827" }}>
-                Recent Cafe Orders
+                Recent Bakers Orders
               </h2>
               <p style={{ margin: "2px 0 0", fontSize: "11.5px", color: "#6b7280" }}>
                 Latest transactions placed by customers

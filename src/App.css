@@ -2328,4 +2328,6 @@ td>b {
   }
 }
 
-
+.cke_notification{
+  display: none;
+}

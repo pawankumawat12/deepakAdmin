@@ -1454,7 +1454,7 @@ export default function Settings() {
 
           {/* Cafe Location */}
           <div className="border-top pt-4 mb-4">
-            <h3 className="fs-6 fw-bold text-dark mb-3">Cafe Location</h3>
+            <h3 className="fs-6 fw-bold text-dark mb-3">Bakery Location</h3>
 
             <div className="row g-4">
               <div className="col-12 col-md-6">
@@ -1732,7 +1732,7 @@ export default function Settings() {
 
         {/* COLOR PALETTE SELECTOR */}
         <div style={{ marginBottom: "24px" }}>
-          <label style={sectionLabel}>Cafe Color Palette</label>
+          <label style={sectionLabel}>Bakery Color Palette</label>
           <div
             style={{
               display: "grid",

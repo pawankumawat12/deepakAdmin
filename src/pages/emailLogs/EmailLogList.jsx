@@ -334,20 +334,7 @@ export default function EmailLogList() {
         minWidth: "220px",
         render: (_, log) => (
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div
-              style={{
-                width: "30px",
-                height: "30px",
-                borderRadius: "6px",
-                background: "#f3f4f6",
-                display: "grid",
-                placeItems: "center",
-                color: "#4b5563",
-                flexShrink: 0,
-              }}
-            >
-              <Mail size={15} />
-            </div>
+          
             <div>
               <div
                 style={{
@@ -720,7 +707,6 @@ export default function EmailLogList() {
         renderActions={(log) => (
           <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
             <Button
-              variant="outline"
               variant="view"
               onClick={() => {
                 setSelectedLogId(log.id);
@@ -731,13 +717,9 @@ export default function EmailLogList() {
               aria-label="View complete email"
             >
               <Eye size={14} />
-              <Eye size={15} />
-              View
-              <Eye size={15} />
             </Button>
 
             <Button
-              variant="danger"
               variant="delete"
               onClick={() => setSingleDeleteId(log.id)}
               title="Delete email log"
@@ -764,9 +746,6 @@ export default function EmailLogList() {
         />
       </div>
 
-      {/* ========================================================= */}
-      {/* EMAIL DETAIL & HTML PREVIEW MODAL                         */}
-      {/* ========================================================= */}
       {selectedLogId && (
         <div
           style={{
@@ -827,25 +806,7 @@ export default function EmailLogList() {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                {/* {extractedOtp && (
-                  <Button
-                    variant="outline"
-                    onClick={() => handleCopy(extractedOtp, "OTP")}
-                    style={{
-                      height: "32px",
-                      padding: "0 10px",
-                      borderColor: "#7c3aed",
-                      background: "#f5f3ff",
-                      color: "#6d28d9",
-                    }}
-                    title="Click to copy extracted OTP code"
-                  >
-                    <KeyRound size={14} />
-                    OTP: {extractedOtp}
-                  </Button>
-                )} */}
-
-                <Button
+               <Button
                   variant="plain"
                   onClick={() => setSelectedLogId(null)}
                   style={{

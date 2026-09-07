@@ -223,8 +223,8 @@ export default function AdminOrderChatModal({ order, onClose }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 25 * 1024 * 1024) {
-      alert("File size cannot exceed 25 MB");
+    if (file.size >15 * 1024 * 1024) {
+      alert("File size cannot exceed 15 MB");
       return;
     }
 
