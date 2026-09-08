@@ -2326,6 +2326,15 @@ td>b {
     padding: 8px 8px !important;
     gap: 8px !important;
   }
+
+  .topbar-shop-status {
+    padding: 3px 6px !important;
+    gap: 4px !important;
+  }
+
+  .topbar-shop-status .shop-status-label {
+    display: none;
+  }
 }
 
 .cke_notification{

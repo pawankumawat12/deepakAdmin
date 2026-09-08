@@ -41,6 +41,7 @@ import {
 } from "../services/notificationApi";
 import { getAdminSocket } from "../services/socket";
 import { toAssetUrl } from "../utils/assetUrl";
+import { useShopStatus } from "../utils/useShopStatus";
 
 const navigationItems = [
   { type: "link", label: "Dashboard", to: "/", icon: LayoutDashboard },
@@ -137,6 +138,7 @@ export default function AdminLayout() {
   const [signOutError, setSignOutError] = useState("");
   const notifRef = useRef(null);
   const profileRef = useRef(null);
+  const { isOpen: isShopOpen, toggleShopStatus } = useShopStatus();
 
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
@@ -366,7 +368,9 @@ export default function AdminLayout() {
             />
             <div className="sidebar-brand-text">
               <span className="brand-title">SFC Bakers</span>
-              <span className="brand-badge">ADMIN PANEL</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span className="brand-badge">ADMIN PANEL</span>
+              </div>
             </div>
           </div>
           <Button
@@ -492,6 +496,84 @@ export default function AdminLayout() {
           </div>
           <div className="top-actions">
             <SearchInput placeholder="Search anything..." className="topbar-search" />
+
+            {/* Quick Shop Status Toggle in Topbar */}
+            <div
+              className="topbar-shop-status"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "4px 10px 4px 12px",
+                borderRadius: "10px",
+                background: isShopOpen ? "#f0fdf4" : "#fef2f2",
+                border: isShopOpen ? "1px solid #bbf7d0" : "1px solid #fecaca",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: isShopOpen ? "#15803d" : "#b91c1c",
+                  whiteSpace: "nowrap",
+                  userSelect: "none",
+                }}
+              >
+                <span
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    background: isShopOpen ? "#22c55e" : "#ef4444",
+                    boxShadow: isShopOpen
+                      ? "0 0 0 2px rgba(34,197,94,0.3)"
+                      : "0 0 0 2px rgba(239,68,68,0.3)",
+                  }}
+                />
+                <span className="shop-status-label">{isShopOpen ? "Shop Open" : "Shop Closed"}</span>
+              </span>
+
+              {/* Toggle Switch */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isShopOpen}
+                onClick={toggleShopStatus}
+                title={isShopOpen ? "Click to set Shop Closed" : "Click to set Shop Open"}
+                style={{
+                  position: "relative",
+                  width: "38px",
+                  height: "20px",
+                  borderRadius: "9999px",
+                  background: isShopOpen ? "#16a34a" : "#dc2626",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "2px",
+                  display: "flex",
+                  alignItems: "center",
+                  transition: "background-color 0.2s ease",
+                  outline: "none",
+                  flexShrink: 0,
+                }}
+              >
+                <span
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    borderRadius: "50%",
+                    background: "#ffffff",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                    transform: isShopOpen ? "translateX(18px)" : "translateX(0px)",
+                    transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    display: "block",
+                  }}
+                />
+              </button>
+            </div>
 
             {/* Notification Bell with Badge & Dropdown */}
             <div style={{ position: "relative" }} ref={notifRef}>

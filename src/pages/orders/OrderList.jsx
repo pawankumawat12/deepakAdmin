@@ -980,31 +980,53 @@ export default function OrderList() {
                       </button>
                     </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => setActiveChatOrder(item)}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    padding: "3px 7px",
-                    borderRadius: "6px",
-                    border: "1px solid #ddd6fe",
-                    backgroundColor: "#f5f3ff",
-                    color: "#6d28d9",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    width: "75px",
-                    textAlign: "center",
-                    cursor: "pointer",
-                  }}
-                >
-                  <MessageCircle size={11} /> Chat
-                </button>
-              </div>
-            );
-          },
-        },
+                  {(() => {
+                    const isChatExpired =
+                      item.chatStatus?.isExpired ??
+                      item.chat_status?.is_expired ??
+                      ((item.status === "Delivered" || item.status === "Completed") &&
+                        item.delivered_at &&
+                        Date.now() >
+                          new Date(item.delivered_at).getTime() + 20 * 60 * 1000);
+
+                    return (
+                      <button
+                        type="button"
+                        disabled={isChatExpired}
+                        onClick={() => !isChatExpired && setActiveChatOrder(item)}
+                        title={
+                          isChatExpired
+                            ? "Chat closed 20 minutes after delivery"
+                            : "Open order chat"
+                        }
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "3px 7px",
+                          borderRadius: "6px",
+                          border: isChatExpired
+                            ? "1px solid #e5e7eb"
+                            : "1px solid #ddd6fe",
+                          backgroundColor: isChatExpired ? "#f3f4f6" : "#f5f3ff",
+                          color: isChatExpired ? "#9ca3af" : "#6d28d9",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          width: isChatExpired ? "85px" : "75px",
+                          textAlign: "center",
+                          cursor: isChatExpired ? "not-allowed" : "pointer",
+                          opacity: isChatExpired ? 0.65 : 1,
+                        }}
+                      >
+                        <MessageCircle size={11} />{" "}
+                        {isChatExpired ? "Expired" : "Chat"}
+                      </button>
+                    );
+                  })()}
+                </div>
+                );
+              },
+            },
           { key: "createdAtFormatted", label: "TIME" },
           // {
           //   key: "actions",

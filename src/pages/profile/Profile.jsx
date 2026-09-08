@@ -501,7 +501,7 @@ export default function Profile() {
                 }}
               >
                 <ShieldCheck size={16} />
-                <span>{user?.role || "admin"} (Super Administrator)</span>
+                <span>{user?.role || "admin"}</span>
               </div>
             </div>
           </div>

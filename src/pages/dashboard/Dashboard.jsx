@@ -1,9 +1,7 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
-  TrendingUp,
-  TrendingDown,
   ShoppingBag,
   Users,
   Package,
@@ -13,20 +11,17 @@ import {
   RefreshCw,
   ArrowRight,
   DollarSign,
-  Utensils,
   Star,
   MessageSquare,
   Flame,
-  Activity,
-  Layers,
   Sparkles,
   Truck,
   ChevronRight,
 } from "lucide-react";
 import { toAssetUrl } from "../../utils/assetUrl";
 import { useGetDashboardOverviewQuery } from "../../services/dashboardApi";
-import Button from "../../components/ui/Button";
 import DataTable from "../../components/common/DataTable";
+import { useShopStatus } from "../../utils/useShopStatus";
 
 function formatRupee(num) {
   if (num == null) return "0";
@@ -37,7 +32,7 @@ export default function Dashboard() {
   const user = useSelector((state) => state.auth.user);
   const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState("weekly");
-  const [activeChartMetric, setActiveChartMetric] = useState("revenue"); // 'revenue' | 'orders'
+  const [activeChartMetric, setActiveChartMetric] = useState("revenue");
   const [hoveredPoint, setHoveredPoint] = useState(null);
 
   const {
@@ -62,7 +57,7 @@ export default function Dashboard() {
     totalProducts: 0,
   };
 
-  const trends = overview.trends || [];
+  const trends = useMemo(() => overview.trends || [], [overview.trends]);
   const statusDistribution = overview.statusDistribution || {};
   const topProducts = overview.topProducts || [];
   const categorySales = overview.categorySales || [];
@@ -121,6 +116,57 @@ export default function Dashboard() {
     const last = chartPoints[chartPoints.length - 1];
     return `${svgPathOrders} L ${last.x},210 L ${first.x},210 Z`;
   }, [svgPathOrders, chartPoints]);
+
+  const chartContainerRef = useRef(null);
+
+  // Handle touch / drag / hover interaction across the entire chart area (desktop & mobile)
+  const handlePointerOrTouch = useCallback(
+    (e) => {
+      if (!chartPoints || chartPoints.length === 0 || !chartContainerRef.current) return;
+      const rect = chartContainerRef.current.getBoundingClientRect();
+      const clientX =
+        e.touches && e.touches.length > 0
+          ? e.touches[0].clientX
+          : e.clientX;
+      if (clientX == null) return;
+
+      const relativeX = clientX - rect.left;
+      const svgX = (relativeX / rect.width) * 600;
+
+      let closest = chartPoints[0];
+      let minDiff = Math.abs(chartPoints[0].x - svgX);
+      for (let i = 1; i < chartPoints.length; i++) {
+        const diff = Math.abs(chartPoints[i].x - svgX);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = chartPoints[i];
+        }
+      }
+      setHoveredPoint(closest);
+    },
+    [chartPoints]
+  );
+
+  const handlePointerLeave = useCallback((e) => {
+    // Only dismiss on desktop mouse exit. On mobile touch, preserve the view so the user can read the tooltip
+    if (e.pointerType === "mouse") {
+      setHoveredPoint(null);
+    }
+  }, []);
+
+  // Close tooltip when tapping outside the chart on mobile/tablet
+  useEffect(() => {
+    if (!hoveredPoint) return;
+    const handleOutsideClick = (e) => {
+      if (chartContainerRef.current && !chartContainerRef.current.contains(e.target)) {
+        setHoveredPoint(null);
+      }
+    };
+    document.addEventListener("pointerdown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsideClick);
+    };
+  }, [hoveredPoint]);
 
   const avgOrderValue =
     kpis.totalOrders > 0 ? Math.round(kpis.totalRevenue / kpis.totalOrders) : 0;
@@ -339,6 +385,7 @@ export default function Dashboard() {
               />
               Live Monitoring
             </span>
+
           </div>
           <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: "12.5px" }}>
             Here is your cafe's real-time financial performance, orders overview, and inventory ranking.
@@ -755,7 +802,23 @@ export default function Dashboard() {
           </div>
 
           {/* SVG Interactive Chart Canvas */}
-          <div style={{ position: "relative", width: "100%", height: "230px" }}>
+          <div
+            ref={chartContainerRef}
+            style={{
+              position: "relative",
+              width: "100%",
+              height: "230px",
+              touchAction: "pan-y",
+              userSelect: "none",
+              WebkitUserSelect: "none",
+              cursor: "crosshair",
+            }}
+            onPointerDown={handlePointerOrTouch}
+            onPointerMove={handlePointerOrTouch}
+            onPointerLeave={handlePointerLeave}
+            onTouchStart={handlePointerOrTouch}
+            onTouchMove={handlePointerOrTouch}
+          >
             <svg
               viewBox="0 0 600 230"
               style={{ width: "100%", height: "100%", overflow: "visible" }}
@@ -802,26 +865,84 @@ export default function Dashboard() {
                 </>
               )}
 
-              {/* Interactive Points */}
+              {/* Vertical Hover Guide Line & Highlight on Hover/Touch */}
+              {hoveredPoint && (
+                <g pointerEvents="none">
+                  {/* Subtle column glow behind active point */}
+                  <rect
+                    x={hoveredPoint.x - 14}
+                    y="35"
+                    width="28"
+                    height="165"
+                    fill={activeChartMetric === "revenue" ? "#4f7d16" : "#2563eb"}
+                    opacity="0.07"
+                    rx="6"
+                  />
+                  {/* Vertical Guide Line */}
+                  <line
+                    x1={hoveredPoint.x}
+                    y1="35"
+                    x2={hoveredPoint.x}
+                    y2="200"
+                    stroke={activeChartMetric === "revenue" ? "#4f7d16" : "#2563eb"}
+                    strokeWidth="1.5"
+                    strokeDasharray="4 4"
+                    opacity="0.85"
+                  />
+                  {/* Active Point Highlight Halo */}
+                  <circle
+                    cx={hoveredPoint.x}
+                    cy={activeChartMetric === "revenue" ? hoveredPoint.yRevenue : hoveredPoint.yOrders}
+                    r="10"
+                    fill={activeChartMetric === "revenue" ? "#4f7d16" : "#2563eb"}
+                    opacity="0.25"
+                  />
+                  {/* Active Point Center Circle */}
+                  <circle
+                    cx={hoveredPoint.x}
+                    cy={activeChartMetric === "revenue" ? hoveredPoint.yRevenue : hoveredPoint.yOrders}
+                    r="5.5"
+                    fill={activeChartMetric === "revenue" ? "#4f7d16" : "#2563eb"}
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                  />
+                </g>
+              )}
+
+              {/* Interactive Points & Full Column Hit Areas */}
               {chartPoints.map((pt, i) => {
                 const cy = activeChartMetric === "revenue" ? pt.yRevenue : pt.yOrders;
                 const isHovered = hoveredPoint?.label === pt.label;
                 const color = activeChartMetric === "revenue" ? "#4f7d16" : "#2563eb";
+                const sliceWidth = chartPoints.length > 1 ? 520 / (chartPoints.length - 1) : 60;
 
                 return (
                   <g key={i}>
-                    {/* Point Circle */}
-                    <circle
-                      cx={pt.x}
-                      cy={cy}
-                      r={isHovered ? 6 : 4}
-                      fill="#ffffff"
-                      stroke={color}
-                      strokeWidth={isHovered ? 3 : 2}
-                      style={{ cursor: "pointer", transition: "all 0.15s ease" }}
+                    {/* Generous touch/hover hit-box covering full column height for mobile & desktop */}
+                    <rect
+                      x={pt.x - sliceWidth / 2}
+                      y="25"
+                      width={sliceWidth}
+                      height="185"
+                      fill="transparent"
+                      style={{ cursor: "pointer" }}
                       onMouseEnter={() => setHoveredPoint(pt)}
-                      onMouseLeave={() => setHoveredPoint(null)}
+                      onTouchStart={() => setHoveredPoint(pt)}
+                      onClick={() => setHoveredPoint(pt)}
                     />
+
+                    {/* Non-hovered point circle */}
+                    {!isHovered && (
+                      <circle
+                        cx={pt.x}
+                        cy={cy}
+                        r={4}
+                        fill="#ffffff"
+                        stroke={color}
+                        strokeWidth={2}
+                        style={{ pointerEvents: "none", transition: "all 0.15s ease" }}
+                      />
+                    )}
 
                     {/* X-axis Label */}
                     <text
@@ -829,8 +950,9 @@ export default function Dashboard() {
                       y="222"
                       textAnchor="middle"
                       fontSize="9.5"
-                      fill="#9ca3af"
-                      fontWeight="600"
+                      fill={isHovered ? (activeChartMetric === "revenue" ? "#4f7d16" : "#2563eb") : "#9ca3af"}
+                      fontWeight={isHovered ? "800" : "600"}
+                      style={{ pointerEvents: "none", transition: "fill 0.15s ease" }}
                     >
                       {pt.label}
                     </text>
@@ -839,32 +961,93 @@ export default function Dashboard() {
               })}
             </svg>
 
-            {/* Hover Tooltip Card */}
-            {hoveredPoint && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: `${(hoveredPoint.x / 600) * 100}%`,
-                  top: "10px",
-                  transform: "translateX(-50%)",
-                  background: "#111827",
-                  color: "#ffffff",
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  fontSize: "11px",
-                  boxShadow: "0 10px 15px -3px rgba(0,0,0,0.3)",
-                  pointerEvents: "none",
-                  zIndex: 20,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <div style={{ fontWeight: 800 }}>{hoveredPoint.label}</div>
-                <div style={{ color: "#4ade80", marginTop: "2px" }}>
-                  Revenue: ₹{formatRupee(hoveredPoint.revenue)}
+            {/* Hover Tooltip Card (responsive & clamped for mobile) */}
+            {hoveredPoint && (() => {
+              const percentX = (hoveredPoint.x / 600) * 100;
+              let leftStyle = `${percentX}%`;
+              let transformStyle = "translateX(-50%)";
+              if (percentX < 20) {
+                leftStyle = "8px";
+                transformStyle = "none";
+              } else if (percentX > 80) {
+                leftStyle = "auto";
+                transformStyle = "none";
+              }
+
+              return (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: leftStyle,
+                    right: percentX > 80 ? "8px" : "auto",
+                    top: "8px",
+                    transform: transformStyle,
+                    background: "#111827",
+                    color: "#ffffff",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    fontSize: "11px",
+                    boxShadow: "0 10px 15px -3px rgba(0,0,0,0.35)",
+                    pointerEvents: "none",
+                    zIndex: 30,
+                    whiteSpace: "nowrap",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
+                      paddingBottom: "3px",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {hoveredPoint.label}
+                  </div>
+                  <div
+                    style={{
+                      color: "#4ade80",
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: "6px",
+                        height: "6px",
+                        borderRadius: "50%",
+                        background: "#4ade80",
+                        display: "inline-block",
+                      }}
+                    />
+                    Revenue: ₹{formatRupee(hoveredPoint.revenue)}
+                  </div>
+                  <div
+                    style={{
+                      color: "#93c5fd",
+                      fontWeight: 700,
+                      marginTop: "2px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: "6px",
+                        height: "6px",
+                        borderRadius: "50%",
+                        background: "#93c5fd",
+                        display: "inline-block",
+                      }}
+                    />
+                    Orders: {hoveredPoint.orders}
+                  </div>
                 </div>
-                <div style={{ color: "#93c5fd" }}>Orders: {hoveredPoint.orders}</div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
 

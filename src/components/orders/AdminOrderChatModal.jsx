@@ -111,6 +111,15 @@ export default function AdminOrderChatModal({ order, onClose }) {
     skip: !orderId,
   });
 
+  const chatStatus =
+    historyData?.chatStatus || order?.chatStatus || order?.chat_status;
+  const isExpired =
+    chatStatus?.isExpired ??
+    chatStatus?.is_expired ??
+    ((order?.status === "Delivered" || order?.status === "Completed") &&
+      order?.delivered_at &&
+      Date.now() > new Date(order.delivered_at).getTime() + 20 * 60 * 1000);
+
   const [postMessageMutation, { isLoading: isSending }] =
     usePostAdminOrderMessageMutation();
   const [markReadMutation] = useMarkAdminOrderMessagesReadMutation();
@@ -245,6 +254,7 @@ export default function AdminOrderChatModal({ order, onClose }) {
   };
 
   const handleSendMessage = async () => {
+    if (isExpired) return;
     const trimmed = inputText.trim();
     if (!trimmed && !selectedFile) return;
     if (isSending) return;
@@ -281,6 +291,7 @@ export default function AdminOrderChatModal({ order, onClose }) {
         const res = await postMessageMutation({
           orderId,
           message: textToSend,
+          senderRole: "admin",
         }).unwrap();
 
         if (res.data) {
@@ -293,6 +304,10 @@ export default function AdminOrderChatModal({ order, onClose }) {
     } catch (err) {
       console.error("Failed to send admin chat message:", err);
       alert("Failed to send message. Please try again.");
+      // Restore input text on error
+      setInputText(textToSend);
+      if (fileToSend) setSelectedFile(fileToSend);
+      alert(err?.data?.message || "Failed to send message. Please try again.");
     }
   };
 
@@ -300,6 +315,9 @@ export default function AdminOrderChatModal({ order, onClose }) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+      if (!isExpired) {
+        handleSendMessage();
+      }
     }
   };
 
@@ -491,6 +509,32 @@ export default function AdminOrderChatModal({ order, onClose }) {
               <span>Direct kitchen chat for #{orderNumber}. Messages are saved automatically.</span>
             </div>
           </div>
+
+          {/* Chat Expired Notice */}
+          {isExpired && (
+            <div style={{ display: "flex", justifyContent: "center", margin: "6px 0" }}>
+              <div
+                style={{
+                  backgroundColor: "#fee2e2",
+                  border: "1px solid #fca5a5",
+                  borderRadius: "8px",
+                  padding: "6px 14px",
+                  fontSize: "11px",
+                  color: "#991b1b",
+                  maxWidth: "420px",
+                  textAlign: "center",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  boxShadow: "0 1px 2px rgba(220, 38, 38, 0.1)",
+                }}
+              >
+                <span>⚠️ Chat support for this order closed 20 minutes after delivery. New messages cannot be sent.</span>
+              </div>
+            </div>
+          )}
 
           {/* Date pill */}
           <div style={{ display: "flex", justifyContent: "center", margin: "2px 0" }}>
@@ -1102,20 +1146,25 @@ export default function AdminOrderChatModal({ order, onClose }) {
             >
               <button
                 type="button"
+                disabled={isExpired}
                 style={{
                   background: "transparent",
                   border: "none",
                   color: showEmojiPicker ? "#008069" : "#54656f",
                   cursor: "pointer",
+                  cursor: isExpired ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   padding: 0,
+                  opacity: isExpired ? 0.4 : 1,
                 }}
                 onClick={() => {
-                  setShowEmojiPicker((prev) => !prev);
-                  setShowAttachMenu(false);
+                  if (!isExpired) {
+                    setShowEmojiPicker((prev) => !prev);
+                    setShowAttachMenu(false);
+                  }
                 }}
-                title="Choose Emoji"
+                title={isExpired ? "Chat closed" : "Choose Emoji"}
               >
                 <Smile size={21} />
               </button>
@@ -1127,37 +1176,44 @@ export default function AdminOrderChatModal({ order, onClose }) {
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder={
-                  selectedFile
+                  isExpired
+                    ? "Chat closed (20m after delivery)"
+                    : selectedFile
                     ? `Add caption for ${selectedFile.name}...`
                     : "Type a message"
                 }
-                disabled={isSending}
+                disabled={isSending || isExpired}
                 style={{
                   flex: 1,
                   backgroundColor: "transparent",
                   fontSize: "14px",
-                  color: "#111b21",
+                  color: isExpired ? "#9ca3af" : "#111b21",
                   border: "none",
                   outline: "none",
+                  cursor: isExpired ? "not-allowed" : "text",
                 }}
               />
 
               <button
                 type="button"
+                disabled={isExpired}
                 onClick={() => {
-                  setShowAttachMenu((prev) => !prev);
-                  setShowEmojiPicker(false);
+                  if (!isExpired) {
+                    setShowAttachMenu((prev) => !prev);
+                    setShowEmojiPicker(false);
+                  }
                 }}
                 style={{
                   background: "transparent",
                   border: "none",
                   color: showAttachMenu ? "#008069" : "#54656f",
-                  cursor: "pointer",
+                  cursor: isExpired ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   padding: 0,
+                  opacity: isExpired ? 0.4 : 1,
                 }}
-                title="Attach photo or document"
+                title={isExpired ? "Chat closed" : "Attach photo or document"}
               >
                 <Paperclip size={19} />
               </button>
@@ -1167,24 +1223,27 @@ export default function AdminOrderChatModal({ order, onClose }) {
             <button
               type="button"
               onClick={handleSendMessage}
-              disabled={isSending}
+              disabled={isSending || isExpired}
               style={{
                 width: "40px",
                 height: "40px",
                 borderRadius: "50%",
-                backgroundColor: "#008069",
+                backgroundColor: isExpired ? "#9ca3af" : "#008069",
                 color: "#ffffff",
                 border: "none",
-                cursor: "pointer",
+                cursor: isExpired ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                 flexShrink: 0,
-                opacity: isSending ? 0.5 : 1,
+                opacity: isSending || isExpired ? 0.6 : 1,
               }}
+              title={isExpired ? "Chat closed 20 minutes after delivery" : "Send message"}
               aria-label={
-                inputText.trim() || selectedFile
+                isExpired
+                  ? "Chat expired"
+                  : inputText.trim() || selectedFile
                   ? "Send message"
                   : "Voice message"
               }
@@ -1192,6 +1251,8 @@ export default function AdminOrderChatModal({ order, onClose }) {
               {isSending ? (
                 <LoaderCircle size={18} className="animate-spin" />
               ) : inputText.trim() || selectedFile ? (
+                <Send size={16} style={{ transform: "translateX(1px)" }} />
+              ) : isExpired ? (
                 <Send size={16} style={{ transform: "translateX(1px)" }} />
               ) : (
                 <Mic size={18} />

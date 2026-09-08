@@ -47,9 +47,12 @@ import {
   AlertCircle,
   CheckCircle2,
   X,
+  Store,
+  Power,
 } from "lucide-react";
 import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 import { toAssetUrl } from "../../utils/assetUrl";
+import { useShopStatus } from "../../utils/useShopStatus";
 
 const DEFAULT_FALLBACK_COLOR_THEMES = [
   {
@@ -154,6 +157,8 @@ function StatusBanner({ text, type }) {
 }
 
 export default function Settings() {
+  const { isOpen: isShopOpen, toggleShopStatus } = useShopStatus();
+
   /* ─── THEME STATE ─── */
   const { data: themeResponse, isLoading, refetch } = useGetThemeQuery();
   const { data: priceSetting, isLoading: priceSettingLoading } =
@@ -594,6 +599,129 @@ export default function Settings() {
           </p>
         </div>
       </div>
+
+      {/* 0. SHOP STATUS & STORE AVAILABILITY SETTING */}
+      <section style={cardStyle}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "14px",
+            borderBottom: "1px solid #f0f0f5",
+            paddingBottom: "16px",
+            marginBottom: "20px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "12px",
+                background: isShopOpen ? "#ecfdf5" : "#fef2f2",
+                display: "grid",
+                placeItems: "center",
+                color: isShopOpen ? "#16a34a" : "#dc2626",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Store size={22} />
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "17px",
+                    fontWeight: 700,
+                    color: "#24243b",
+                  }}
+                >
+                  Shop Status & Store Availability
+                </h2>
+                <span
+                  style={{
+                    padding: "3px 10px",
+                    borderRadius: "9999px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    background: isShopOpen ? "#dcfce7" : "#fee2e2",
+                    color: isShopOpen ? "#15803d" : "#991b1b",
+                    border: isShopOpen ? "1px solid #86efac" : "1px solid #fca5a5",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  {isShopOpen ? "Shop Open" : "Shop Closed"}
+                </span>
+              </div>
+              <p style={{ margin: "2px 0 0", fontSize: "12.5px", color: "#8b8ba0" }}>
+                Switch store availability on or off to control whether customers can place orders.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Toggle Switch in Header */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isShopOpen}
+              onClick={toggleShopStatus}
+              title={isShopOpen ? "Click to set Shop Closed" : "Click to set Shop Open"}
+              style={{
+                position: "relative",
+                width: "56px",
+                height: "30px",
+                borderRadius: "9999px",
+                background: isShopOpen ? "#16a34a" : "#dc2626",
+                border: "none",
+                cursor: "pointer",
+                padding: "3px",
+                display: "flex",
+                alignItems: "center",
+                transition: "background-color 0.25s ease",
+                outline: "none",
+                boxShadow: isShopOpen
+                  ? "0 2px 8px rgba(22,163,74,0.3)"
+                  : "0 2px 8px rgba(220,38,38,0.3)",
+              }}
+            >
+              <span
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "50%",
+                  background: "#ffffff",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
+                  transform: isShopOpen ? "translateX(26px)" : "translateX(0px)",
+                  transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                  display: "block",
+                }}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div
+          style={{
+            fontSize: "12px",
+            color: "#6b7280",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <Sparkles size={14} style={{ color: "#f59e0b" }} />
+          <span>
+            <strong>Instant control:</strong> You can also toggle the shop status anytime directly from the top navigation bar of the Admin Panel.
+          </span>
+        </div>
+      </section>
 
       <section style={cardStyle}>
         <div

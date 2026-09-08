@@ -71,6 +71,19 @@ export const settingsApi = baseApi.injectEndpoints({
         body,
       }),
     }),
+
+    getStoreStatus: build.query({
+      query: () => "/settings/store-status",
+      providesTags: ["Settings", "StoreStatus"],
+    }),
+    updateStoreStatus: build.mutation({
+      query: (body) => ({
+        url: "/settings/store-status",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Settings", "StoreStatus"],
+    }),
   }),
 });
 
@@ -86,4 +99,6 @@ export const {
   useGetSmtpQuery,
   useUpdateSmtpMutation,
   useTestSmtpMutation,
+  useGetStoreStatusQuery,
+  useUpdateStoreStatusMutation,
 } = settingsApi;
