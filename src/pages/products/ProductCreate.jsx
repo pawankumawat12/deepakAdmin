@@ -55,7 +55,11 @@ export default function ProductCreate() {
           />
           {error && (
             <p className="error">
-              {error.data?.message || "Unable to create product"}
+              {error.data?.errors
+                ? Object.entries(error.data.errors)
+                    .map(([field, msg]) => `${field}: ${msg}`)
+                    .join(" | ")
+                : error.data?.message || "Unable to create product"}
             </p>
           )}
         </>

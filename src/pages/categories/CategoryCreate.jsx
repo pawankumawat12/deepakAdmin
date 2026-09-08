@@ -42,7 +42,15 @@ export default function CategoryCreate() {
             submitLabel="Create category"
             isSubmitting={isLoading}
           />
-          {error && <p className="error">{error.data?.message || "Unable to create category"}</p>}
+          {error && (
+            <p className="error">
+              {error.data?.errors
+                ? Object.entries(error.data.errors)
+                    .map(([field, msg]) => `${field}: ${msg}`)
+                    .join(" | ")
+                : error.data?.message || "Unable to create category"}
+            </p>
+          )}
         </>
       )}
     </>

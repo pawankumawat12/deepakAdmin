@@ -53,7 +53,15 @@ export default function CategoryEdit() {
         submitLabel="Save changes"
         isSubmitting={isLoading}
       />
-      {error && <p className="error">{error.data?.message || "Unable to update category"}</p>}
+      {error && (
+        <p className="error">
+          {error.data?.errors
+            ? Object.entries(error.data.errors)
+                .map(([field, msg]) => `${field}: ${msg}`)
+                .join(" | ")
+            : error.data?.message || "Unable to update category"}
+        </p>
+      )}
     </>
   );
 }
