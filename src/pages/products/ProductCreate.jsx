@@ -12,7 +12,7 @@ export default function ProductCreate() {
   const { data: categoryResponse, isLoading: categoriesLoading } =
     useGetProductCategoriesQuery();
   const [createProduct, { isLoading, error }] = useCreateProductMutation();
-  const categories = categoryResponse?.data || [];
+  const categories = categoryResponse?.data ||  [];
   
   const save = async (data) => {
     try {

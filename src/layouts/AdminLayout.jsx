@@ -58,9 +58,12 @@ const navigationItems = [
   {
     type: "group",
     id: "storefront",
-    label: "Storefront Display",
+    label: "Storefront & Content",
     icon: SlidersHorizontal,
-    children: [{ label: "Hero Sliders", to: "/hero-sliders", icon: SlidersHorizontal }],
+    children: [
+      { label: "Hero Sliders", to: "/hero-sliders", icon: SlidersHorizontal },
+      { label: "CMS Pages", to: "/cms-pages", icon: FileText },
+    ],
   },
   {
     type: "group",
@@ -120,6 +123,9 @@ const getPageTitle = (pathname) => {
   if (pathname.startsWith("/reviews")) return "Reviews";
   if (pathname.startsWith("/messages")) return "Messages";
   if (pathname.startsWith("/hero-sliders")) return "Hero Sliders";
+  if (pathname.startsWith("/cms-pages/create")) return "Add CMS Page";
+  if (pathname.startsWith("/cms-pages") && pathname.includes("/edit")) return "Edit CMS Page";
+  if (pathname.startsWith("/cms-pages")) return "CMS Pages";
   if (pathname.startsWith("/email-logs")) return "Email Logs";
   if (pathname.startsWith("/email-templates/create")) return "Create Email Template";
   if (pathname.startsWith("/email-templates") && pathname.includes("/edit")) return "Edit Email Template";

@@ -23,7 +23,13 @@ function loadEditorScript() {
   });
 }
 
-export default function CKEditorField({ value, onChange, label = "Email body" }) {
+export default function CKEditorField({
+  id = "ckeditor-body",
+  value,
+  onChange,
+  label = "Content",
+  height = 380,
+}) {
   const textareaRef = useRef(null);
   const editorRef = useRef(null);
   const onChangeRef = useRef(onChange);
@@ -38,7 +44,7 @@ export default function CKEditorField({ value, onChange, label = "Email body" })
       .then((CKEDITOR) => {
         if (cancelled || !textareaRef.current || editorRef.current) return;
         const editor = CKEDITOR.replace(textareaRef.current, {
-          height: 360,
+          height,
           removePlugins: "exportpdf,uploadimage,uploadwidget,notificationaggregator",
         
   toolbar: [
@@ -82,8 +88,8 @@ export default function CKEditorField({ value, onChange, label = "Email body" })
 
   return (
     <div className="ckeditor-field full">
-      <label htmlFor="email-template-body">{label}</label>
-      <textarea id="email-template-body" ref={textareaRef} defaultValue={value || ""} />
+      <label htmlFor={id}>{label}</label>
+      <textarea id={id} ref={textareaRef} defaultValue={value || ""} />
       {error && <small className="error">{error}. Check your network connection and reload.</small>}
     </div>
   );

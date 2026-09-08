@@ -148,6 +148,7 @@ export const baseApi = createApi({
     "EmailTemplates",
     "HeroSliders",
     "Favourites",
+    "CmsPages",
   ],
   endpoints: () => ({}),
 });
