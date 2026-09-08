@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Sparkles, Package } from "lucide-react";
 
 import { productSchema } from "../../schema/product.schema";
+import { toAssetUrl } from "../../utils/assetUrl";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
@@ -59,9 +60,7 @@ export default function ProductForm({
       id: `existing-${index}-${image}`,
       file: null,
       originalUrl: image,
-      previewUrl: image.startsWith("http")
-        ? image
-        : `${(import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "")}${image.startsWith("/") ? "" : "/"}${image}`,
+      previewUrl: toAssetUrl(image),
       isExisting: true,
     }));
 

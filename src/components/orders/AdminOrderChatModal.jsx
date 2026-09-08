@@ -23,12 +23,7 @@ import {
   useMarkAdminOrderMessagesReadMutation,
 } from "../../services/chatApi";
 import { getAdminSocket } from "../../services/socket";
-
-const API_ORIGIN = (
-  import.meta.env.VITE_BACKEND_URL ||
-  import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") ||
-  ""
-).replace(/\/+$/, "");
+import { toAssetUrl } from "../../utils/assetUrl";
 
 // Full categorized WhatsApp Emojis
 const EMOJI_CATEGORIES = [
@@ -223,8 +218,8 @@ export default function AdminOrderChatModal({ order, onClose }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size >15 * 1024 * 1024) {
-      alert("File size cannot exceed 15 MB");
+    if (file.size >10 * 1024 * 1024) {
+      alert("File size cannot exceed 10 MB");
       return;
     }
 
@@ -606,19 +601,11 @@ export default function AdminOrderChatModal({ order, onClose }) {
                               position: "relative",
                             }}
                             onClick={() =>
-                              setPreviewLightboxImg(
-                                item.attachment_url?.startsWith("http")
-                                  ? item.attachment_url
-                                  : `${API_ORIGIN}${item.attachment_url}`
-                              )
+                              setPreviewLightboxImg(toAssetUrl(item.attachment_url))
                             }
                           >
                             <img
-                              src={
-                                item.attachment_url?.startsWith("http")
-                                  ? item.attachment_url
-                                  : `${API_ORIGIN}${item.attachment_url}`
-                              }
+                              src={toAssetUrl(item.attachment_url)}
                               alt={item.attachment_name || "Image attachment"}
                               style={{ width: "100%", height: "100%", maxHeight: "200px", objectFit: "cover" }}
                             />
@@ -626,11 +613,7 @@ export default function AdminOrderChatModal({ order, onClose }) {
                         ) : (
                           /* Fixed-size Document Attachment Card */
                           <a
-                            href={
-                              item.attachment_url?.startsWith("http")
-                                ? item.attachment_url
-                                : `${API_ORIGIN}${item.attachment_url}`
-                            }
+                            href={toAssetUrl(item.attachment_url)}
                             target="_blank"
                             rel="noopener noreferrer"
                             download={item.attachment_name || "document"}

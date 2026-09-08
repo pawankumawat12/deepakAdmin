@@ -11,6 +11,7 @@ import Select from "../../components/ui/Select";
 import Pagination from "../../components/ui/Pagination";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import { exportToCsv } from "../../utils/csvExport";
+import { toAssetUrl } from "../../utils/assetUrl";
 import {
   useDeleteCategoryMutation,
   useGetCategoriesQuery,
@@ -157,17 +158,6 @@ export default function CategoryList() {
     }
   };
 
-  const getImageSrc = (imageUrl) => {
-  if (!imageUrl || /^(?:blob:|data:|https?:\/\/)/i.test(imageUrl)) return imageUrl;
-
-  const backendUrl = (
-    import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    ""
-  ).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
-  return `${backendUrl}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
-};
-
   return (
     <>
       <div className="section-head">
@@ -300,7 +290,7 @@ export default function CategoryList() {
                 }
                 return (
                   <img
-                    src={getImageSrc(value)}
+                    src={toAssetUrl(value)}
                     alt="Category"
                     className="table-image"
                   />

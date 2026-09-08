@@ -49,11 +49,7 @@ import {
   X,
 } from "lucide-react";
 import { FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
-const API_ORIGIN = (
-  import.meta.env.VITE_BACKEND_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  ""
-).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
+import { toAssetUrl } from "../../utils/assetUrl";
 
 const DEFAULT_FALLBACK_COLOR_THEMES = [
   {
@@ -297,7 +293,7 @@ export default function Settings() {
   const fileInputRef = useRef(null);
 
   const currentLogoUrl = logoResponse?.data?.logo_url
-    ? `${API_ORIGIN}${logoResponse.data.logo_url}`
+    ? toAssetUrl(logoResponse.data.logo_url)
     : null;
 
   const handleLogoSelect = async (e) => {

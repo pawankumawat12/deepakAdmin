@@ -4,20 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
 
 import { categorySchema } from "../../schema/category.schema";
+import { toAssetUrl } from "../../utils/assetUrl";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
-
-const getImageSrc = (imageUrl) => {
-  if (!imageUrl || /^(?:blob:|data:|https?:\/\/)/i.test(imageUrl)) return imageUrl;
-
-  const backendUrl = (
-    import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    ""
-  ).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
-  return `${backendUrl}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
-};
 
 export default function CategoryForm({
   initialValues,
@@ -110,7 +100,7 @@ export default function CategoryForm({
       {previewUrl && (
         <div className="image-preview-list">
           <div className="image-preview">
-            <img src={getImageSrc(previewUrl)} alt="Category preview" />
+            <img src={toAssetUrl(previewUrl)} alt="Category preview" />
             {imageFile && (
               <Button type="button" variant="plain" className="image-preview-remove" aria-label="Remove category image" onClick={removeImage}>
                 <X size={14} />

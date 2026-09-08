@@ -23,6 +23,7 @@ import {
   Truck,
   ChevronRight,
 } from "lucide-react";
+import { toAssetUrl } from "../../utils/assetUrl";
 import { useGetDashboardOverviewQuery } from "../../services/dashboardApi";
 import Button from "../../components/ui/Button";
 import DataTable from "../../components/common/DataTable";
@@ -1110,7 +1111,7 @@ export default function Dashboard() {
 
                   {/* Thumbnail */}
                   <img
-                    src={p.image}
+                    src={toAssetUrl(p.image)}
                     alt={p.name}
                     style={{
                       width: "40px",

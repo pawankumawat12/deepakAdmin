@@ -19,6 +19,7 @@ import Pagination from "../../components/ui/Pagination";
 import Button from "../../components/ui/Button";
 import Skeleton from "../../components/ui/Skeleton";
 import useDebouncedValue from "../../utils/useDebouncedValue";
+import { toAssetUrl } from "../../utils/assetUrl";
 import { useGetAdminFavouritesQuery } from "../../services/favouriteApi";
 import { useGetProductCategoriesQuery } from "../../services/productApi";
 
@@ -105,7 +106,7 @@ export default function FavouriteList() {
         render: (_, row) => {
           const defaultFallback =
             "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=120&q=80";
-          const imgSrc = row.image || defaultFallback;
+          const imgSrc = toAssetUrl(row.image) || defaultFallback;
           return (
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div

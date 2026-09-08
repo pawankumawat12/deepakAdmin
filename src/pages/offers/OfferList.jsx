@@ -37,16 +37,7 @@ import {
   Upload,
   Image as ImageIcon,
 } from "lucide-react";
-
-const getImageSrc = (imageUrl) => {
-  if (!imageUrl || /^(?:blob:|data:|https?:\/\/)/i.test(imageUrl)) return imageUrl;
-  const backendUrl = (
-    import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    ""
-  ).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
-  return `${backendUrl}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
-};
+import { toAssetUrl } from "../../utils/assetUrl";
 
 export default function OfferList() {
   const [search, setSearch] = useState("");
@@ -1244,7 +1235,7 @@ export default function OfferList() {
                   {bannerPreviewUrl && (
                     <div style={{ marginTop: "8px", position: "relative", display: "inline-block" }}>
                       <img
-                        src={getImageSrc(bannerPreviewUrl)}
+                        src={toAssetUrl(bannerPreviewUrl)}
                         alt="Offer banner preview"
                         style={{
                           width: "120px",
