@@ -1017,7 +1017,6 @@ export default function OfferList() {
                     <option value="FLAT">FLAT (₹ Rupee Discount)</option>
                     <option value="BOGO">BOGO (Buy X, Get Y Free)</option>
                     <option value="PRODUCT">PRODUCT (Target Specific Items)</option>
-                    <option value="CATEGORY">CATEGORY (Target Food Categories)</option>
                   </select>
                 </div>
 

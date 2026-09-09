@@ -584,7 +584,6 @@ export default function MessageList() {
               {row.admin_reply ? "View" : "Reply"}
             </Button>
             <Button
-              variant="danger"
               variant="delete"
               onClick={() => setDeleteConfirmId(row.id)}
               title="Delete Inquiry"

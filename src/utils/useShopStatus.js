@@ -24,7 +24,8 @@ export function getInitialShopStatus() {
 
 export function useShopStatus() {
   const { data: statusResponse, isLoading, refetch } = useGetStoreStatusQuery();
-  const [updateStoreStatusApi, { isLoading: isUpdating }] = useUpdateStoreStatusMutation();
+  const [updateStoreStatusApi, { isLoading: isUpdating }] =
+    useUpdateStoreStatusMutation();
 
   const [localOpen, setLocalOpen] = useState(getInitialShopStatus);
 
@@ -39,7 +40,8 @@ export function useShopStatus() {
     let socket;
     try {
       socket = getAdminSocket();
-    } catch { void 0;
+    } catch {
+      void 0;
       // Socket not ready yet
     }
 
@@ -51,18 +53,26 @@ export function useShopStatus() {
         setLocalOpen(nextVal);
         try {
           localStorage.setItem(STORAGE_KEY, nextVal ? "open" : "closed");
-        } catch { void 0;
+        } catch {
+          void 0;
           // ignore storage error
         }
+        refetch();
       }
     };
 
+    const handleConnect = () => {
+      refetch();
+    };
+
     socket.on("store_status_changed", handleSocketStatusChanged);
+    socket.on("connect", handleConnect);
 
     return () => {
       socket.off("store_status_changed", handleSocketStatusChanged);
+      socket.off("connect", handleConnect);
     };
-  }, []);
+  }, [refetch]);
 
   // Listen to custom event for same-tab updates & storage event for cross-tab updates
   useEffect(() => {
@@ -96,7 +106,8 @@ export function useShopStatus() {
       setLocalOpen(nextValue);
       try {
         localStorage.setItem(STORAGE_KEY, nextValue ? "open" : "closed");
-      } catch { void 0;
+      } catch {
+        void 0;
         // ignore storage error
       }
 
@@ -118,7 +129,7 @@ export function useShopStatus() {
         }
       }
 
-      // Persist to backend database via API
+  
       try {
         await updateStoreStatusApi({ is_open: nextValue }).unwrap();
       } catch (err) {

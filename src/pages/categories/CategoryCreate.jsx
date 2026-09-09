@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
 import CategoryForm from "../../components/forms/CategoryForm";
 import Button from "../../components/ui/Button";
 import {
@@ -16,9 +17,16 @@ export default function CategoryCreate() {
   const save = async (data) => {
     try {
       await createCategory(data).unwrap();
+      toast.success("Category created successfully!");
       navigate("/categories");
-    } catch {
-      // The API error is shown below.
+    } catch (err) {
+      if (err?.status !== 401) {
+        const errorMsg =
+          err?.data?.message ||
+          (err?.data?.errors && Object.values(err.data.errors)[0]) ||
+          "Failed to create category.";
+        toast.error(errorMsg);
+      }
     }
   };
 
@@ -42,7 +50,7 @@ export default function CategoryCreate() {
             submitLabel="Create category"
             isSubmitting={isLoading}
           />
-          {error && (
+          {error && error.status !== 401 && (
             <p className="error">
               {error.data?.errors
                 ? Object.entries(error.data.errors)

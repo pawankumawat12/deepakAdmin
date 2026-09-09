@@ -2,42 +2,8 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { signOut, setUser } from "../context/authSlice";
 import { updateAdminSocketToken, disconnectAdminSocket } from "./socket";
 
-class SimpleMutex {
-  constructor() {
-    this._queue = Promise.resolve();
-    this._locked = false;
-  }
-
-  isLocked() {
-    return this._locked;
-  }
-
-  async acquire() {
-    this._locked = true;
-    let release;
-    const ticket = new Promise((resolve) => {
-      release = resolve;
-    });
-    const wait = this._queue;
-    this._queue = this._queue.then(() => ticket);
-    await wait;
-    let released = false;
-    return () => {
-      if (released) return;
-      released = true;
-      this._locked = false;
-      release();
-    };
-  }
-
-  async waitForUnlock() {
-    while (this._locked) {
-      await this._queue;
-    }
-  }
-}
-
-const mutex = new SimpleMutex();
+let activeRefreshPromise = null;
+let lastRefreshFailedAt = 0;
 
 const getNormalizedBaseUrl = () => {
   const envUrl = (
@@ -53,17 +19,108 @@ const getNormalizedBaseUrl = () => {
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: getNormalizedBaseUrl(),
   credentials: "include",
-  prepareHeaders: (headers, { getState }) => {
+  prepareHeaders: (headers, { getState, arg }) => {
+    const url = typeof arg === "string" ? arg : arg?.url;
+    const isRefresh =
+      url === "/auth/refresh-token" || url?.includes("refresh-token");
     const accessToken = getState()?.auth?.accessToken;
-    if (accessToken) {
+
+    // Never attach Authorization header on refresh token requests
+    // to prevent backend fallback from verifying expired access token as refresh token
+    if (accessToken && !isRefresh) {
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
     return headers;
   },
 });
 
+const executeRefreshToken = async (api, extraOptions) => {
+  // If refresh failed within the last 5 seconds, do not retry
+  if (Date.now() - lastRefreshFailedAt < 5000) {
+    return {
+      success: false,
+      error: { status: 401, data: { message: "Session expired" } },
+    };
+  }
+
+  if (activeRefreshPromise) {
+    return activeRefreshPromise;
+  }
+
+  activeRefreshPromise = (async () => {
+    try {
+      const refreshResult = await rawBaseQuery(
+        {
+          url: "/auth/refresh-token",
+          method: "POST",
+        },
+        api,
+        extraOptions
+      );
+
+      const newAccessToken =
+        refreshResult.data?.accessToken || refreshResult.data?.token;
+
+      if (!refreshResult.error && newAccessToken) {
+        lastRefreshFailedAt = 0;
+        updateAdminSocketToken(newAccessToken);
+
+        api.dispatch(
+          setUser({
+            ...(refreshResult.data?.user || {}),
+            accessToken: newAccessToken,
+          })
+        );
+
+        return { success: true, accessToken: newAccessToken };
+      }
+
+      // Refresh failed: Refresh token is missing, expired, or invalid
+      lastRefreshFailedAt = Date.now();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+      }
+      disconnectAdminSocket();
+      api.dispatch(signOut());
+
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/login"
+      ) {
+        window.location.replace("/login");
+      }
+
+      return { success: false, error: refreshResult.error };
+    } catch (err) {
+      lastRefreshFailedAt = Date.now();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+      }
+      disconnectAdminSocket();
+      api.dispatch(signOut());
+
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/login"
+      ) {
+        window.location.replace("/login");
+      }
+
+      return { success: false, error: err };
+    } finally {
+      activeRefreshPromise = null;
+    }
+  })();
+
+  return activeRefreshPromise;
+};
+
 const baseQueryWithReauth = async (args, api, extraOptions) => {
-  await mutex.waitForUnlock();
+  // If a refresh is already in-flight, await it so new requests use the fresh token
+  if (activeRefreshPromise) {
+    await activeRefreshPromise;
+  }
+
   let result = await rawBaseQuery(args, api, extraOptions);
 
   const url = typeof args === "string" ? args : args?.url;
@@ -76,53 +133,33 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
     url === "/auth/admin-login" ||
     url === "/auth/verify-otp";
 
-  if (result.error?.status === 401 && !isAuthEndpoint) {
-    if (!mutex.isLocked()) {
-      const release = await mutex.acquire();
-      try {
-        const refreshResult = await rawBaseQuery(
-          {
-            url: "/auth/refresh-token",
-            method: "POST",
-          },
-          api,
-          extraOptions
-        );
+  const isOnAuthPage =
+    typeof window !== "undefined" &&
+    (window.location.pathname === "/login" ||
+      window.location.pathname === "/forgot-password" ||
+      window.location.pathname === "/reset-password");
 
-        if (
-          !refreshResult.error &&
-          (refreshResult.data?.accessToken || refreshResult.data?.token)
-        ) {
-          const newAccessToken =
-            refreshResult.data.accessToken || refreshResult.data.token;
+  const hasToken = Boolean(
+    api.getState()?.auth?.accessToken ||
+      (typeof window !== "undefined" && localStorage.getItem("accessToken"))
+  );
 
-          updateAdminSocketToken(newAccessToken);
+  // If on auth/login page or endpoint, or has no token, never attempt refresh on 401
+  if (
+    result.error?.status === 401 &&
+    !isAuthEndpoint &&
+    !isOnAuthPage &&
+    hasToken
+  ) {
+    const refreshOutcome = await executeRefreshToken(api, extraOptions);
 
-          api.dispatch(
-            setUser({
-              ...(refreshResult.data?.user || {}),
-              accessToken: newAccessToken,
-            })
-          );
-
-          result = await rawBaseQuery(args, api, extraOptions);
-        } else {
-          // Stop all retries immediately, clear access token and Redux auth state
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("accessToken");
-          }
-          disconnectAdminSocket();
-          api.dispatch(signOut());
-        }
-      } finally {
-        release();
-      }
+    if (refreshOutcome?.success) {
+      // Retry the original query with the new access token
+      result = await rawBaseQuery(args, api, extraOptions);
     } else {
-      await mutex.waitForUnlock();
-      // Only retry if a new token was successfully stored in Redux by the refresh call
-      const tokenAfterUnlock = api.getState()?.auth?.accessToken;
-      if (tokenAfterUnlock) {
-        result = await rawBaseQuery(args, api, extraOptions);
+      // Refresh failed and redirecting to login; sanitize error message so no toast/span shows "Access token not found"
+      if (result.error?.data && typeof result.error.data === "object") {
+        result.error.data.message = "Session expired. Redirecting to login...";
       }
     }
   }

@@ -9,6 +9,15 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body: payload,
       }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const token = data?.accessToken || data?.token || data?.user?.token;
+          if (data?.user && !data?.requiresOtp) {
+            dispatch(setUser({ ...data.user, accessToken: token }));
+          }
+        } catch {}
+      },
     }),
     sendOtp: build.mutation({
       query: (payload) => ({
@@ -43,6 +52,19 @@ export const authApi = baseApi.injectEndpoints({
     }),
     getMe: build.query({
       query: () => ({ url: "/auth/me" }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const token = data?.accessToken || data?.token || data?.user?.token;
+          if (data?.user) {
+            dispatch(setUser({ ...data.user, accessToken: token }));
+          } else if (token) {
+            dispatch(setUser({ accessToken: token }));
+          }
+        } catch {
+          // Handled in component
+        }
+      },
       providesTags: ["Auth"],
     }),
     logout: build.mutation({
@@ -52,6 +74,7 @@ export const authApi = baseApi.injectEndpoints({
           localStorage.removeItem("accessToken");
         }
         dispatch(signOut());
+        dispatch(baseApi.util.resetApiState());
         try {
           await queryFulfilled;
         } catch {}

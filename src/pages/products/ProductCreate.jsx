@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
 import ProductForm from "../../components/forms/ProductForm";
 import Button from "../../components/ui/Button";
 import {
@@ -17,9 +18,16 @@ export default function ProductCreate() {
   const save = async (data) => {
     try {
       await createProduct(data).unwrap();
+      toast.success("Product created successfully!");
       navigate("/products");
-    } catch {
-      // The API error is shown below.
+    } catch (err) {
+      if (err?.status !== 401) {
+        const errorMsg =
+          err?.data?.message ||
+          (err?.data?.errors && Object.values(err.data.errors)[0]) ||
+          "Failed to create product. Please check form details.";
+        toast.error(errorMsg);
+      }
     }
   };
 
@@ -53,7 +61,7 @@ export default function ProductCreate() {
             submitLabel="Create product"
             isSubmitting={isLoading}
           />
-          {error && (
+          {error && error.status !== 401 && (
             <p className="error">
               {error.data?.errors
                 ? Object.entries(error.data.errors)

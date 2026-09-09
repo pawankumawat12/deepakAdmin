@@ -1,13 +1,3 @@
-/**
- * Exports data to a CSV file and triggers a browser download.
- * Handles commas, double quotes, newlines, and prepends UTF-8 BOM
- * for perfect compatibility with Microsoft Excel and Google Sheets.
- *
- * @param {Object} options
- * @param {string} options.filename - e.g. "orders-export-2026-09-05.csv"
- * @param {Array<{ key: string, label: string }>} options.columns - Column definitions
- * @param {Array<Object>} options.data - Array of row objects
- */
 export function exportToCsv({ filename = "export.csv", columns, data }) {
   if (!Array.isArray(columns) || columns.length === 0) {
     console.warn("exportToCsv: No columns specified.");

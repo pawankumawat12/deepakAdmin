@@ -8,7 +8,14 @@ const authSlice = createSlice({
       const payload = action.payload;
       if (payload) {
         state.user = payload.user || payload;
-        state.accessToken = payload.accessToken || payload.token || state.accessToken;
+        const token =
+          payload.accessToken ||
+          payload.token ||
+          payload.user?.accessToken ||
+          payload.user?.token;
+        if (token) {
+          state.accessToken = token;
+        }
       }
     },
     

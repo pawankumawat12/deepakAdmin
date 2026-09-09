@@ -1,5 +1,6 @@
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
 
 import ProductForm from "../../components/forms/ProductForm";
 import Button from "../../components/ui/Button";
@@ -57,9 +58,16 @@ export default function ProductEdit() {
         imageFiles: Array.from(data.imageFiles || []),
       }).unwrap();
 
+      toast.success("Product updated successfully!");
       navigate("/products");
-    } catch (error) {
-      console.error("Update product error:", error);
+    } catch (err) {
+      if (err?.status !== 401) {
+        const errorMsg =
+          err?.data?.message ||
+          (err?.data?.errors && Object.values(err.data.errors)[0]) ||
+          "Failed to update product. Please check form details.";
+        toast.error(errorMsg);
+      }
     }
   };
 
@@ -99,7 +107,7 @@ export default function ProductEdit() {
         isSubmitting={isLoading}
       />
 
-      {error && (
+      {error && error.status !== 401 && (
         <p className="error">
           {error.data?.message ||
             "Unable to update product"}

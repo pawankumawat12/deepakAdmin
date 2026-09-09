@@ -1,13 +1,30 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import { X, Banknote, MapPin, User, ShoppingBag, Receipt, Truck, Tag, FileText, AlertTriangle, Download, LoaderCircle } from "lucide-react";
+import {
+  X,
+  Banknote,
+  MapPin,
+  User,
+  ShoppingBag,
+  Receipt,
+  Truck,
+  Tag,
+  FileText,
+  AlertTriangle,
+  Download,
+  LoaderCircle,
+  Lock,
+  RotateCcw,
+  ShieldCheck,
+} from "lucide-react";
 import Button from "../components/ui/Button";
 
 const OrderDetailsModal = ({
   order,
   onClose,
   onPaymentStatusChange,
+  onOpenRefund,
   isUpdatingPayment,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -600,49 +617,205 @@ const OrderDetailsModal = ({
 
                 </div>
 
-                <div className="d-flex justify-content-between align-items-center">
+                {(() => {
+                  const isOnline =
+                    order.payment_method &&
+                    !order.payment_method.toLowerCase().includes("cash") &&
+                    !order.payment_method.toLowerCase().includes("cod");
+                  const currentStatus = (order.payment_status || "Pending").trim();
+                  const currentStatusLower = currentStatus.toLowerCase();
+                  const isRefunded = currentStatusLower === "refunded";
+                  const isPartiallyRefunded =
+                    currentStatusLower === "partially refunded" ||
+                    currentStatusLower === "partially_refunded";
+                  const isPaid = currentStatusLower === "paid";
 
-                  <span className="small text-muted">
-                    Update Payment Status
-                  </span>
+                  if (isRefunded) {
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "10px 14px",
+                          backgroundColor: "#f1f5f9",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "8px",
+                          color: "#334155",
+                          fontSize: "12.5px",
+                        }}
+                      >
+                        <Lock size={15} color="#475569" />
+                        <span style={{ fontWeight: 600 }}>
+                          Payment is fully Refunded and is permanently locked. No further changes allowed.
+                        </span>
+                      </div>
+                    );
+                  }
 
-                  <select
-                    className="form-select form-select-sm"
-                    style={{ width: "170px" }}
-                    value={order.payment_status || "Pending"}
-                    disabled={isUpdatingPayment}
-                    onChange={(e) =>
-                      onPaymentStatusChange(
-                        order.id,
-                        e.target.value
-                      )
-                    }
-                  >
-                    <option value="Pending">
-                      Pending
-                    </option>
+                  if (isPartiallyRefunded) {
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "8px 12px",
+                          backgroundColor: "#faf5ff",
+                          border: "1px solid #e9d5ff",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            color: "#7e22ce",
+                          }}
+                        >
+                          Partially Refunded
+                        </span>
+                        {isOnline && onOpenRefund && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenRefund(order)}
+                            style={{
+                              padding: "5px 12px",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              borderRadius: "6px",
+                              backgroundColor: "#7e22ce",
+                              color: "#ffffff",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <RotateCcw size={12} />
+                            <span>Process Additional Refund</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
 
-                    <option value="Paid">
-                      Paid
-                    </option>
+                  if (isOnline && isPaid) {
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "8px 12px",
+                          backgroundColor: "#f0fdf4",
+                          border: "1px solid #bbf7d0",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            color: "#166534",
+                          }}
+                        >
+                          Paid via Razorpay (Locked from Pending/Failed)
+                        </span>
+                        {onOpenRefund && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenRefund(order)}
+                            style={{
+                              padding: "5px 12px",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              borderRadius: "6px",
+                              backgroundColor: "#f3e8ff",
+                              color: "#7e22ce",
+                              border: "1px solid #d8b4fe",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <RotateCcw size={12} />
+                            <span>Process Refund</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
 
-                    <option value="Failed">
-                      Failed
-                    </option>
+                  return (
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span className="small text-muted">
+                        Update Payment Status
+                      </span>
 
-                    <option value="Refunded">
-                      Refunded
-                    </option>
-                  </select>
-
-                </div>
+                      <select
+                        className="form-select form-select-sm"
+                        style={{ width: "170px" }}
+                        value={order.payment_status || "Pending"}
+                        disabled={isUpdatingPayment}
+                        onChange={(e) =>
+                          onPaymentStatusChange(
+                            order.id,
+                            e.target.value
+                          )
+                        }
+                      >
+                        <option value="Pending">Pending</option>
+                        {(!isOnline || isPaid) && <option value="Paid">Paid</option>}
+                        <option value="Failed">Failed</option>
+                        {!isOnline && isPaid && <option value="Refunded">Refunded</option>}
+                      </select>
+                    </div>
+                  );
+                })()}
 
               </div>
 
-              {paymentDetails && (
-                <pre className="bg-light border rounded-3 p-3 small mt-3 mb-0">
-                  {JSON.stringify(paymentDetails, null, 2)}
-                </pre>
+              {/* Refund History Table */}
+              {Array.isArray(paymentDetails?.refunds) && paymentDetails.refunds.length > 0 && (
+                <div className="mt-3 p-3 bg-light border rounded-3">
+                  <div className="fw-bold small text-dark mb-2 d-flex align-items-center gap-1">
+                    <RotateCcw size={13} />
+                    <span>Refund History</span>
+                  </div>
+                  <div className="table-responsive">
+                    <table className="table table-sm table-bordered mb-0 bg-white" style={{ fontSize: "11px" }}>
+                      <thead>
+                        <tr className="table-light">
+                          <th>Refund ID</th>
+                          <th>Amount</th>
+                          <th>Status</th>
+                          <th>Processed At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paymentDetails.refunds.map((rfnd, idx) => (
+                          <tr key={rfnd.refund_id || idx}>
+                            <td className="font-monospace text-muted">{rfnd.refund_id || "N/A"}</td>
+                            <td className="fw-bold text-danger">₹{Number(rfnd.amount || 0).toFixed(2)}</td>
+                            <td>
+                              <span className="badge bg-purple text-white">
+                                {rfnd.status || "processed"}
+                              </span>
+                            </td>
+                            <td>
+                              {rfnd.created_at
+                                ? new Date(rfnd.created_at).toLocaleString()
+                                : "N/A"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
 
             </OrderSection>
@@ -821,7 +994,9 @@ const Info = ({
 }) => {
   const getBadgeClass = (val) => {
     const s = String(val || "").toLowerCase();
-    if (s.includes("delivered")) return "badge bg-success";
+    if (s.includes("delivered") || s === "paid") return "badge bg-success";
+    if (s === "refunded" || s.includes("refunded")) return "badge bg-secondary";
+    if (s.includes("partially")) return "badge bg-purple text-white";
     if (s.includes("preparing")) return "badge bg-primary";
     if (s.includes("out for delivery")) return "badge bg-info text-dark";
     if (s.includes("cancel") || s.includes("failed")) return "badge bg-danger";

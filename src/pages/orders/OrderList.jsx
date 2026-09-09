@@ -49,8 +49,11 @@ import {
   Zap,
   FileText,
   Download,
+  Lock,
+  RotateCcw,
 } from "lucide-react";
 import OrderDetailsModal from "../../modals/OrderDetailsModal";
+import RefundModal from "../../modals/RefundModal";
 
 export default function OrderList() {
   const location = useLocation();
@@ -58,6 +61,7 @@ export default function OrderList() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [refundModalOrder, setRefundModalOrder] = useState(null);
   const debouncedSearch = useDebouncedValue(search, 600);
 
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
@@ -176,8 +180,61 @@ export default function OrderList() {
   };
 
   const handlePaymentStatusChange = async (orderId, newPaymentStatus) => {
+    const order = orders?.find((o) => o.id === orderId) || (selectedOrderDetails?.id === orderId ? selectedOrderDetails : null);
+    if (!order) return;
+
+    const isOnline =
+      order.payment_method &&
+      !order.payment_method.toLowerCase().includes("cash") &&
+      !order.payment_method.toLowerCase().includes("cod");
+
+    const currentStatus = (order.payment_status || "Pending").trim();
+    const currentStatusLower = currentStatus.toLowerCase();
+    const targetStatusLower = newPaymentStatus.toLowerCase();
+
+    // RULE 1: If payment is REFUNDED, it is permanently locked
+    if (currentStatusLower === "refunded") {
+      toast.error("Refunded payments are permanently locked and cannot be changed.");
+      return;
+    }
+
+    // If Admin selects Refund / Partially Refunded for an online order, open RefundModal!
+    if (
+      isOnline &&
+      (targetStatusLower === "refunded" ||
+        targetStatusLower === "partially refunded" ||
+        targetStatusLower === "partially_refunded")
+    ) {
+      setRefundModalOrder(order);
+      return;
+    }
+
+    // RULE 2: Online/Razorpay: If PAID, cannot change to PENDING or FAILED
+    if (isOnline && currentStatusLower === "paid") {
+      if (targetStatusLower === "pending" || targetStatusLower === "failed") {
+        toast.error("Online payments that are already Paid cannot be changed to Pending or Failed.");
+        return;
+      }
+    }
+
+    // RULE 3: Partially Refunded orders cannot be set back to Pending, Failed, or Paid
+    if (
+      currentStatusLower === "partially refunded" ||
+      currentStatusLower === "partially_refunded"
+    ) {
+      if (
+        targetStatusLower === "pending" ||
+        targetStatusLower === "failed" ||
+        targetStatusLower === "paid"
+      ) {
+        toast.error("Partially refunded orders cannot be set back to Pending, Failed, or Paid. Please use Process Refund.");
+        return;
+      }
+    }
+
     try {
       await updatePaymentStatus({ id: orderId, paymentStatus: newPaymentStatus }).unwrap();
+      toast.success(`Payment status updated to ${newPaymentStatus}`);
       if (selectedOrderDetails && selectedOrderDetails.id === orderId) {
         setSelectedOrderDetails((prev) => ({
           ...prev,
@@ -186,6 +243,7 @@ export default function OrderList() {
       }
     } catch (err) {
       console.error("Failed to update payment status:", err);
+      toast.error(err?.data?.message || err?.message || "Failed to update payment status");
     }
   };
 
@@ -767,15 +825,34 @@ export default function OrderList() {
                 !item.payment_method.toLowerCase().includes("cash") &&
                 !item.payment_method.toLowerCase().includes("cod");
               const currentStatus = item.payment_status || "Pending";
+              const currentStatusLower = currentStatus.toLowerCase();
+
+              const isRefunded = currentStatusLower === "refunded";
+              const isPartiallyRefunded =
+                currentStatusLower === "partially refunded" ||
+                currentStatusLower === "partially_refunded";
+              const isPaid = currentStatusLower === "paid";
 
               let statusBg = "#fef3c7";
               let statusColor = "#b45309";
-              if (currentStatus === "Paid") {
+              let statusBorder = "#fde68a";
+
+              if (isPaid) {
                 statusBg = "#dcfce7";
                 statusColor = "#166534";
-              } else if (currentStatus === "Failed") {
+                statusBorder = "#bbf7d0";
+              } else if (currentStatusLower === "failed") {
                 statusBg = "#fee2e2";
                 statusColor = "#b91c1c";
+                statusBorder = "#fecaca";
+              } else if (isRefunded) {
+                statusBg = "#f1f5f9";
+                statusColor = "#475569";
+                statusBorder = "#cbd5e1";
+              } else if (isPartiallyRefunded) {
+                statusBg = "#f3e8ff";
+                statusColor = "#7e22ce";
+                statusBorder = "#e9d5ff";
               }
 
               return (
@@ -805,7 +882,7 @@ export default function OrderList() {
                         backgroundColor: "#f3f4f6",
                         padding: "1px 4px",
                         borderRadius: "4px",
-                        maxWidth: "130px",
+                        maxWidth: "135px",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
@@ -815,26 +892,147 @@ export default function OrderList() {
                       UTR: {item.transaction_id}
                     </div>
                   )}
-                  <Select
-                    value={currentStatus}
-                    disabled={isUpdatingPayment}
-                    onChange={(e) => handlePaymentStatusChange(item.id, e.target.value)}
-                    style={{
-                      fontSize: "11px",
-                      padding: "2px 6px",
-                      borderRadius: "6px",
-                      fontWeight: 700,
-                      backgroundColor: statusBg,
-                      color: statusColor,
-                      borderColor: "transparent",
-                      width: "135px",
-                    }}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Failed">Failed</option>
-                    <option value="Refunded">Refunded</option>
-                  </Select>
+
+                  {/* RULE 1: If Refunded, permanently locked */}
+                  {isRefunded ? (
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                        fontWeight: 700,
+                        backgroundColor: statusBg,
+                        color: statusColor,
+                        border: `1px solid ${statusBorder}`,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        width: "fit-content",
+                      }}
+                      title="Payment is fully refunded and permanently locked"
+                    >
+                      <Lock size={11} />
+                      <span>Refunded</span>
+                    </div>
+                  ) : isPartiallyRefunded ? (
+                    /* RULE 3: Partially Refunded */
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <div
+                        style={{
+                          fontSize: "10.5px",
+                          padding: "3px 6px",
+                          borderRadius: "6px",
+                          fontWeight: 700,
+                          backgroundColor: statusBg,
+                          color: statusColor,
+                          border: `1px solid ${statusBorder}`,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Partially Refunded
+                      </div>
+                      {isOnline && (
+                        <button
+                          type="button"
+                          onClick={() => setRefundModalOrder(item)}
+                          title="Process another refund via Razorpay"
+                          style={{
+                            padding: "3px 6px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            borderRadius: "6px",
+                            backgroundColor: "#7e22ce",
+                            color: "#fff",
+                            border: "none",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Refund +
+                        </button>
+                      )}
+                    </div>
+                  ) : isOnline && isPaid ? (
+                    /* RULE 2: Online Paid cannot change to Pending or Failed. Only Refund action */
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          fontWeight: 700,
+                          backgroundColor: statusBg,
+                          color: statusColor,
+                          border: `1px solid ${statusBorder}`,
+                        }}
+                      >
+                        Paid
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setRefundModalOrder(item)}
+                        title="Initiate Razorpay Refund"
+                        style={{
+                          padding: "3px 6px",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          borderRadius: "6px",
+                          backgroundColor: "#f3e8ff",
+                          color: "#7e22ce",
+                          border: "1px solid #d8b4fe",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "3px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <RotateCcw size={10} />
+                        <span>Refund</span>
+                      </button>
+                    </div>
+                  ) : isOnline ? (
+                    /* Online Pending or Failed */
+                    <Select
+                      value={currentStatus}
+                      disabled={isUpdatingPayment}
+                      onChange={(e) => handlePaymentStatusChange(item.id, e.target.value)}
+                      style={{
+                        fontSize: "11px",
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                        fontWeight: 700,
+                        backgroundColor: statusBg,
+                        color: statusColor,
+                        borderColor: statusBorder,
+                        width: "135px",
+                      }}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Failed">Failed</option>
+                    </Select>
+                  ) : (
+                    /* RULE 5: COD - Keep existing management: Pending -> Paid, Paid -> Refunded */
+                    <Select
+                      value={currentStatus}
+                      disabled={isUpdatingPayment}
+                      onChange={(e) => handlePaymentStatusChange(item.id, e.target.value)}
+                      style={{
+                        fontSize: "11px",
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                        fontWeight: 700,
+                        backgroundColor: statusBg,
+                        color: statusColor,
+                        borderColor: statusBorder,
+                        width: "135px",
+                      }}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Paid">Paid</option>
+                      {isPaid && <option value="Refunded">Refunded</option>}
+                    </Select>
+                  )}
                 </div>
               );
             },
@@ -1070,7 +1268,21 @@ export default function OrderList() {
     order={selectedOrderDetails}
     onClose={() => setSelectedOrderDetails(null)}
     onPaymentStatusChange={handlePaymentStatusChange}
+    onOpenRefund={(order) => setRefundModalOrder(order)}
     isUpdatingPayment={isUpdatingPayment}
+  />
+)}
+
+{refundModalOrder && (
+  <RefundModal
+    isOpen={Boolean(refundModalOrder)}
+    order={refundModalOrder}
+    onClose={() => setRefundModalOrder(null)}
+    onRefundSuccess={(updated) => {
+      if (selectedOrderDetails?.id === updated?.id) {
+        setSelectedOrderDetails(updated);
+      }
+    }}
   />
 )}
       
