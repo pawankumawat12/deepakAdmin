@@ -370,8 +370,8 @@ export default function ProductList() {
               key: "name",
               label: "PRODUCT",
               render: (value) => (
-                <div className="product-name">
-                  <b>{value}</b>
+                <div className="product-name" title={value}>
+                  <b title={value}>{value}</b>
                 </div>
               ),
               sortable: true,

@@ -101,11 +101,19 @@ export default function DataTable({
                     cursor:
                       column.sortable && onSort ? "pointer" : "default",
                     whiteSpace: "nowrap",
+                    maxWidth: column.maxWidth || "260px",
+                    minWidth: column.minWidth || "100px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    ...column.style,
                   }}
                   onClick={() => handleSort(column)}
+                  title={typeof column.label === "string" ? column.label : undefined}
                 >
-                  <div> {column.label}
-                    {renderSortIcon(column)}</div>
+                  <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {column.label}
+                    {renderSortIcon(column)}
+                  </div>
                 </th>
               ))}
 
@@ -148,28 +156,50 @@ export default function DataTable({
                     <td>{index + 1}</td>
                   )}
 
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      style={{
-                     
-                        maxWidth: column.maxWidth || "320px",
-                        minWidth: column.minWidth || "140px",
-                      }}
-                      title={
-                        typeof row[column.key] === "string" && !column.render
-                          ? row[column.key]
-                          : undefined
-                      }
-                    >
-                      {column.render
-                        ? column.render(row[column.key], row, index)
-                        : row[column.key] ?? "-"}
-                    </td>
-                  ))}
+                  {columns.map((column) => {
+                    const rawVal = row[column.key];
+                    const tooltip = column.getTooltip
+                      ? column.getTooltip(rawVal, row, index)
+                      : column.tooltip !== undefined
+                      ? column.tooltip
+                      : typeof rawVal === "string" || typeof rawVal === "number"
+                      ? String(rawVal)
+                      : undefined;
+
+                    return (
+                      <td
+                        key={column.key}
+                        className="data-table-cell"
+                        style={{
+                          maxWidth: column.maxWidth || "260px",
+                          minWidth: column.minWidth || "100px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: column.wrap ? "normal" : "nowrap",
+                          verticalAlign: "middle",
+                          ...column.style,
+                        }}
+                        title={tooltip}
+                      >
+                        <div
+                          style={{
+                            maxWidth: "100%",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: column.wrap ? "normal" : "nowrap",
+                            wordBreak: column.wrap ? "break-word" : "normal",
+                          }}
+                        >
+                          {column.render
+                            ? column.render(rawVal, row, index)
+                            : (rawVal ?? "-")}
+                        </div>
+                      </td>
+                    );
+                  })}
 
                   {renderActions && (
-                    <td>
+                    <td style={{ verticalAlign: "middle", whiteSpace: "nowrap" }}>
                       <div className="d-flex align-items-center gap-2">
                         {renderActions(row)}
                       </div>

@@ -76,7 +76,7 @@ export default function ProductEdit() {
       <div className="section-head">
         <div>
           <h1>Edit product</h1>
-          <p>Update {product.name}.</p>
+          <p style={{maxWidth:"300px"}}>Update {product.name}.</p>
         </div>
 
         <Button
