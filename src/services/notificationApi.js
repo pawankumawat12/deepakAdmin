@@ -30,6 +30,22 @@ export const notificationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Notification"],
     }),
+
+    registerAdminDeviceToken: builder.mutation({
+      query: (body) => ({
+        url: "/notifications/admin-token",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    unregisterAdminDeviceToken: builder.mutation({
+      query: (body) => ({
+        url: "/notifications/admin-token",
+        method: "DELETE",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -38,5 +54,8 @@ export const {
   useGetAdminUnreadCountQuery,
   useMarkAdminNotificationReadMutation,
   useMarkAllAdminNotificationsReadMutation,
+  useRegisterAdminDeviceTokenMutation,
+  useUnregisterAdminDeviceTokenMutation,
 } = notificationApi;
+
 

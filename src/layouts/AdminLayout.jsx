@@ -38,8 +38,10 @@ import {
   useGetAdminUnreadCountQuery,
   useMarkAdminNotificationReadMutation,
   useMarkAllAdminNotificationsReadMutation,
+  useRegisterAdminDeviceTokenMutation,
 } from "../services/notificationApi";
 import { getAdminSocket } from "../services/socket";
+import { requestAdminPushToken, onForegroundFcmMessage } from "../services/fcm";
 import { toAssetUrl } from "../utils/assetUrl";
 import { useShopStatus } from "../utils/useShopStatus";
 
@@ -184,9 +186,101 @@ export default function AdminLayout() {
 
   const [markAsRead] = useMarkAdminNotificationReadMutation();
   const [markAllAsRead, { isLoading: isMarkingAll }] = useMarkAllAdminNotificationsReadMutation();
+  const [registerDeviceToken] = useRegisterAdminDeviceTokenMutation();
 
   const notifications = notifData?.data?.notifications || [];
   const unreadCount = unreadCountData?.data?.unreadCount ?? (notifData?.data?.unreadCount || 0);
+
+  // FCM Push Notification Registration & Foreground Listener
+  useEffect(() => {
+    let unsubscribeFcm = () => {};
+
+    const setupFcm = async () => {
+      try {
+        const token = await requestAdminPushToken();
+        if (token) {
+          await registerDeviceToken({
+            token,
+            deviceType: "web",
+            deviceInfo: navigator.userAgent || null,
+          }).unwrap();
+        }
+      } catch (err) {
+        console.warn("[Admin FCM Registration Notice]:", err?.message || err);
+      }
+    };
+
+    setupFcm();
+
+    // Foreground FCM push listener
+    unsubscribeFcm = onForegroundFcmMessage((payload) => {
+      refetchNotifs();
+      refetchUnreadCount();
+
+      const title = payload.notification?.title || payload.data?.title || "SFC Cafe";
+      const body = payload.notification?.body || payload.data?.body || "New order received";
+
+      toast.custom(
+        (t) => (
+          <div
+            style={{
+              background: "#0f172a",
+              color: "#ffffff",
+              padding: "12px 16px",
+              borderRadius: "12px",
+              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.4)",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              cursor: "pointer",
+              border: "1px solid #334155",
+              maxWidth: "360px",
+            }}
+            onClick={() => {
+              toast.dismiss(t.id);
+              navigate("/orders");
+            }}
+          >
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                background: "#4f7d16",
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Bell size={16} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: "12px", color: "#f8fafc" }}>{title}</div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "#94a3b8",
+                  marginTop: "2px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {body}
+              </div>
+            </div>
+          </div>
+        ),
+        { duration: 5000 }
+      );
+    });
+
+    return () => {
+      if (typeof unsubscribeFcm === "function") {
+        unsubscribeFcm();
+      }
+    };
+  }, [registerDeviceToken, refetchNotifs, refetchUnreadCount, navigate]);
 
   // Real-Time Socket.IO Notification Listener
   useEffect(() => {
