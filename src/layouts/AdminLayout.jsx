@@ -212,7 +212,7 @@ export default function AdminLayout() {
 
     setupFcm();
 
-    // Foreground FCM push listener
+    // Foreground FCM push listener - trigger native system notification even when tab is active
     unsubscribeFcm = onForegroundFcmMessage((payload) => {
       refetchNotifs();
       refetchUnreadCount();
@@ -220,6 +220,62 @@ export default function AdminLayout() {
       const title = payload.notification?.title || payload.data?.title || "SFC Cafe";
       const body = payload.notification?.body || payload.data?.body || "New order received";
 
+      // 1. Play chime sound
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+          osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.4);
+        }
+      } catch {}
+
+      // 2. Trigger native OS / browser notification even when active
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        try {
+          if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.showNotification(title, {
+                body,
+                icon: "/favicon.svg",
+                badge: "/favicon.svg",
+                tag: payload.data?.orderId ? `order-${payload.data.orderId}` : `sfc-order-${Date.now()}`,
+                renotify: true,
+                requireInteraction: true,
+                data: {
+                  url: "/orders",
+                  orderId: payload.data?.orderId,
+                  orderNumber: payload.data?.orderNumber,
+                },
+              });
+            });
+          } else {
+            const notif = new Notification(title, {
+              body,
+              icon: "/favicon.svg",
+              badge: "/favicon.svg",
+              tag: payload.data?.orderId ? `order-${payload.data.orderId}` : `sfc-order-${Date.now()}`,
+            });
+            notif.onclick = () => {
+              window.focus();
+              navigate("/orders");
+            };
+          }
+        } catch (e) {
+          console.warn("[FCM] Native notification trigger error:", e);
+        }
+      }
+
+      // 3. In-app toast banner
       toast.custom(
         (t) => (
           <div
@@ -357,16 +413,19 @@ export default function AdminLayout() {
       refetchUnreadCount();
     };
 
-    socket.on("notification:new", handleNewNotification);
-    socket.on("notification:unread_count", handleUnreadCount);
-    socket.on("new_order", () => {
+    const handleNewOrder = () => {
       refetchNotifs();
       refetchUnreadCount();
-    });
+    };
+
+    socket.on("notification:new", handleNewNotification);
+    socket.on("notification:unread_count", handleUnreadCount);
+    socket.on("new_order", handleNewOrder);
 
     return () => {
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:unread_count", handleUnreadCount);
+      socket.off("new_order", handleNewOrder);
     };
   }, [refetchNotifs, refetchUnreadCount, navigate]);
 

@@ -103,6 +103,7 @@ export default function AdminOrderChatModal({ order, onClose }) {
   const imageInputRef = useRef(null);
   const docInputRef = useRef(null);
   const inputFieldRef = useRef(null);
+  const isSendingRef = useRef(false);
 
   const {
     data: historyData,
@@ -113,10 +114,10 @@ export default function AdminOrderChatModal({ order, onClose }) {
 
   const chatStatus =
     historyData?.chatStatus || order?.chatStatus || order?.chat_status;
+  const isDelivered = order?.order_status === "delivered";
   const isExpired =
-    chatStatus?.isExpired ??
-    chatStatus?.is_expired ??
-    ((order?.status === "Delivered" || order?.status === "Completed") &&
+    chatStatus?.isExpired ||
+    (isDelivered &&
       order?.delivered_at &&
       Date.now() > new Date(order.delivered_at).getTime() + 20 * 60 * 1000);
 
@@ -142,7 +143,7 @@ export default function AdminOrderChatModal({ order, onClose }) {
     const handleNewMessage = (payload) => {
       if (String(payload.orderId) === String(orderId)) {
         setLiveMessages((prev) => {
-          if (prev.some((m) => m.id === payload.message.id)) return prev;
+          if (prev.some((m) => String(m.id) === String(payload.message.id))) return prev;
           return [...prev, payload.message];
         });
 
@@ -257,7 +258,8 @@ export default function AdminOrderChatModal({ order, onClose }) {
     if (isExpired) return;
     const trimmed = inputText.trim();
     if (!trimmed && !selectedFile) return;
-    if (isSending) return;
+    if (isSending || isSendingRef.current) return;
+    isSendingRef.current = true;
 
     const socket = getAdminSocket();
     socket.emit("typing_stop", {
@@ -283,7 +285,7 @@ export default function AdminOrderChatModal({ order, onClose }) {
         const res = await postMessageMutation(formData).unwrap();
         if (res.data) {
           setLiveMessages((prev) => {
-            if (prev.some((m) => m.id === res.data.id)) return prev;
+            if (prev.some((m) => String(m.id) === String(res.data.id))) return prev;
             return [...prev, res.data];
           });
         }
@@ -296,18 +298,19 @@ export default function AdminOrderChatModal({ order, onClose }) {
 
         if (res.data) {
           setLiveMessages((prev) => {
-            if (prev.some((m) => m.id === res.data.id)) return prev;
+            if (prev.some((m) => String(m.id) === String(res.data.id))) return prev;
             return [...prev, res.data];
           });
         }
       }
     } catch (err) {
       console.error("Failed to send admin chat message:", err);
-      alert("Failed to send message. Please try again.");
       // Restore input text on error
       setInputText(textToSend);
       if (fileToSend) setSelectedFile(fileToSend);
       alert(err?.data?.message || "Failed to send message. Please try again.");
+    } finally {
+      isSendingRef.current = false;
     }
   };
 
@@ -315,9 +318,6 @@ export default function AdminOrderChatModal({ order, onClose }) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
-      if (!isExpired) {
-        handleSendMessage();
-      }
     }
   };
 
