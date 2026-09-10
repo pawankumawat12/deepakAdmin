@@ -5,10 +5,14 @@ const CKEDITOR_SRC = "https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js";
 function loadEditorScript() {
   if (window.CKEDITOR) return Promise.resolve(window.CKEDITOR);
 
-  const existingScript = document.querySelector(`script[src="${CKEDITOR_SRC}"]`);
+  const existingScript = document.querySelector(
+    `script[src="${CKEDITOR_SRC}"]`
+  );
   if (existingScript) {
     return new Promise((resolve, reject) => {
-      existingScript.addEventListener("load", () => resolve(window.CKEDITOR), { once: true });
+      existingScript.addEventListener("load", () => resolve(window.CKEDITOR), {
+        once: true,
+      });
       existingScript.addEventListener("error", reject, { once: true });
     });
   }
@@ -45,22 +49,35 @@ export default function CKEditorField({
         if (cancelled || !textareaRef.current || editorRef.current) return;
         const editor = CKEDITOR.replace(textareaRef.current, {
           height,
-          removePlugins: "exportpdf,uploadimage,uploadwidget,notificationaggregator",
-        
-  toolbar: [
-    ["Source"],
-    ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord"],
-    ["Undo", "Redo"],
-    ["Bold", "Italic", "Underline", "Strike", "Subscript", "Superscript"],
-    ["RemoveFormat"],
-    ["NumberedList", "BulletedList", "Outdent", "Indent"],
-    ["JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"],
-    ["Link", "Unlink", "Anchor"],
-    ["Blockquote"],
-    ["Table"],
-    ["HorizontalRule", "SpecialChar"],
-    ["Format", "Styles"],
-  ],
+          removePlugins:
+            "exportpdf,uploadimage,uploadwidget,notificationaggregator",
+
+          toolbar: [
+            ["Source"],
+            ["Save", "NewPage", "ExportPdf", "Preview", "Print", "Templates"],
+            ["Cut", "Copy", "Paste", "PasteText", "PasteFromWord"],
+            ["Undo", "Redo"],
+            ["Find", "Replace", "SelectAll", "Scayt"],
+            [
+              "Bold",
+              "Italic",
+              "Underline",
+              "Strike",
+              "Subscript",
+              "Superscript",
+            ],
+            ["RemoveFormat"],
+            ["NumberedList", "BulletedList", "Outdent", "Indent"],
+            ["JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"],
+            ["Blockquote", "CreateDiv"],
+            ["Link", "Unlink", "Anchor"],
+            ["Image", "UploadImage"],
+            ["Table"],
+            ["HorizontalRule", "SpecialChar"],
+            ["Styles", "Format", "Font", "FontSize"],
+            ["TextColor", "BGColor"],
+            ["Maximize", "ShowBlocks"],
+          ],
         });
         editorRef.current = editor;
         editor.on("instanceReady", () => editor.setData(value || ""));
@@ -81,7 +98,11 @@ export default function CKEditorField({
 
   useEffect(() => {
     const editor = editorRef.current;
-    if (editor && editor.status === "ready" && editor.getData() !== (value || "")) {
+    if (
+      editor &&
+      editor.status === "ready" &&
+      editor.getData() !== (value || "")
+    ) {
       editor.setData(value || "");
     }
   }, [value]);
@@ -90,7 +111,11 @@ export default function CKEditorField({
     <div className="ckeditor-field full">
       <label htmlFor={id}>{label}</label>
       <textarea id={id} ref={textareaRef} defaultValue={value || ""} />
-      {error && <small className="error">{error}. Check your network connection and reload.</small>}
+      {error && (
+        <small className="error">
+          {error}. Check your network connection and reload.
+        </small>
+      )}
     </div>
   );
 }
