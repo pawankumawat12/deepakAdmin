@@ -85,23 +85,25 @@ const OrderDetailsModal = ({
   const address = order.parsedAddress || order.delivery_address_json;
   const paymentDetails = order.parsedPaymentDetails;
 
-  const money = (value) =>
-    `₹${Number(value || 0).toLocaleString("en-IN")}`;
+  const money = (value) => {
+    const num = Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+    return `₹${num.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+  };
 
   const number = (value) =>
     Number(value || 0).toLocaleString("en-IN");
 
-  const subtotal = Number(p.subtotal ?? order.subtotal ?? 0);
-  const discount = Number(p.discount ?? order.discount ?? 0);
+  const subtotal = Math.round((Number(p.subtotal ?? order.subtotal ?? 0) + Number.EPSILON) * 100) / 100;
+  const discount = Math.round((Number(p.discount ?? order.discount ?? 0) + Number.EPSILON) * 100) / 100;
   const discountPercent = Number(p.discount_percent ?? 0);
 
-  const discountedSubtotal = Number(
+  const discountedSubtotal = Math.round((Number(
     p.discounted_subtotal ?? subtotal - discount
-  );
+  ) + Number.EPSILON) * 100) / 100;
 
-  const deliveryFee = Number(
+  const deliveryFee = Math.round((Number(
     p.delivery_fee ?? order.delivery_fee ?? 0
-  );
+  ) + Number.EPSILON) * 100) / 100;
 
   const distanceKm =
     p.distance_km ?? order.distance_km ?? null;
@@ -110,11 +112,11 @@ const OrderDetailsModal = ({
     p.delivery_charge_type || "Not specified";
 
   const deliveryChargeValue =
-    Number(p.delivery_charge_value ?? 0);
+    Math.round((Number(p.delivery_charge_value ?? 0) + Number.EPSILON) * 100) / 100;
 
-  const taxAmount = Number(
+  const taxAmount = Math.round((Number(
     p.tax_amount ?? order.tax_amount ?? 0
-  );
+  ) + Number.EPSILON) * 100) / 100;
 
   const gstPercent = Number(p.gst_percent ?? 0);
 
@@ -123,21 +125,21 @@ const OrderDetailsModal = ({
     order.tax_inclusive ??
     false;
 
-  const packagingFee = Number(
+  const packagingFee = Math.round((Number(
     p.packaging_fee ?? order.packaging_fee ?? 0
-  );
+  ) + Number.EPSILON) * 100) / 100;
 
-  const platformFee = Number(
+  const platformFee = Math.round((Number(
     p.platform_fee ?? order.platform_fee ?? 0
-  );
+  ) + Number.EPSILON) * 100) / 100;
 
-  const codFee = Number(
+  const codFee = Math.round((Number(
     p.cod_fee ?? order.cod_fee ?? 0
-  );
+  ) + Number.EPSILON) * 100) / 100;
 
-  const grandTotal = Number(
+  const grandTotal = Math.round((Number(
     p.grand_total ?? order.total_amount ?? 0
-  );
+  ) + Number.EPSILON) * 100) / 100;
 
   const freeDeliveryThreshold = Number(
     p.free_delivery_threshold ?? 0
