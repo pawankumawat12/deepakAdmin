@@ -1,0 +1,33 @@
+import {
+  Leaf,
+  Zap,
+  Truck,
+  Heart,
+  ShieldCheck,
+  Clock3,
+  Star,
+  Award,
+  Sparkles,
+  Utensils,
+  Flame,
+  Coffee,
+  Smile,
+  ThumbsUp,
+} from "lucide-react";
+
+export const ICON_MAP = {
+  Leaf,
+  Zap,
+  Truck,
+  Heart,
+  ShieldCheck,
+  Clock3,
+  Star,
+  Award,
+  Sparkles,
+  Utensils,
+  Flame,
+  Coffee,
+  Smile,
+  ThumbsUp,
+};

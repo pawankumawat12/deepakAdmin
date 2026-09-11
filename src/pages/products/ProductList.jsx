@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { Filter, Plus, Trash2, Pencil, X, Zap, Package, Download, CheckCircle, Ban } from "lucide-react";
+import { Filter, Plus, Trash2, Pencil, X, Zap, Package, PackageX, Download, CheckCircle, Ban } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import DataTable from "../../components/common/DataTable";
@@ -96,7 +96,16 @@ export default function ProductList() {
     { key: "category", label: "Category" },
     { key: "price", label: "Price (₹)" },
     { key: "stock", label: "Stock" },
-    { key: "availability_type", label: "Fulfillment" },
+    {
+      key: "availability_type",
+      label: "Fulfillment",
+      getValue: (r) =>
+        r.availability_type === "MADE_TO_ORDER"
+          ? "Made to Order"
+          : Number(r.stock) <= 0
+          ? "Out of stock"
+          : `In Stock (${r.stock})`,
+    },
     { key: "status", label: "Status" },
     {
       key: "created_at",
@@ -381,17 +390,28 @@ export default function ProductList() {
             {
               key: "availability_type",
               label: "FULFILLMENT",
-              render: (value, item) => (
-                item.availability_type === "MADE_TO_ORDER" ? (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "#fef3eb", color: "#e86b1a" }}>
-                    <Zap size={12} /> Made to Order
-                  </span>
-                ) : (
+              render: (value, item) => {
+                if (item.availability_type === "MADE_TO_ORDER") {
+                  return (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "#fef3eb", color: "#e86b1a" }}>
+                      <Zap size={12} /> Made to Order
+                    </span>
+                  );
+                }
+                const stockNum = Number(item.stock) || 0;
+                if (stockNum <= 0) {
+                  return (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "#fef2f2", color: "#dc2626" }}>
+                      <PackageX size={12} /> Out of stock
+                    </span>
+                  );
+                }
+                return (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "#f0fdf4", color: "#16a34a" }}>
-                    <Package size={12} /> In Stock ({item.stock})
+                    <Package size={12} /> In Stock ({stockNum})
                   </span>
-                )
-              ),
+                );
+              },
               sortable: true,
             },
             {

@@ -31,6 +31,7 @@ import {
   Clock,
   ExternalLink,
   SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { baseApi } from "../services/baseApi";
 import {
@@ -64,6 +65,8 @@ const navigationItems = [
     icon: SlidersHorizontal,
     children: [
       { label: "Hero Sliders", to: "/hero-sliders", icon: SlidersHorizontal },
+      { label: "Why Choose Us", to: "/why-choose-us", icon: Sparkles },
+      { label: "Customer Love", to: "/testimonials", icon: Heart },
       { label: "CMS Pages", to: "/cms-pages", icon: FileText },
     ],
   },
@@ -125,6 +128,8 @@ const getPageTitle = (pathname) => {
   if (pathname.startsWith("/reviews")) return "Reviews";
   if (pathname.startsWith("/messages")) return "Messages";
   if (pathname.startsWith("/hero-sliders")) return "Hero Sliders";
+  if (pathname.startsWith("/why-choose-us")) return "Why Choose Us";
+  if (pathname.startsWith("/testimonials")) return "Customer Love (Testimonials)";
   if (pathname.startsWith("/cms-pages/create")) return "Add CMS Page";
   if (pathname.startsWith("/cms-pages") && pathname.includes("/edit")) return "Edit CMS Page";
   if (pathname.startsWith("/cms-pages")) return "CMS Pages";

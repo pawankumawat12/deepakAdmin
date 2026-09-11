@@ -26,6 +26,8 @@ import EmailTemplateCreate from "../pages/emailTemplates/EmailTemplateCreate";
 import EmailTemplateEdit from "../pages/emailTemplates/EmailTemplateEdit";
 import EmailTemplateView from "../pages/emailTemplates/EmailTemplateView";
 import HeroSliderList from "../pages/heroSliders/HeroSliderList";
+import WhyChooseUsList from "../pages/whyChooseUs/WhyChooseUsList";
+import TestimonialList from "../pages/testimonials/TestimonialList";
 import CmsPageList from "../pages/cms/CmsPageList";
 import CmsPageCreate from "../pages/cms/CmsPageCreate";
 import CmsPageEdit from "../pages/cms/CmsPageEdit";
@@ -61,6 +63,8 @@ export default function AppRoutes() {
           <Route path="email-templates/:id/edit" element={<EmailTemplateEdit />} />
           <Route path="email-templates/:id" element={<EmailTemplateView />} />
           <Route path="hero-sliders" element={<HeroSliderList />} />
+          <Route path="why-choose-us" element={<WhyChooseUsList />} />
+          <Route path="testimonials" element={<TestimonialList />} />
           <Route path="cms-pages" element={<CmsPageList />} />
           <Route path="cms-pages/create" element={<CmsPageCreate />} />
           <Route path="cms-pages/:id/edit" element={<CmsPageEdit />} />
