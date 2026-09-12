@@ -31,6 +31,10 @@ import TestimonialList from "../pages/testimonials/TestimonialList";
 import CmsPageList from "../pages/cms/CmsPageList";
 import CmsPageCreate from "../pages/cms/CmsPageCreate";
 import CmsPageEdit from "../pages/cms/CmsPageEdit";
+import IngredientList from "../pages/inventory/IngredientList";
+import RecipeList from "../pages/inventory/RecipeList";
+import SupplierList from "../pages/inventory/SupplierList";
+import InventoryLogList from "../pages/inventory/InventoryLogList";
 
 export default function AppRoutes() {
   return (
@@ -68,6 +72,10 @@ export default function AppRoutes() {
           <Route path="cms-pages" element={<CmsPageList />} />
           <Route path="cms-pages/create" element={<CmsPageCreate />} />
           <Route path="cms-pages/:id/edit" element={<CmsPageEdit />} />
+          <Route path="inventory/ingredients" element={<IngredientList />} />
+          <Route path="inventory/recipes" element={<RecipeList />} />
+          <Route path="inventory/suppliers" element={<SupplierList />} />
+          <Route path="inventory/logs" element={<InventoryLogList />} />
           <Route path="favourites" element={<FavouriteList />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />

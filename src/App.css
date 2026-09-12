@@ -1211,13 +1211,31 @@ td>b {
   z-index: 100;
 }
 
-.confirm-dialog {
-  width: min(390px, calc(100vw - 32px));
+.confirm-dialog,
+.admin-dialog {
   position: relative;
   border-radius: 16px;
   background: #fff;
   padding: 28px;
   box-shadow: 0 24px 60px #11142645;
+}
+
+.confirm-dialog {
+  width: min(390px, calc(100vw - 32px));
+}
+
+.admin-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.admin-dialog-lg {
+  width: min(720px, calc(100vw - 32px));
+}
+
+.admin-dialog-sm {
+  width: min(500px, calc(100vw - 32px));
 }
 
 .confirm-icon {
@@ -1235,19 +1253,22 @@ td>b {
   background: #fff0f1;
 }
 
-.confirm-dialog h2 {
+.confirm-dialog h2,
+.admin-dialog h2 {
   margin: 16px 0 7px;
   font: 600 21px Outfit;
 }
 
-.confirm-dialog>p {
-  margin: 0;
+.confirm-dialog>p,
+.admin-dialog>p {
+  margin: 0 0 18px;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.55;
 }
 
-.confirm-dialog .confirm-error {
+.confirm-dialog .confirm-error,
+.admin-dialog .confirm-error {
   margin-top: 12px;
   border-radius: 8px;
   padding: 9px 10px;

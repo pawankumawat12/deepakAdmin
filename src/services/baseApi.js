@@ -188,6 +188,10 @@ export const baseApi = createApi({
     "Testimonials",
     "Favourites",
     "CmsPages",
+    "Suppliers",
+    "Ingredients",
+    "Recipes",
+    "InventoryLogs",
   ],
   endpoints: () => ({}),
 });

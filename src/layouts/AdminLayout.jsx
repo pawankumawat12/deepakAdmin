@@ -32,6 +32,10 @@ import {
   ExternalLink,
   SlidersHorizontal,
   Sparkles,
+  Boxes,
+  UtensilsCrossed,
+  Truck,
+  History,
 } from "lucide-react";
 import { baseApi } from "../services/baseApi";
 import {
@@ -56,6 +60,18 @@ const navigationItems = [
     children: [
       { label: "Products", to: "/products", icon: Package },
       { label: "Categories", to: "/categories", icon: Tags },
+    ],
+  },
+  {
+    type: "group",
+    id: "inventory",
+    label: "Raw Materials & BOM",
+    icon: Boxes,
+    children: [
+      { label: "Raw Materials", to: "/inventory/ingredients", icon: Boxes },
+      { label: "Product Recipes", to: "/inventory/recipes", icon: UtensilsCrossed },
+      { label: "Suppliers & Vendors", to: "/inventory/suppliers", icon: Truck },
+      { label: "Stock Movement Logs", to: "/inventory/logs", icon: History },
     ],
   },
   {
@@ -122,6 +138,10 @@ const getPageTitle = (pathname) => {
   if (pathname.startsWith("/categories/create")) return "Add Category";
   if (pathname.startsWith("/categories") && pathname.includes("/edit")) return "Edit Category";
   if (pathname.startsWith("/categories")) return "Categories";
+  if (pathname.startsWith("/inventory/ingredients")) return "Raw Materials & Ingredients";
+  if (pathname.startsWith("/inventory/recipes")) return "Product Recipes (BOM)";
+  if (pathname.startsWith("/inventory/suppliers")) return "Suppliers & Vendors";
+  if (pathname.startsWith("/inventory/logs")) return "Stock Movement Logs";
   if (pathname.startsWith("/orders")) return "Orders";
   if (pathname.startsWith("/customers")) return "Customers";
   if (pathname.startsWith("/offers")) return "Offers";
