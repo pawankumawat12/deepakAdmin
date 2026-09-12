@@ -2383,3 +2383,24 @@ td>b {
 .cke_notification{
   display: none;
 }
+
+/* Toast Dismiss Cross Button */
+.toast-close-btn {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 4px !important;
+  margin-left: 10px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  transition: background 0.15s ease !important;
+}
+
+.toast-close-btn:hover {
+  background: rgba(255, 255, 255, 0.38) !important;
+}
