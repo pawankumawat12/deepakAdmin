@@ -53,20 +53,47 @@ export const settingsApi = baseApi.injectEndpoints({
     }),
 
     getSmtp: build.query({
-      query: () => "/settings/smtp",
-      providesTags: ["Settings", "SmtpSettings"],
+      query: () => "/settings/email",
+      providesTags: ["Settings", "EmailSettings"],
     }),
     updateSmtp: build.mutation({
       query: (body) => ({
-        url: "/settings/smtp",
+        url: "/settings/email",
         method: "PUT",
         body,
       }),
-      invalidatesTags: ["Settings", "SmtpSettings"],
+      invalidatesTags: ["Settings", "EmailSettings"],
     }),
     testSmtp: build.mutation({
       query: (body) => ({
-        url: "/settings/smtp/test",
+        url: "/settings/email/test",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    getEmailSettings: build.query({
+      query: () => "/settings/email",
+      providesTags: ["Settings", "EmailSettings"],
+    }),
+    sendEmailOtp: build.mutation({
+      query: (body) => ({
+        url: "/settings/email/send-otp",
+        method: "POST",
+        body,
+      }),
+    }),
+    updateEmailSettings: build.mutation({
+      query: (body) => ({
+        url: "/settings/email",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Settings", "EmailSettings"],
+    }),
+    testEmail: build.mutation({
+      query: (body) => ({
+        url: "/settings/email/test",
         method: "POST",
         body,
       }),
@@ -99,6 +126,10 @@ export const {
   useGetSmtpQuery,
   useUpdateSmtpMutation,
   useTestSmtpMutation,
+  useGetEmailSettingsQuery,
+  useSendEmailOtpMutation,
+  useUpdateEmailSettingsMutation,
+  useTestEmailMutation,
   useGetStoreStatusQuery,
   useUpdateStoreStatusMutation,
 } = settingsApi;

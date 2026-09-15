@@ -11,10 +11,12 @@ import {
   useUpdateLogoMutation,
   useGetSettingPricingQuery,
   useUpdateSettingPricingMutation,
-  useGetSmtpQuery,
-  useUpdateSmtpMutation,
-  useTestSmtpMutation,
+  useGetEmailSettingsQuery,
+  useSendEmailOtpMutation,
+  useUpdateEmailSettingsMutation,
+  useTestEmailMutation,
 } from "../../services/settingsApi";
+import toast from "react-hot-toast";
 import {
   Palette,
   Sun,
@@ -373,90 +375,152 @@ export default function Settings() {
     }
   };
 
-  /* ─── SMTP CONFIGURATION STATE ─── */
-  const { data: smtpResponse, isLoading: smtpLoading } = useGetSmtpQuery();
-  const [updateSmtp, { isLoading: smtpSaving }] = useUpdateSmtpMutation();
-  const [testSmtp, { isLoading: smtpTesting }] = useTestSmtpMutation();
+  /* ─── RESEND CONFIGURATION STATE ─── */
+  const { data: emailResponse, isLoading: emailLoading } = useGetEmailSettingsQuery();
+  const [updateEmailSettings, { isLoading: emailSaving }] = useUpdateEmailSettingsMutation();
+  const [sendEmailOtp, { isLoading: otpSending }] = useSendEmailOtpMutation();
+  const [testEmail, { isLoading: emailTesting }] = useTestEmailMutation();
 
-  const [smtpForm, setSmtpForm] = useState({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    user: "",
-    password: "",
-    from_email: "",
+  const [emailForm, setEmailForm] = useState({
+    api_key: "",
+    from_email: "noreply@sfcbakers.com",
     from_name: "SFC Bakers",
     is_enabled: true,
   });
+  const [originalEmailSettings, setOriginalEmailSettings] = useState(null);
+  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpInput, setOtpInput] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [otpTimer, setOtpTimer] = useState(0);
 
-  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
   const [testEmailRecipient, setTestEmailRecipient] = useState("");
   const [showTestModal, setShowTestModal] = useState(false);
-  const [smtpStatus, setSmtpStatus] = useState({ text: "", type: "" });
+  const [emailStatus, setEmailStatus] = useState({ text: "", type: "" });
   const [testStatus, setTestStatus] = useState({ text: "", type: "" });
 
   useEffect(() => {
-    if (smtpResponse?.data) {
-      setSmtpForm({
-        host: smtpResponse.data.host || "smtp.gmail.com",
-        port: smtpResponse.data.port || 587,
-        secure: Boolean(smtpResponse.data.secure),
-        user: smtpResponse.data.user || "",
-        password: smtpResponse.data.password || "",
-        from_email: smtpResponse.data.from_email || "",
-        from_name: smtpResponse.data.from_name || "SFC Bakers",
-        is_enabled: smtpResponse.data.is_enabled !== false,
+    if (emailResponse?.data) {
+      setEmailForm({
+        api_key: emailResponse.data.api_key || "",
+        from_email: emailResponse.data.from_email || "noreply@sfcbakers.com",
+        from_name: emailResponse.data.from_name || "SFC Bakers",
+        is_enabled: emailResponse.data.is_enabled !== false,
       });
-      if (!testEmailRecipient && smtpResponse.data.user) {
-        setTestEmailRecipient(smtpResponse.data.user);
+      setOriginalEmailSettings(emailResponse.data);
+      if (!testEmailRecipient && emailResponse.data.from_email) {
+        setTestEmailRecipient(emailResponse.data.from_email);
       }
     }
-  }, [smtpResponse]);
+  }, [emailResponse]);
 
-  const handleSmtpChange = (field) => (e) => {
+  useEffect(() => {
+    let timer;
+    if (otpTimer > 0) {
+      timer = setTimeout(() => setOtpTimer((prev) => prev - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [otpTimer]);
+
+  const handleEmailChange = (field) => (e) => {
     const value =
       e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setSmtpForm((prev) => ({ ...prev, [field]: value }));
+    setEmailForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveSmtp = async (e) => {
+  const handleSaveEmailSettings = async (e) => {
     if (e) e.preventDefault();
     try {
-      setSmtpStatus({ text: "", type: "" });
-      if (!smtpForm.host.trim()) {
-        setSmtpStatus({ text: "SMTP Host is required.", type: "error" });
-        return;
-      }
-      if (!smtpForm.user.trim()) {
-        setSmtpStatus({
-          text: "SMTP Username / Email is required.",
-          type: "error",
-        });
+      setEmailStatus({ text: "", type: "" });
+
+      if (!emailForm.from_email?.trim()) {
+        setEmailStatus({ text: "From Email Address is required.", type: "error" });
         return;
       }
 
-      await updateSmtp({
-        ...smtpForm,
-        port: Number(smtpForm.port) || 587,
-      }).unwrap();
+      const isApiKeyChanged =
+        isEditingApiKey &&
+        emailForm.api_key &&
+        !emailForm.api_key.includes("•") &&
+        emailForm.api_key.trim() !== (originalEmailSettings?.api_key || "");
 
-      setSmtpStatus({
-        text: "SMTP configuration saved and securely stored in database!",
+      const isFromEmailChanged =
+        emailForm.from_email.trim().toLowerCase() !==
+        (originalEmailSettings?.from_email || "").trim().toLowerCase();
+
+      // If sensitive credentials (API key or From Email) changed, request OTP before saving
+      if (isApiKeyChanged || isFromEmailChanged) {
+        setOtpError("");
+        setOtpInput("");
+        await sendEmailOtp(emailForm).unwrap();
+        setShowOtpModal(true);
+        setOtpTimer(60);
+        toast.success("Security verification code dispatched to your admin email address.");
+        return;
+      }
+
+      // If neither API key nor From Email changed, commit directly
+      await updateEmailSettings(emailForm).unwrap();
+      setIsEditingApiKey(false);
+      setEmailStatus({
+        text: "Resend email configuration updated and saved successfully!",
         type: "success",
       });
-      setTimeout(() => setSmtpStatus({ text: "", type: "" }), 5000);
+      toast.success("Resend settings updated!");
+      setTimeout(() => setEmailStatus({ text: "", type: "" }), 5000);
     } catch (err) {
-      setSmtpStatus({
-        text: err?.data?.message || "Failed to update SMTP settings",
+      setEmailStatus({
+        text: err?.data?.message || "Failed to update Resend settings",
         type: "error",
       });
+      toast.error(err?.data?.message || "Failed to update Resend settings");
+    }
+  };
+
+  const handleVerifyOtpAndSave = async (e) => {
+    if (e) e.preventDefault();
+    if (!otpInput || otpInput.trim().length !== 6) {
+      setOtpError("Please enter the 6-digit verification code.");
+      return;
+    }
+
+    try {
+      setOtpError("");
+      await updateEmailSettings({
+        ...emailForm,
+        otp: otpInput.trim(),
+      }).unwrap();
+
+      setShowOtpModal(false);
+      setIsEditingApiKey(false);
+      setOtpInput("");
+      setEmailStatus({
+        text: "Resend credentials verified and saved successfully!",
+        type: "success",
+      });
+      toast.success("Resend credentials successfully verified and updated!");
+      setTimeout(() => setEmailStatus({ text: "", type: "" }), 5000);
+    } catch (err) {
+      setOtpError(err?.data?.message || "Invalid or expired verification code.");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (otpTimer > 0) return;
+    try {
+      setOtpError("");
+      await sendEmailOtp(emailForm).unwrap();
+      setOtpTimer(60);
+      toast.success("New verification code dispatched to your admin email.");
+    } catch (err) {
+      setOtpError(err?.data?.message || "Failed to resend verification code.");
     }
   };
 
   const handleRunTestEmail = async () => {
     try {
       setTestStatus({ text: "", type: "" });
-      const recipient = testEmailRecipient.trim() || smtpForm.user.trim();
+      const recipient = testEmailRecipient.trim();
       if (!recipient) {
         setTestStatus({
           text: "Please enter a valid recipient email address for testing.",
@@ -465,28 +529,26 @@ export default function Settings() {
         return;
       }
 
-      const res = await testSmtp({
+      const res = await testEmail({
         to: recipient,
-        host: smtpForm.host,
-        port: Number(smtpForm.port) || 587,
-        secure: smtpForm.secure,
-        user: smtpForm.user,
-        password: smtpForm.password,
-        from_email: smtpForm.from_email || smtpForm.user,
-        from_name: smtpForm.from_name,
+        api_key: isEditingApiKey ? emailForm.api_key : undefined,
+        from_email: emailForm.from_email,
+        from_name: emailForm.from_name,
       }).unwrap();
 
       setTestStatus({
-        text: res?.message || `Test email successfully sent to ${recipient}!`,
+        text: res?.message || `Test email successfully dispatched to ${recipient}!`,
         type: "success",
       });
+      toast.success(res?.message || "Test email dispatched successfully!");
     } catch (err) {
       setTestStatus({
         text:
           err?.data?.message ||
-          "SMTP connection failed. Check host, port, credentials, and SSL settings.",
+          "Resend delivery failed. Please verify API key, sender email, and domain status.",
         type: "error",
       });
+      toast.error(err?.data?.message || "Test email failed.");
     }
   };
 
@@ -939,7 +1001,7 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* ─── SMTP EMAIL CONFIGURATION CARD ─── */}
+      {/* ─── RESEND EMAIL CONFIGURATION CARD ─── */}
       <section style={cardStyle}>
         <div
           style={{
@@ -965,7 +1027,7 @@ export default function Settings() {
                 color: "#7c3aed",
               }}
             >
-              <Server size={22} />
+              <Mail size={22} />
             </div>
             <div>
               <div
@@ -979,7 +1041,7 @@ export default function Settings() {
                     color: "#24243b",
                   }}
                 >
-                  SMTP Email Configuration
+                  Resend Email Configuration
                 </h2>
                 <span
                   style={{
@@ -987,18 +1049,17 @@ export default function Settings() {
                     fontWeight: 700,
                     padding: "2px 8px",
                     borderRadius: "6px",
-                    backgroundColor: smtpForm.is_enabled
+                    backgroundColor: emailForm.is_enabled
                       ? "#dcfce7"
                       : "#fee2e2",
-                    color: smtpForm.is_enabled ? "#166534" : "#991b1b",
+                    color: emailForm.is_enabled ? "#166534" : "#991b1b",
                   }}
                 >
-                  {smtpForm.is_enabled ? "Active & Enabled" : "Disabled"}
+                  {emailForm.is_enabled ? "Active & Enabled" : "Disabled"}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: "12px", color: "#8b8ba0" }}>
-                Outgoing mail server credentials for OTP verification, password
-                resets, and notifications.
+                Cloud email delivery powered by Resend SDK for customer OTP verification, password resets, and notifications.
               </p>
             </div>
           </div>
@@ -1022,11 +1083,11 @@ export default function Settings() {
             }}
           >
             <Send size={14} />
-            Test SMTP Connection
+            Test Resend Connection
           </button>
         </div>
 
-        <StatusBanner text={smtpStatus.text} type={smtpStatus.type} />
+        <StatusBanner text={emailStatus.text} type={emailStatus.type} />
 
         <div
           style={{
@@ -1036,7 +1097,7 @@ export default function Settings() {
             marginBottom: "24px",
           }}
         >
-          {/* SMTP Host */}
+          {/* Resend API Key */}
           <div>
             <label style={sectionLabel}>
               <span
@@ -1046,163 +1107,69 @@ export default function Settings() {
                   gap: "6px",
                 }}
               >
-                <Server size={14} />
-                SMTP Host / Server *
+                <Key size={14} />
+                Resend API Key *
               </span>
             </label>
-            <input
-              type="text"
-              value={smtpForm.host}
-              onChange={handleSmtpChange("host")}
-              placeholder="e.g. smtp.gmail.com or smtp.sendgrid.net"
-              style={inputStyle}
-              required
-            />
-          </div>
-
-          {/* SMTP Port */}
-          <div>
-            <label style={sectionLabel}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <Sliders size={14} />
-                SMTP Port *
-              </span>
-            </label>
-            <input
-              type="number"
-              value={smtpForm.port}
-              onChange={handleSmtpChange("port")}
-              placeholder="587 or 465"
-              style={inputStyle}
-              required
-            />
-          </div>
-
-          {/* Encryption / SSL Mode */}
-          <div>
-            <label style={sectionLabel}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <ShieldCheck size={14} />
-                Security / Encryption
-              </span>
-            </label>
-            <select
-              value={smtpForm.secure ? "true" : "false"}
-              onChange={(e) =>
-                setSmtpForm((prev) => ({
-                  ...prev,
-                  secure: e.target.value === "true",
-                  port:
-                    e.target.value === "true"
-                      ? 465
-                      : prev.port === 465
-                        ? 587
-                        : prev.port,
-                }))
-              }
-              style={inputStyle}
-            >
-              <option value="false">
-                STARTTLS / TLS (Standard - Port 587)
-              </option>
-              <option value="true">SSL / TLS (Direct Secure - Port 465)</option>
-            </select>
-          </div>
-
-          {/* Username / Account */}
-          <div>
-            <label style={sectionLabel}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <Mail size={14} />
-                SMTP Username / Email *
-              </span>
-            </label>
-            <input
-              type="text"
-              value={smtpForm.user}
-              onChange={handleSmtpChange("user")}
-              placeholder="e.g. your-email@gmail.com"
-              style={inputStyle}
-              required
-            />
-          </div>
-
-          {/* Password (with Mask & Visibility Toggle) */}
-          <div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <label style={sectionLabel}>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  <Key size={14} />
-                  SMTP Password / App Password *
-                </span>
-              </label>
-            </div>
-            <div style={{ position: "relative" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <input
-                type={showSmtpPassword ? "text" : "password"}
-                value={smtpForm.password}
-                onChange={handleSmtpChange("password")}
-                placeholder={
-                  smtpResponse?.data?.is_password_set
-                    ? "••••••••"
-                    : "Enter SMTP password"
+                type={isEditingApiKey ? "text" : "password"}
+                value={
+                  isEditingApiKey
+                    ? emailForm.api_key
+                    : emailForm.api_key ||
+                      (emailResponse?.data?.is_api_key_set
+                        ? "re_••••••••••••••••"
+                        : "")
                 }
-                style={{ ...inputStyle, paddingRight: "40px" }}
+                onChange={handleEmailChange("api_key")}
+                placeholder={
+                  isEditingApiKey
+                    ? "Enter API key (e.g. re_123456789...)"
+                    : emailResponse?.data?.is_api_key_set
+                    ? "re_••••••••••••••••"
+                    : "No API key configured"
+                }
+                disabled={!isEditingApiKey}
+                style={{
+                  ...inputStyle,
+                  backgroundColor: isEditingApiKey ? "#ffffff" : "#f9fafb",
+                  cursor: isEditingApiKey ? "text" : "not-allowed",
+                }}
               />
               <button
                 type="button"
-                onClick={() => setShowSmtpPassword((prev) => !prev)}
+                onClick={() => {
+                  if (isEditingApiKey) {
+                    setIsEditingApiKey(false);
+                    setEmailForm((prev) => ({
+                      ...prev,
+                      api_key: originalEmailSettings?.api_key || "",
+                    }));
+                  } else {
+                    setIsEditingApiKey(true);
+                  }
+                }}
                 style={{
-                  position: "absolute",
-                  right: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  border: "none",
-                  background: "transparent",
-                  color: "#9ca3af",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  border: "1px solid #e5e7eb",
+                  backgroundColor: isEditingApiKey ? "#fee2e2" : "#f3f4f6",
+                  color: isEditingApiKey ? "#dc2626" : "#374151",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
                   cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
+                  transition: "all 0.2s",
                 }}
               >
-                {showSmtpPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {isEditingApiKey ? "Cancel" : "Change Key"}
               </button>
             </div>
             <p
               style={{ fontSize: "10px", color: "#8b8ba0", margin: "4px 0 0" }}
             >
-              For Gmail, use a 16-character App Password. Stored encrypted
-              (AES-256) in DB.
+              Default from env: <code>RESEND_API_KEY</code>. Updating this key requires email OTP verification.
             </p>
           </div>
 
@@ -1217,16 +1184,22 @@ export default function Settings() {
                 }}
               >
                 <Mail size={14} />
-                From Email Address
+                From Email Address *
               </span>
             </label>
             <input
               type="email"
-              value={smtpForm.from_email}
-              onChange={handleSmtpChange("from_email")}
+              value={emailForm.from_email}
+              onChange={handleEmailChange("from_email")}
               placeholder="e.g. noreply@sfcbakers.com"
               style={inputStyle}
+              required
             />
+            <p
+              style={{ fontSize: "10px", color: "#8b8ba0", margin: "4px 0 0" }}
+            >
+              Default from env: <code>RESEND_FROM_EMAIL</code>. Must be a verified domain/sender in Resend.
+            </p>
           </div>
 
           {/* From Name */}
@@ -1245,11 +1218,16 @@ export default function Settings() {
             </label>
             <input
               type="text"
-              value={smtpForm.from_name}
-              onChange={handleSmtpChange("from_name")}
+              value={emailForm.from_name}
+              onChange={handleEmailChange("from_name")}
               placeholder="e.g. SFC Bakers"
               style={inputStyle}
             />
+            <p
+              style={{ fontSize: "10px", color: "#8b8ba0", margin: "4px 0 0" }}
+            >
+              Default from env: <code>RESEND_FROM_NAME</code>. Displayed as the sender name in email clients.
+            </p>
           </div>
 
           {/* Enable / Disable Switch */}
@@ -1260,7 +1238,7 @@ export default function Settings() {
               justifyContent: "center",
             }}
           >
-            <label style={sectionLabel}>Enable SMTP Service</label>
+            <label style={sectionLabel}>Email Service Status</label>
             <label
               style={{
                 display: "inline-flex",
@@ -1272,8 +1250,8 @@ export default function Settings() {
             >
               <input
                 type="checkbox"
-                checked={smtpForm.is_enabled}
-                onChange={handleSmtpChange("is_enabled")}
+                checked={emailForm.is_enabled}
+                onChange={handleEmailChange("is_enabled")}
                 style={{
                   width: "18px",
                   height: "18px",
@@ -1283,9 +1261,14 @@ export default function Settings() {
               <span
                 style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}
               >
-                Allow backend to send emails via this configuration
+                Enable Resend Email Delivery
               </span>
             </label>
+            <p
+              style={{ fontSize: "10px", color: "#8b8ba0", margin: "0" }}
+            >
+              When disabled or when EMAIL_ACTIVE=false, all outgoing emails are safely bypassed and logged.
+            </p>
           </div>
         </div>
 
@@ -1294,8 +1277,8 @@ export default function Settings() {
         >
           <Button
             type="button"
-            onClick={handleSaveSmtp}
-            disabled={smtpSaving || smtpLoading}
+            onClick={handleSaveEmailSettings}
+            disabled={emailSaving || emailLoading || otpSending}
             style={{
               minWidth: "180px",
               display: "flex",
@@ -1306,22 +1289,235 @@ export default function Settings() {
               borderColor: "#7c3aed",
             }}
           >
-            {smtpSaving ? (
+            {emailSaving || otpSending ? (
               <>
                 <RefreshCw size={16} className="animate-spin" />
-                Saving to Database...
+                {otpSending ? "Dispatching OTP..." : "Saving..."}
               </>
             ) : (
               <>
                 <Check size={16} />
-                Save SMTP Settings
+                Save Email Settings
               </>
             )}
           </Button>
         </div>
       </section>
 
-      {/* ─── TEST SMTP MODAL ─── */}
+      {/* ─── OTP VERIFICATION MODAL FOR SENSITIVE CREDENTIALS ─── */}
+      {showOtpModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "16px",
+          }}
+          onClick={() => {
+            setShowOtpModal(false);
+            setOtpError("");
+          }}
+        >
+          <div
+            className="admin-dialog"
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "20px",
+              maxWidth: "460px",
+              width: "100%",
+              padding: "26px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "16px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    padding: "8px",
+                    borderRadius: "12px",
+                    backgroundColor: "#fef3c7",
+                    color: "#d97706",
+                  }}
+                >
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 800,
+                      margin: 0,
+                      color: "#111827",
+                    }}
+                  >
+                    Security Authorization
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      margin: "2px 0 0 0",
+                    }}
+                  >
+                    Authorize Resend Credential Update
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtpModal(false);
+                  setOtpError("");
+                }}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#6b7280",
+                  cursor: "pointer",
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: "13px", color: "#4b5563", lineHeight: "1.5", margin: "0 0 16px 0" }}>
+              Updating the Resend API Key or From Email requires admin authorization. A 6-digit verification code has been dispatched to your admin email address.
+            </p>
+
+            {otpError && (
+              <div
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  marginBottom: "14px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  backgroundColor: "#fef2f2",
+                  color: "#991b1b",
+                  border: "1px solid #fecaca",
+                }}
+              >
+                {otpError}
+              </div>
+            )}
+
+            <div style={{ marginBottom: "18px" }}>
+              <label style={sectionLabel}>Enter 6-Digit Verification Code</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
+                placeholder="••••••"
+                autoFocus
+                style={{
+                  ...inputStyle,
+                  textAlign: "center",
+                  fontSize: "24px",
+                  letterSpacing: "8px",
+                  fontWeight: 700,
+                  fontFamily: "monospace",
+                  padding: "12px",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "20px",
+              }}
+            >
+              <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                Didn't receive code?
+              </span>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={otpTimer > 0 || otpSending}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: otpTimer > 0 ? "#9ca3af" : "#7c3aed",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  cursor: otpTimer > 0 ? "not-allowed" : "pointer",
+                }}
+              >
+                {otpTimer > 0 ? `Resend code (${otpTimer}s)` : "Resend Code"}
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtpModal(false);
+                  setOtpError("");
+                }}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid #e5e7eb",
+                  backgroundColor: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#374151",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <Button
+                type="button"
+                onClick={handleVerifyOtpAndSave}
+                disabled={emailSaving}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  backgroundColor: "#7c3aed",
+                  borderColor: "#7c3aed",
+                }}
+              >
+                {emailSaving ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <Check size={14} />
+                    Verify & Apply Credentials
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TEST RESEND MODAL ─── */}
       {showTestModal && (
         <div
           style={{
@@ -1340,6 +1536,7 @@ export default function Settings() {
           }}
         >
           <div
+            className="admin-dialog"
             style={{
               backgroundColor: "#ffffff",
               borderRadius: "20px",
@@ -1380,7 +1577,7 @@ export default function Settings() {
                       color: "#111827",
                     }}
                   >
-                    Test SMTP Configuration
+                    Test Resend Connection
                   </h3>
                   <p
                     style={{
@@ -1389,7 +1586,7 @@ export default function Settings() {
                       margin: "2px 0 0 0",
                     }}
                   >
-                    Send a live test email to verify outgoing server settings
+                    Dispatch a live test email via Resend SDK to verify configuration
                   </p>
                 </div>
               </div>
@@ -1428,11 +1625,10 @@ export default function Settings() {
                   margin: "6px 0 0 0",
                 }}
               >
-                Will test connecting to{" "}
+                Will test sending from{" "}
                 <strong>
-                  {smtpForm.host}:{smtpForm.port}
-                </strong>{" "}
-                as <strong>{smtpForm.user || "user"}</strong>.
+                  {emailForm.from_name} &lt;{emailForm.from_email}&gt;
+                </strong>.
               </p>
             </div>
 
@@ -1465,7 +1661,7 @@ export default function Settings() {
               <Button
                 type="button"
                 onClick={handleRunTestEmail}
-                disabled={smtpTesting}
+                disabled={emailTesting}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -1474,10 +1670,10 @@ export default function Settings() {
                   borderColor: "#7c3aed",
                 }}
               >
-                {smtpTesting ? (
+                {emailTesting ? (
                   <>
                     <RefreshCw size={14} className="animate-spin" />
-                    Connecting & Sending...
+                    Sending Test Email...
                   </>
                 ) : (
                   <>

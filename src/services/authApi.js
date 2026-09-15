@@ -85,7 +85,21 @@ export const authApi = baseApi.injectEndpoints({
       query: (email) => ({
         url: "/auth/forgot-password",
         method: "POST",
-        body: { email, role: "admin" },
+        body: typeof email === "object" ? email : { email, role: "admin" },
+      }),
+    }),
+    resendForgotPasswordOtp: build.mutation({
+      query: (email) => ({
+        url: "/auth/resend-forgot-password-otp",
+        method: "POST",
+        body: typeof email === "object" ? email : { email, role: "admin" },
+      }),
+    }),
+    verifyForgotPasswordOtp: build.mutation({
+      query: ({ email, otp }) => ({
+        url: "/auth/verify-forgot-password-otp",
+        method: "POST",
+        body: { email, otp },
       }),
     }),
     verifyResetPasswordToken: build.mutation({
@@ -95,10 +109,10 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
     resetPassword: build.mutation({
-      query: ({ accessToken, password }) => ({
-        url: `/auth/reset-password/${encodeURIComponent(accessToken)}`,
+      query: (payload) => ({
+        url: "/auth/reset-password",
         method: "POST",
-        body: { password },
+        body: payload,
       }),
     }),
     getCustomers: build.query({
@@ -189,6 +203,8 @@ export const {
   useLazyGetMeQuery,
   useLogoutMutation,
   useForgotPasswordMutation,
+  useResendForgotPasswordOtpMutation,
+  useVerifyForgotPasswordOtpMutation,
   useVerifyResetPasswordTokenMutation,
   useResetPasswordMutation,
   useGetCustomersQuery,
