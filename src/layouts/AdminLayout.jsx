@@ -6,7 +6,6 @@ import { signOut } from "../context/authSlice";
 import { useLogoutMutation } from "../services/authApi";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import Button from "../components/ui/Button";
-import SearchInput from "../components/ui/SearchInput";
 import {
   Bell,
   ChevronDown,
@@ -679,8 +678,6 @@ export default function AdminLayout() {
             <h2>{title}</h2>
           </div>
           <div className="top-actions">
-            <SearchInput placeholder="Search anything..." className="topbar-search" />
-
             {/* Quick Shop Status Toggle in Topbar */}
             <div
               className="topbar-shop-status"

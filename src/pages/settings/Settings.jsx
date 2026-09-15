@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import DataTable from "../../components/common/DataTable";
 import { useForm } from "react-hook-form";
 import Button from "../../components/ui/Button";
 import {
@@ -690,7 +689,7 @@ export default function Settings() {
               }}
             >
               <Store size={22} />
-            </div>
+            </div>  
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 <h2
