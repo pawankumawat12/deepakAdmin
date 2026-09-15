@@ -258,9 +258,7 @@ export default function ForgotPassword() {
           </>
         )}
 
-        <Link className="text-btn" to="/login" style={{ marginTop: "16px" }}>
-          <ArrowLeft size={16} /> Back to login
-        </Link>
+        
       </section>
     </main>
   );
