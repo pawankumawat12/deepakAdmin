@@ -28,6 +28,7 @@ import toast from "react-hot-toast";
 import { getAdminSocket } from "../../services/socket";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import Pagination from "../../components/ui/Pagination";
+import { isValidIndianPhone, sanitizePhoneInput } from "../../utils/phoneValidation";
 import DataTable from "../../components/common/DataTable";
 import BulkActionBar from "../../components/common/BulkActionBar";
 import Button from "../../components/ui/Button";
@@ -143,6 +144,12 @@ export default function CustomerList() {
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!selectedCustomer) return;
+
+    if (editForm.phone && editForm.phone.trim() && !isValidIndianPhone(editForm.phone)) {
+      toast.error("Please enter a valid 10-digit phone number starting with 6, 7, 8, or 9.");
+      return;
+    }
+
     try {
       await editCustomer({
         id: selectedCustomer.id,
@@ -1001,9 +1008,11 @@ export default function CustomerList() {
                 </label>
                 <input
                   type="tel"
+                  maxLength={10}
+                  placeholder="e.g. 9876543210"
                   value={editForm.phone}
                   onChange={(e) =>
-                    setEditForm({ ...editForm, phone: e.target.value })
+                    setEditForm({ ...editForm, phone: sanitizePhoneInput(e.target.value) })
                   }
                   style={{
                     width: "100%",

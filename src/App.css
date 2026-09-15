@@ -1397,6 +1397,16 @@ td>b {
   text-transform: capitalize;
 }
 
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.profile-form-grid .profile-col-full {
+  grid-column: 1 / -1;
+}
+
 .modal {
   background: white;
   width: min(440px, calc(100vw - 30px));
@@ -2131,6 +2141,15 @@ td>b {
 
   .entity-form .full {
     grid-column: auto;
+  }
+
+  .profile-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  .profile-form-grid .profile-col-full {
+    grid-column: auto !important;
   }
 
   .email-template-preview {

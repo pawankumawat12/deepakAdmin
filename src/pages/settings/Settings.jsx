@@ -40,8 +40,6 @@ import {
   Receipt,
   Server,
   ShieldCheck,
-  Eye,
-  EyeOff,
   Send,
   Key,
   Lock,
