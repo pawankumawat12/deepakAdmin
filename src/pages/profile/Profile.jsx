@@ -24,6 +24,7 @@ import { toAssetUrl } from "../../utils/assetUrl";
 import { isValidIndianPhone, normalizeIndianPhone, sanitizePhoneInput } from "../../utils/phoneValidation";
 import Button from "../../components/ui/Button";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import ChangeEmailModal from "../../modals/ChangeEmailModal";
 import DynamicQrSection from "./DynamicQrSection";
 
 export default function Profile() {
@@ -37,6 +38,7 @@ export default function Profile() {
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [isRemovingPhoto, setIsRemovingPhoto] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Form states
   const [name, setName] = useState(user?.name || "");
@@ -457,21 +459,52 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Email Address (Read-only credential) */}
+            {/* Email Address */}
             <div>
-              <label
+              <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--muted)",
+                  justifyContent: "space-between",
                   marginBottom: "6px",
                 }}
               >
-                <Mail size={15} /> Email Address
-              </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "var(--muted)",
+                    margin: 0,
+                  }}
+                >
+                  <Mail size={15} /> Email Address
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowEmailModal(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#2563eb",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    transition: "background-color 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                >
+                  Change Email
+                </button>
+              </div>
               <div style={{ position: "relative" }}>
                 <input
                   type="email"
@@ -508,7 +541,7 @@ export default function Profile() {
                 </span>
               </div>
               <small style={{ color: "#9ca3af", fontSize: "11px", marginTop: "4px", display: "block" }}>
-                Email address serves as your primary admin login identity.
+                Click "Change Email" to update your login email.
               </small>
             </div>
 
@@ -872,6 +905,13 @@ export default function Profile() {
           isLoading={isRemovingPhoto}
         />
       )}
+
+      {/* Change Admin Email Modal with Current Email OTP Verification */}
+      <ChangeEmailModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        currentEmail={user?.email || ""}
+      />
     </>
   );
 }
