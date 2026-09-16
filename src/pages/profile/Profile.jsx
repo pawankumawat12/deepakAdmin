@@ -24,6 +24,7 @@ import { toAssetUrl } from "../../utils/assetUrl";
 import { isValidIndianPhone, normalizeIndianPhone, sanitizePhoneInput } from "../../utils/phoneValidation";
 import Button from "../../components/ui/Button";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import DynamicQrSection from "./DynamicQrSection";
 
 export default function Profile() {
   const user = useSelector((state) => state.auth.user);
@@ -855,6 +856,9 @@ export default function Profile() {
           </div>
         </form>
       </section>
+
+      {/* Dynamic QR Code Management Section */}
+      <DynamicQrSection />
 
       {/* Confirmation Dialog for Removing Profile Photo */}
       {showRemoveConfirm && (

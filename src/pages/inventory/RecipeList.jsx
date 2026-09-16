@@ -73,7 +73,7 @@ export default function RecipeList() {
       (ing) => !recipeItems.some((r) => Number(r.ingredient_id) === Number(ing.id))
     );
     if (!available) {
-      toast.error("All available raw materials are already added to this recipe");
+      toast.error("Please add another raw material to use in this recipe.");
       return;
     }
     setRecipeItems((prev) => [

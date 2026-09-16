@@ -270,7 +270,6 @@ export default function IngredientModal({
                     </option>
                   ))}
                 </Select>
-                <small className="muted">Select vendor or click "+ Add Supplier" to create inline</small>
               </label>
 
               {!isEdit && (
