@@ -10,6 +10,7 @@ import Pagination from "../../components/ui/Pagination";
 import SearchInput from "../../components/ui/SearchInput";
 import useDebouncedValue from "../../utils/useDebouncedValue";
 import { exportToCsv } from "../../utils/csvExport";
+import { useThrottledCallback } from "../../utils/throttle";
 import toast from "react-hot-toast";
 import {
   useGetAdminOrdersQuery,
@@ -488,6 +489,10 @@ export default function OrderList() {
     }
   };
 
+  const throttledConfirmBulkStatusChange = useThrottledCallback(confirmBulkStatusChange, 1500);
+  const throttledExportSelected = useThrottledCallback(handleExportSelected, 2000);
+  const throttledExportAll = useThrottledCallback(handleExportAll, 2000);
+
   return (
     <>
       <div className="section-head">
@@ -498,7 +503,7 @@ export default function OrderList() {
         <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
           <Button
             variant="outline"
-            onClick={handleExportAll}
+            onClick={throttledExportAll}
             disabled={isExportingAll}
             loading={isExportingAll}
             title="Export orders matching current filters as CSV"
@@ -628,7 +633,7 @@ export default function OrderList() {
           </Button>
           <Button
             variant="outline"
-            onClick={handleExportSelected}
+            onClick={throttledExportSelected}
             style={{ fontSize: "13px", padding: "6px 12px" }}
           >
             <Download size={14} /> Export Selected ({selectedIds.length})
@@ -1586,7 +1591,7 @@ export default function OrderList() {
           </div>
         }
         confirmLabel={isBulkUpdating ? "Updating..." : "Confirm Update"}
-        onConfirm={confirmBulkStatusChange}
+        onConfirm={throttledConfirmBulkStatusChange}
         onCancel={() => {
           setBulkConfirmOpen(false);
           setBulkCancelReason("");

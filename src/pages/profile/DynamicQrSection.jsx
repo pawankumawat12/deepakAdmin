@@ -14,6 +14,7 @@ import {
   useGetDynamicQrQuery,
   useUpdateDynamicQrMutation,
 } from "../../services/settingsApi";
+import { useThrottledCallback } from "../../utils/throttle";
 
 export default function DynamicQrSection() {
   const { data: qrResponse, isLoading } = useGetDynamicQrQuery();
@@ -264,6 +265,10 @@ export default function DynamicQrSection() {
     printWindow.document.close();
   };
 
+  const throttledSave = useThrottledCallback(handleSave, 1500);
+  const throttledDownloadPng = useThrottledCallback(handleDownloadPng, 1500);
+  const throttledPrintStandee = useThrottledCallback(handlePrintStandee, 1500);
+
   return (
     <section
       style={{
@@ -329,7 +334,7 @@ export default function DynamicQrSection() {
                 margin: 0,
               }}
             >
-              Permanent QR code for your store. Print once for tables or stands — changing the destination URL anytime will automatically redirect customers to the new page without changing the printed QR image.
+              Permanent QR code for your store. Print once for tables or stands.
             </p>
           </div>
         </div>
@@ -391,7 +396,7 @@ export default function DynamicQrSection() {
               alignSelf: "flex-start",
             }}
           >
-            Permanent QR Code (Print Once)
+            QR Code
           </div>
 
           {/* QR Graphic Container */}
@@ -452,47 +457,9 @@ export default function DynamicQrSection() {
               marginBottom: "14px",
             }}
           >
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 800,
-                color: "#15803d",
-                letterSpacing: "0.8px",
-                background: "#f0fdf4",
-                border: "1px solid #bbf7d0",
-                padding: "2px 8px",
-                borderRadius: "6px",
-              }}
-            >
-              SFC BAKERS
-            </span>
-            <span style={{ fontSize: "11px", color: "#6b7280" }}>
-              Center Badge Included
-            </span>
           </div>
 
-          {qrData?.scan_url && (
-            <div
-              style={{
-                fontSize: "11px",
-                color: "#4b5563",
-                background: "#f3f4f6",
-                border: "1px solid #e5e7eb",
-                padding: "3px 8px",
-                borderRadius: "6px",
-                marginBottom: "14px",
-                maxWidth: "100%",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                fontFamily: "monospace",
-              }}
-              title={qrData.scan_url}
-            >
-              Permanent Link: {qrData.scan_url}
-            </div>
-          )}
-
+        
           {/* Download & Print Buttons */}
           <div
             style={{
@@ -503,7 +470,7 @@ export default function DynamicQrSection() {
           >
             <button
               type="button"
-              onClick={handleDownloadPng}
+              onClick={throttledDownloadPng}
               disabled={!effectiveQrSvg}
               style={{
                 background: "#ffffff",
@@ -529,7 +496,7 @@ export default function DynamicQrSection() {
 
           <button
             type="button"
-            onClick={handlePrintStandee}
+            onClick={throttledPrintStandee}
             disabled={!effectiveQrSvg}
             style={{
               width: "100%",
@@ -555,7 +522,7 @@ export default function DynamicQrSection() {
 
         {/* Right Column: Destination Configuration */}
         <div>
-          <form onSubmit={handleSave}>
+          <form onSubmit={throttledSave}>
             {/* Destination URL */}
             <div style={{ marginBottom: "20px" }}>
               <label
@@ -632,7 +599,7 @@ export default function DynamicQrSection() {
                   lineHeight: 1.4,
                 }}
               >
-                Changing this Destination URL will immediately redirect all scans from your permanent QR code. No need to reprint the QR code!
+                Changing this Destination URL will immediately redirect all scans from your permanent QR code.
               </p>
             </div>
 
@@ -657,12 +624,12 @@ export default function DynamicQrSection() {
                 {isSaving ? (
                   <>
                     <RefreshCw size={15} className="animate-spin" />
-                    Saving QR Settings...
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Check size={16} />
-                    Save QR Settings
+                    Save
                   </>
                 )}
               </Button>

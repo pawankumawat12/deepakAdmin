@@ -645,21 +645,7 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-help">
-            <p>Need help?</p>
-            <span>Reach your support team</span>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                navigate("/messages");
-              }}
-            >
-              Contact support
-            </button>
-          </div>
-        </div>
+        
       </aside>
 
       <div className="main-area">

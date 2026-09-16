@@ -5,6 +5,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Select from "../components/ui/Select";
 import { useAdjustIngredientStockMutation } from "../services/inventoryApi";
+import { useThrottledCallback } from "../utils/throttle";
 
 export default function StockAdjustModal({ isOpen, onClose, ingredient = null }) {
   const [adjustStock, { isLoading }] = useAdjustIngredientStockMutation();
@@ -65,6 +66,8 @@ export default function StockAdjustModal({ isOpen, onClose, ingredient = null })
     }
   };
 
+  const throttledSubmit = useThrottledCallback(handleSubmit, 2000);
+
   return (
     <div
       className="modal-backdrop"
@@ -108,7 +111,7 @@ export default function StockAdjustModal({ isOpen, onClose, ingredient = null })
           </strong>
         </p>
 
-        <form className="entity-form" onSubmit={handleSubmit}>
+        <form className="entity-form" onSubmit={throttledSubmit}>
           <div className="form-grid">
             <label className="full">
               Adjustment Action *

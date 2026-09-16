@@ -1,5 +1,6 @@
 import { AlertTriangle, LoaderCircle, X } from "lucide-react";
 import Button from "./Button";
+import { useThrottledCallback } from "../../utils/throttle";
 
 export default function ConfirmDialog({
   title,
@@ -11,6 +12,7 @@ export default function ConfirmDialog({
   isLoading = false,
   error = "",
 }) {
+  const throttledConfirm = useThrottledCallback(onConfirm, 1500);
   return (
     <div
       className="modal-backdrop"
@@ -50,7 +52,7 @@ export default function ConfirmDialog({
           </Button>
           <Button
             variant={danger ? "danger" : "primary"}
-            onClick={onConfirm}
+            onClick={throttledConfirm}
             disabled={isLoading}
             loading={isLoading}
           >

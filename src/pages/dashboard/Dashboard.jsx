@@ -22,6 +22,7 @@ import { toAssetUrl } from "../../utils/assetUrl";
 import { useGetDashboardOverviewQuery } from "../../services/dashboardApi";
 import DataTable from "../../components/common/DataTable";
 import { useShopStatus } from "../../utils/useShopStatus";
+import { useThrottledCallback } from "../../utils/throttle";
 
 function formatRupee(num) {
   if (num == null) return "0";
@@ -41,6 +42,8 @@ export default function Dashboard() {
     isFetching,
     refetch,
   } = useGetDashboardOverviewQuery({ timeframe });
+
+  const throttledRefetch = useThrottledCallback(() => refetch(), 1500);
 
   const overview = dashboardData?.data || {};
   const kpis = overview.kpis || {
@@ -436,7 +439,7 @@ export default function Dashboard() {
 
           <button
             type="button"
-            onClick={() => refetch()}
+            onClick={throttledRefetch}
             disabled={isFetching}
             title="Refresh analytics data"
             style={{

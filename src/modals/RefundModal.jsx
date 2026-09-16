@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, RotateCcw, AlertTriangle, ShieldCheck, CheckCircle2, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRefundOrderMutation } from "../services/orderApi";
+import { useThrottledCallback } from "../utils/throttle";
 
 export default function RefundModal({ isOpen, onClose, order, onRefundSuccess }) {
   const [refundOrderApi, { isLoading }] = useRefundOrderMutation();
@@ -104,6 +105,8 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
       );
     }
   };
+
+  const throttledSubmit = useThrottledCallback(handleSubmit, 2500);
 
   const isAlreadyRefunded =
     (order.payment_status || "").toLowerCase() === "refunded" ||
@@ -208,7 +211,7 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={throttledSubmit}>
               {/* Order Summary Cards */}
               <div
                 style={{

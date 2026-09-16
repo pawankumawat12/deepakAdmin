@@ -19,6 +19,7 @@ import {
   useSaveProductRecipeMutation,
 } from "../../services/inventoryApi";
 import useDebouncedValue from "../../utils/useDebouncedValue";
+import { useThrottledCallback } from "../../utils/throttle";
 
 export default function RecipeList() {
   const [productSearch, setProductSearch] = useState("");
@@ -149,6 +150,8 @@ export default function RecipeList() {
       toast.error(err?.data?.message || "Failed to save recipe");
     }
   };
+
+  const throttledSaveRecipe = useThrottledCallback(handleSaveRecipe, 2000);
 
   return (
     <>
@@ -377,7 +380,7 @@ export default function RecipeList() {
                     borderTop: "1px solid var(--line)",
                   }}
                 >
-                  <Button variant="primary" onClick={handleSaveRecipe} loading={isSaving} disabled={isSaving}>
+                  <Button variant="primary" onClick={throttledSaveRecipe} loading={isSaving} disabled={isSaving}>
                     <Save size={16} /> Save Recipe
                   </Button>
                 </div>

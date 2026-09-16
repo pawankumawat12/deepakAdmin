@@ -10,6 +10,7 @@ import {
   useGetSuppliersQuery,
 } from "../services/inventoryApi";
 import SupplierModal from "./SupplierModal";
+import { useThrottledCallback } from "../utils/throttle";
 
 const COMMON_CATEGORIES = [
   "Bakery",
@@ -165,6 +166,8 @@ export default function IngredientModal({
     }
   };
 
+  const throttledSubmit = useThrottledCallback(handleSubmit, 2000);
+
   return (
     <>
       <div
@@ -202,7 +205,7 @@ export default function IngredientModal({
 
           {errorMsg && <div className="confirm-error">{errorMsg}</div>}
 
-          <form className="entity-form" onSubmit={handleSubmit}>
+          <form className="entity-form" onSubmit={throttledSubmit}>
             <div className="form-grid">
               <label className="full">
                 Raw Material / Ingredient Name *
