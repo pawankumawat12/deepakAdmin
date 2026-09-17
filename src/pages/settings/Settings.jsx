@@ -197,20 +197,42 @@ export default function Settings() {
       return;
     }
     setDetectingStoreLocation(true);
+
+    const onLocationSuccess = (pos) => {
+      const lat = Math.round(pos.coords.latitude * 100000) / 100000;
+      const lng = Math.round(pos.coords.longitude * 100000) / 100000;
+      setValue("store_latitude", lat, { shouldDirty: true });
+      setValue("store_longitude", lng, { shouldDirty: true });
+      setDetectingStoreLocation(false);
+      toast.success(`Store location detected: ${lat}, ${lng}`);
+    };
+
+    const tryFallbackOrError = (err) => {
+      if (err.code === err.PERMISSION_DENIED) {
+        setDetectingStoreLocation(false);
+        toast.error("Location permission denied. Please allow location access in your browser.");
+        return;
+      }
+
+      // Fallback to standard accuracy (works on PC/Laptop without GPS hardware)
+      navigator.geolocation.getCurrentPosition(
+        onLocationSuccess,
+        (fallbackErr) => {
+          setDetectingStoreLocation(false);
+          let errorMsg = "Could not fetch location. Please check browser permissions.";
+          if (fallbackErr.code === fallbackErr.PERMISSION_DENIED) {
+            errorMsg = "Location permission denied. Please allow location access in your browser.";
+          }
+          toast.error(errorMsg);
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+      );
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = Math.round(pos.coords.latitude * 100000) / 100000;
-        const lng = Math.round(pos.coords.longitude * 100000) / 100000;
-        setValue("store_latitude", lat, { shouldDirty: true });
-        setValue("store_longitude", lng, { shouldDirty: true });
-        setDetectingStoreLocation(false);
-        toast.success(`Store location detected: ${lat}, ${lng}`);
-      },
-      (err) => {
-        setDetectingStoreLocation(false);
-        toast.error("Could not fetch GPS location. Please check browser permissions.");
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
+      onLocationSuccess,
+      tryFallbackOrError,
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
   };
 
