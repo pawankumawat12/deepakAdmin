@@ -63,6 +63,16 @@ const navigationItems = [
   },
   {
     type: "group",
+    id: "sales",
+    label: "Orders & Deals",
+    icon: ShoppingBag,
+    children: [
+      { label: "All Orders", to: "/orders", icon: ShoppingBag },
+      { label: "Offers & Deals", to: "/offers", icon: BadgePercent },
+    ],
+  },
+  {
+    type: "group",
     id: "inventory",
     label: "Raw Materials & BOM",
     icon: Boxes,
@@ -85,16 +95,7 @@ const navigationItems = [
       { label: "CMS Pages", to: "/cms-pages", icon: FileText },
     ],
   },
-  {
-    type: "group",
-    id: "sales",
-    label: "Orders & Deals",
-    icon: ShoppingBag,
-    children: [
-      { label: "All Orders", to: "/orders", icon: ShoppingBag },
-      { label: "Offers & Deals", to: "/offers", icon: BadgePercent },
-    ],
-  },
+ 
   {
     type: "group",
     id: "customers",
