@@ -33,6 +33,7 @@ import {
   Sparkles,
   Receipt,
   MapPin,
+  Navigation,
   X,
   Eye,
   Percent,
@@ -1245,16 +1246,58 @@ export default function OrderList() {
           //   ),
           // }
         ]}
-        renderActions={(item) => (
-          <Button
-            variant="view"
-            title="View Order Details"
-            aria-label="View Order Details"
-            onClick={() => setSelectedOrderDetails(item)}
-          >
-            <Eye size={15} />
-          </Button>
-        )}
+        renderActions={(item) => {
+          const addr = item.parsedAddress || item.delivery_address_json;
+          let parsedAddr = null;
+          try {
+            parsedAddr = typeof addr === "string" ? JSON.parse(addr || "{}") : addr;
+          } catch (_) {}
+
+          const hasCoords =
+            parsedAddr?.latitude != null &&
+            parsedAddr?.longitude != null &&
+            Number(parsedAddr.latitude) !== 0 &&
+            Number(parsedAddr.longitude) !== 0;
+
+          const destination = hasCoords
+            ? `${parsedAddr.latitude},${parsedAddr.longitude}`
+            : parsedAddr?.formatted_address
+            ? encodeURIComponent(
+                `${parsedAddr.formatted_address}, ${parsedAddr.city || ""} ${parsedAddr.pincode || ""}`
+              )
+            : item.shipping_address
+            ? encodeURIComponent(item.shipping_address)
+            : null;
+
+          const mapUrl = destination
+            ? `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`
+            : null;
+
+          return (
+            <div className="d-flex align-items-center gap-1">
+              {mapUrl && (
+                <a
+                  href={mapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-outline-success p-1 rounded-2 d-inline-flex align-items-center justify-content-center"
+                  style={{ width: "32px", height: "32px" }}
+                  title="Deliver via Google Maps Route"
+                >
+                  <Navigation size={14} />
+                </a>
+              )}
+              <Button
+                variant="view"
+                title="View Order Details"
+                aria-label="View Order Details"
+                onClick={() => setSelectedOrderDetails(item)}
+              >
+                <Eye size={15} />
+              </Button>
+            </div>
+          );
+        }}
       />
 
       <Pagination

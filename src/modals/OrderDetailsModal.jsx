@@ -17,6 +17,9 @@ import {
   Lock,
   RotateCcw,
   ShieldCheck,
+  Navigation,
+  Phone,
+  ExternalLink,
 } from "lucide-react";
 import Button from "../components/ui/Button";
 
@@ -183,6 +186,47 @@ const OrderDetailsModal = ({
   const updatedDate = order.updated_at
     ? new Date(order.updated_at).toLocaleString("en-IN")
     : "-";
+
+  const getDirectionsUrl = () => {
+    if (!address) {
+      if (!order.shipping_address) return null;
+      return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+        order.shipping_address
+      )}&travelmode=driving`;
+    }
+
+    const hasCoords =
+      address.latitude != null &&
+      address.longitude != null &&
+      Number(address.latitude) !== 0 &&
+      Number(address.longitude) !== 0;
+
+    const destination = hasCoords
+      ? `${address.latitude},${address.longitude}`
+      : encodeURIComponent(
+          [
+            address.house_number,
+            address.building_name,
+            address.formatted_address,
+            address.city,
+            address.pincode,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        );
+
+    const hasStoreCoords =
+      storeLatitude != null &&
+      storeLongitude != null &&
+      Number(storeLatitude) !== 0 &&
+      Number(storeLongitude) !== 0;
+
+    if (hasStoreCoords) {
+      return `https://www.google.com/maps/dir/?api=1&origin=${storeLatitude},${storeLongitude}&destination=${destination}&travelmode=driving`;
+    }
+
+    return `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
+  };
 
   return (
     <div
@@ -868,17 +912,65 @@ const OrderDetailsModal = ({
                         {address.pincode}
                       </div>
 
-                      {/* {address.latitude != null && (
-                        <div className="text-muted mt-1">
-                          GPS: {address.latitude},{" "}
-                          {address.longitude}
-                        </div>
-                      )} */}
+                      {address.latitude != null &&
+                        address.longitude != null &&
+                        Number(address.latitude) !== 0 &&
+                        Number(address.longitude) !== 0 && (
+                          <div className="text-success fw-bold mt-2 d-flex align-items-center gap-1.5 small">
+                            <MapPin size={13} />
+                            <span>
+                              GPS Pin: {Number(address.latitude).toFixed(4)},{" "}
+                              {Number(address.longitude).toFixed(4)}
+                            </span>
+                          </div>
+                        )}
 
+                      {/* Direction & Call Buttons */}
+                      <div className="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
+                        {getDirectionsUrl() && (
+                          <a
+                            href={getDirectionsUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-success d-inline-flex align-items-center gap-1.5 fw-bold shadow-sm"
+                          >
+                            <Navigation size={13} />
+                            <span>Deliver via Google Maps</span>
+                            <ExternalLink size={11} />
+                          </a>
+                        )}
+
+                        {address.phone_number && (
+                          <a
+                            href={`tel:${address.phone_number.replace(/\s/g, "")}`}
+                            className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5 fw-semibold"
+                          >
+                            <Phone size={13} />
+                            <span>Call Customer</span>
+                          </a>
+                        )}
+                      </div>
                     </>
                   ) : (
-                    order.shipping_address ||
-                    "No address details available"
+                    <>
+                      <div>
+                        {order.shipping_address || "No address details available"}
+                      </div>
+                      {getDirectionsUrl() && (
+                        <div className="mt-3 pt-3 border-top">
+                          <a
+                            href={getDirectionsUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-success d-inline-flex align-items-center gap-1.5 fw-bold shadow-sm"
+                          >
+                            <Navigation size={13} />
+                            <span>Deliver via Google Maps</span>
+                            <ExternalLink size={11} />
+                          </a>
+                        </div>
+                      )}
+                    </>
                   )}
 
                 </div>

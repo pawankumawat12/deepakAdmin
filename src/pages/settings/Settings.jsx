@@ -29,6 +29,7 @@ import {
   Phone,
   Mail,
   MapPin,
+  Navigation,
   Clock,
   Percent,
   Truck,
@@ -170,7 +171,9 @@ export default function Settings() {
   const [statusMessage, setStatusMessage] = useState({ text: "", type: "" });
   const [pricingStatus, setPricingStatus] = useState({ text: "", type: "" });
 
-  const { register, handleSubmit, reset } = useForm({
+  const [detectingStoreLocation, setDetectingStoreLocation] = useState(false);
+
+  const { register, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       gst_percent: "",
       tax_inclusive: false,
@@ -187,6 +190,29 @@ export default function Settings() {
       discount_percent: "",
     },
   });
+
+  const handleDetectStoreLocation = () => {
+    if (typeof window === "undefined" || !("geolocation" in navigator)) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    setDetectingStoreLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = Math.round(pos.coords.latitude * 100000) / 100000;
+        const lng = Math.round(pos.coords.longitude * 100000) / 100000;
+        setValue("store_latitude", lat, { shouldDirty: true });
+        setValue("store_longitude", lng, { shouldDirty: true });
+        setDetectingStoreLocation(false);
+        toast.success(`Store location detected: ${lat}, ${lng}`);
+      },
+      (err) => {
+        setDetectingStoreLocation(false);
+        toast.error("Could not fetch GPS location. Please check browser permissions.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const availableColorThemes =
     themeResponse?.data?.availableColorThemes &&
@@ -1771,7 +1797,21 @@ export default function Settings() {
 
           {/* Cafe Location */}
           <div className="border-top pt-4 mb-4">
-            <h3 className="fs-6 fw-bold text-dark mb-3">Bakery Location</h3>
+            <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+              <div>
+                <h3 className="fs-6 fw-bold text-dark mb-0">Bakery Location</h3>
+                <p className="text-muted small mb-0">Coordinates used to calculate delivery distance to customer</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleDetectStoreLocation}
+                disabled={detectingStoreLocation}
+                className="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1.5 fw-semibold"
+              >
+                <Navigation size={13} />
+                <span>{detectingStoreLocation ? "Detecting GPS..." : "Auto-detect Store Location (GPS)"}</span>
+              </button>
+            </div>
 
             <div className="row g-4">
               <div className="col-12 col-md-6">
