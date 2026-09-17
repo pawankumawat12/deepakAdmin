@@ -22,6 +22,7 @@ import {
   useRejectOrderMutation,
   useGetAdminOrderByIdQuery,
 } from "../../services/orderApi";
+import { useGetSettingPricingQuery } from "../../services/settingsApi";
 import { getAdminSocket } from "../../services/socket";
 import AdminOrderChatModal from "../../components/orders/AdminOrderChatModal";
 import {
@@ -89,6 +90,7 @@ export default function OrderList() {
     status: statusFilter || undefined,
     search: debouncedSearch.trim() || undefined,
   });
+  const { data: pricingSettingData } = useGetSettingPricingQuery();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
   const [bulkUpdateStatus, { isLoading: isBulkUpdating }] = useBulkUpdateOrderStatusMutation();
   const [updatePaymentStatus, { isLoading: isUpdatingPayment }] =
@@ -1261,21 +1263,35 @@ export default function OrderList() {
 
           const destination = hasCoords
             ? `${parsedAddr.latitude},${parsedAddr.longitude}`
-            : parsedAddr?.formatted_address
+            : parsedAddr
             ? encodeURIComponent(
-                `${parsedAddr.formatted_address}, ${parsedAddr.city || ""} ${parsedAddr.pincode || ""}`
+                [
+                  parsedAddr.house_number,
+                  parsedAddr.building_name,
+                  parsedAddr.formatted_address,
+                  parsedAddr.city,
+                  parsedAddr.pincode,
+                ]
+                  .filter(Boolean)
+                  .join(", ")
               )
             : item.shipping_address
             ? encodeURIComponent(item.shipping_address)
             : null;
 
-          let pricing = item.pricing_details || item.pricing_breakdown;
+          let pricing =
+            item.parsedPricing ||
+            item.pricing_details_json ||
+            item.pricing_details ||
+            item.pricing_breakdown;
           try {
             if (typeof pricing === "string") pricing = JSON.parse(pricing);
           } catch (_) {}
 
-          const storeLat = pricing?.store_latitude;
-          const storeLng = pricing?.store_longitude;
+          const storeLat =
+            pricing?.store_latitude ?? pricingSettingData?.data?.store_latitude;
+          const storeLng =
+            pricing?.store_longitude ?? pricingSettingData?.data?.store_longitude;
           const hasStoreCoords =
             storeLat != null &&
             storeLng != null &&
