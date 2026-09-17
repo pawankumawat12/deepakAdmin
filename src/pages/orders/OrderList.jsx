@@ -1269,8 +1269,23 @@ export default function OrderList() {
             ? encodeURIComponent(item.shipping_address)
             : null;
 
+          let pricing = item.pricing_details || item.pricing_breakdown;
+          try {
+            if (typeof pricing === "string") pricing = JSON.parse(pricing);
+          } catch (_) {}
+
+          const storeLat = pricing?.store_latitude;
+          const storeLng = pricing?.store_longitude;
+          const hasStoreCoords =
+            storeLat != null &&
+            storeLng != null &&
+            Number(storeLat) !== 0 &&
+            Number(storeLng) !== 0;
+
           const mapUrl = destination
-            ? `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`
+            ? hasStoreCoords
+              ? `https://www.google.com/maps/dir/?api=1&origin=${storeLat},${storeLng}&destination=${destination}&travelmode=driving`
+              : `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`
             : null;
 
           return (
