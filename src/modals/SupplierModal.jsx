@@ -88,6 +88,11 @@ export default function SupplierModal({
       return;
     }
 
+    if (formData.email && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      setErrorMsg("Please enter a valid email address");
+      return;
+    }
+
     try {
       if (isEdit) {
         const res = await updateSupplier({
@@ -105,7 +110,6 @@ export default function SupplierModal({
     } catch (err) {
       const msg = err?.data?.message || "Failed to save supplier";
       setErrorMsg(msg);
-      toast.error(msg);
     }
   };
 

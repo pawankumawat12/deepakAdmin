@@ -3,21 +3,30 @@ import Button from "./Button";
 import { useThrottledCallback } from "../../utils/throttle";
 
 export default function ConfirmDialog({
+  isOpen = true,
   title,
   message,
   confirmLabel = "Delete",
+  confirmText,
   onConfirm,
   onClose,
+  onCancel,
   danger = true,
+  confirmVariant,
   isLoading = false,
   error = "",
 }) {
+  if (isOpen === false) return null;
+  const handleClose = onClose || onCancel;
+  const label = confirmText || confirmLabel;
+  const isDanger = confirmVariant ? confirmVariant === "danger" : danger;
   const throttledConfirm = useThrottledCallback(onConfirm, 1500);
+
   return (
     <div
       className="modal-backdrop"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !isLoading) onClose();
+        if (event.target === event.currentTarget && !isLoading && handleClose) handleClose();
       }}
     >
       <section
@@ -30,13 +39,13 @@ export default function ConfirmDialog({
         <Button
           variant="plain"
           className="modal-close"
-          onClick={onClose}
+          onClick={handleClose}
           disabled={isLoading}
           aria-label="Close"
         >
           <X size={18} />
         </Button>
-        <span className={danger ? "confirm-icon danger" : "confirm-icon"}>
+        <span className={isDanger ? "confirm-icon danger" : "confirm-icon"}>
           <AlertTriangle size={22} />
         </span>
         <h2 id="confirm-title">{title}</h2>
@@ -45,18 +54,18 @@ export default function ConfirmDialog({
         <div className="confirm-actions">
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isLoading}
           >
             Cancel
           </Button>
           <Button
-            variant={danger ? "danger" : "primary"}
+            variant={isDanger ? "danger" : "primary"}
             onClick={throttledConfirm}
             disabled={isLoading}
             loading={isLoading}
           >
-            {isLoading ? "Processing..." : confirmLabel}
+            {isLoading ? "Processing..." : label}
           </Button>
         </div>
       </section>

@@ -35,15 +35,20 @@ import IngredientList from "../pages/inventory/IngredientList";
 import RecipeList from "../pages/inventory/RecipeList";
 import SupplierList from "../pages/inventory/SupplierList";
 import InventoryLogList from "../pages/inventory/InventoryLogList";
+import StoreList from "../pages/stores/StoreList";
+import StoreProductList from "../pages/stores/StoreProductList";
+import StoreOrderList from "../pages/stores/StoreOrderList";
+import StoreSetPassword from "../pages/auth/StoreSetPassword";
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public / Unauthenticated Routes: If already logged in, redirect to "/" (Dashboard) */}
+      {/* Public / Unauthenticated Routes */}
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/store/set-password" element={<StoreSetPassword />} />
       </Route>
 
       {/* Protected Admin Routes: Must be authenticated as admin to access any internal page */}
@@ -56,6 +61,9 @@ export default function AppRoutes() {
           <Route path="categories" element={<CategoryList />} />
           <Route path="categories/create" element={<CategoryCreate />} />
           <Route path="categories/:id/edit" element={<CategoryEdit />} />
+          <Route path="stores" element={<StoreList />} />
+          <Route path="stores/:storeId/products" element={<StoreProductList />} />
+          <Route path="stores/:storeId/orders" element={<StoreOrderList />} />
           <Route path="orders" element={<OrderList />} />
           <Route path="customers" element={<CustomerList />} />
           <Route path="offers" element={<OfferList />} />

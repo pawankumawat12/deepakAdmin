@@ -100,7 +100,6 @@ export default function Profile() {
     } catch (err) {
       const msg = err?.data?.message || "Failed to update password.";
       setPasswordError(msg);
-      toast.error(msg);
     }
   };
 

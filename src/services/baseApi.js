@@ -4,6 +4,21 @@ import { updateAdminSocketToken, disconnectAdminSocket } from "./socket";
 
 let activeRefreshPromise = null;
 let lastRefreshFailedAt = 0;
+const NO_STORE_LINKED_MESSAGE = "No store linked to your account.";
+
+function logoutStoreOwnerWithoutStore(api) {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("accessToken");
+  }
+
+  disconnectAdminSocket();
+  api.dispatch(signOut());
+  api.dispatch(baseApi.util.resetApiState());
+
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.replace("/login");
+  }
+}
 
 const getNormalizedBaseUrl = () => {
   const envUrl = (
@@ -123,6 +138,19 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 
   let result = await rawBaseQuery(args, api, extraOptions);
 
+  const currentUser = api.getState()?.auth?.user;
+  const isStoreOwnerWithoutStore =
+    currentUser?.role === "store_owner" &&
+    result.error?.data?.message === NO_STORE_LINKED_MESSAGE;
+
+  // A Store Owner can no longer use the portal once the linked store has
+  // disappeared. End the local session immediately instead of leaving the
+  // user on a broken dashboard.
+  if (isStoreOwnerWithoutStore) {
+    logoutStoreOwnerWithoutStore(api);
+    return result;
+  }
+
   const url = typeof args === "string" ? args : args?.url;
   const isRefreshRequest =
     url === "/auth/refresh-token" || url?.includes("refresh-token");
@@ -192,6 +220,8 @@ export const baseApi = createApi({
     "Ingredients",
     "Recipes",
     "InventoryLogs",
+    "Stores",
+    "StoreRequests",
   ],
   endpoints: () => ({}),
 });

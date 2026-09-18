@@ -52,10 +52,12 @@ export default function ProtectedRoute() {
     );
   }
 
-  // When signed out or unauthorized, user and reset cache will both be null
+  // Allow admin and store_owner into the portal
   const effectiveUser = user || data?.user;
-  const isAdmin = Boolean(effectiveUser && effectiveUser.role === "admin");
+  const isAuthorized = Boolean(
+    effectiveUser && (effectiveUser.role === "admin" || effectiveUser.role === "store_owner")
+  );
 
-  return isAdmin ? <Outlet /> : <Navigate to="/login" replace />;
+  return isAuthorized ? <Outlet /> : <Navigate to="/login" replace />;
 }
 

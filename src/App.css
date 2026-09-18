@@ -1489,17 +1489,18 @@ td>b {
 
 .password-toggle {
   position: absolute;
-  right: 0;
-  top: 0;
+  right: 2px;
+  top: 2px;
 
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   border: 0;
+  border-radius: 6px;
   background: transparent;
   color: #8b8ba0;
 
@@ -1507,7 +1508,13 @@ td>b {
 }
 
 .password-toggle:hover {
+  background: #f3f4f6;
   color: #6253e8;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #8479ee;
+  outline-offset: 1px;
 }
 
 

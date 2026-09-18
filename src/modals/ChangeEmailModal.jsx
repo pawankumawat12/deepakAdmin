@@ -83,7 +83,6 @@ export default function ChangeEmailModal({ isOpen, onClose, currentEmail = "" })
       const msg =
         err?.data?.message || err?.message || "Failed to initiate email change.";
       setError(msg);
-      toast.error(msg);
     }
   };
 
@@ -101,7 +100,6 @@ export default function ChangeEmailModal({ isOpen, onClose, currentEmail = "" })
       const msg =
         err?.data?.message || err?.message || "Failed to resend verification code.";
       setError(msg);
-      toast.error(msg);
     }
   };
 
@@ -127,7 +125,6 @@ export default function ChangeEmailModal({ isOpen, onClose, currentEmail = "" })
       const msg =
         err?.data?.message || err?.message || "Invalid or expired verification code.";
       setError(msg);
-      toast.error(msg);
     }
   };
 

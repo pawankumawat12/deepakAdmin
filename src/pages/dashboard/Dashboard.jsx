@@ -17,9 +17,11 @@ import {
   Sparkles,
   Truck,
   ChevronRight,
+  Store,
 } from "lucide-react";
 import { toAssetUrl } from "../../utils/assetUrl";
 import { useGetDashboardOverviewQuery } from "../../services/dashboardApi";
+import { useGetMyStoreQuery } from "../../services/storeApi";
 import DataTable from "../../components/common/DataTable";
 import { useShopStatus } from "../../utils/useShopStatus";
 import { useThrottledCallback } from "../../utils/throttle";
@@ -31,6 +33,10 @@ function formatRupee(num) {
 
 export default function Dashboard() {
   const user = useSelector((state) => state.auth.user);
+  const isStoreOwner = user?.role === "store_owner";
+  const { data: myStoreData } = useGetMyStoreQuery(undefined, { skip: !isStoreOwner });
+  const myStore = myStoreData?.store;
+
   const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState("weekly");
   const [activeChartMetric, setActiveChartMetric] = useState("revenue");
@@ -359,7 +365,7 @@ export default function Dashboard() {
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <h1 style={{ margin: 0, fontSize: "22px", fontWeight: 900, color: "#111827" }}>
               Welcome back, {user?.name || "Admin"}! 
             </h1>
@@ -388,10 +394,29 @@ export default function Dashboard() {
               />
               Live Monitoring
             </span>
-
+            {isStoreOwner && (
+              <span
+                style={{
+                  background: "#eff6ff",
+                  color: "#1d4ed8",
+                  border: "1px solid #bfdbfe",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  padding: "2px 8px",
+                  borderRadius: "9999px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <Store size={12} /> {myStore?.name ? `Branch: ${myStore.name}` : "Store Portal"}
+              </span>
+            )}
           </div>
           <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: "12.5px" }}>
-            Here is your cafe's real-time financial performance, orders overview, and inventory ranking.
+            {isStoreOwner
+              ? "Here is your branch's real-time sales, order preparation status, and product performance."
+              : "Here is your cafe's real-time financial performance, orders overview, and inventory ranking."}
           </p>
         </div>
 
@@ -459,6 +484,127 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* STORE OWNER BRANCH & PERMITTED CATEGORIES BANNER */}
+      {isStoreOwner && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, #064e3b 0%, #065f46 100%)",
+            color: "#ffffff",
+            padding: "20px 24px",
+            borderRadius: "16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+            boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "12px",
+                  background: "rgba(255,255,255,0.15)",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Store size={24} style={{ color: "#a7f3d0" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.05em", color: "#a7f3d0", textTransform: "uppercase" }}>
+                  Assigned Branch
+                </div>
+                <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "2px 0 0", color: "#ffffff" }}>
+                  {myStore?.name || "Your Branch Store"}
+                </h2>
+                {myStore?.city && (
+                  <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#d1fae5" }}>
+                    {myStore.city}, {myStore.state || "Rajasthan"} {myStore.phone ? `• ${myStore.phone}` : ""}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "9999px",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  background: myStore?.is_open ? "#10b981" : "#ef4444",
+                  color: "#ffffff",
+                }}
+              >
+                {myStore?.is_open ? "Store Open" : "Store Closed"}
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate("/products/create")}
+                style={{
+                  background: "#ffffff",
+                  color: "#065f46",
+                  fontWeight: 700,
+                  fontSize: "12px",
+                  padding: "8px 16px",
+                  borderRadius: "10px",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <Package size={15} />
+                Add Store Product
+              </button>
+            </div>
+          </div>
+
+          {/* Assigned Categories */}
+          <div
+            style={{
+              background: "rgba(0,0,0,0.2)",
+              borderRadius: "12px",
+              padding: "12px 16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+            }}
+          >
+            <div style={{ fontSize: "12px", fontWeight: 600, color: "#a7f3d0" }}>
+              Authorized Categories (Products can only be added within these categories):
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {Array.isArray(myStore?.assigned_categories) && myStore.assigned_categories.length > 0 ? (
+                myStore.assigned_categories.map((cat) => (
+                  <span
+                    key={cat.id}
+                    style={{
+                      background: "rgba(255,255,255,0.18)",
+                      color: "#ffffff",
+                      padding: "3px 10px",
+                      borderRadius: "8px",
+                      fontSize: "11.5px",
+                      fontWeight: 600,
+                      border: "1px solid rgba(255,255,255,0.2)",
+                    }}
+                  >
+                    {cat.name}
+                  </span>
+                ))
+              ) : (
+                <span style={{ fontSize: "11.5px", color: "#fca5a5" }}>
+                  No categories assigned yet. Please contact the administrator.
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. DYNAMIC KPI CARDS GRID (7 CARDS) */}
       <div
@@ -1462,10 +1608,12 @@ export default function Dashboard() {
           >
             <div>
               <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "#111827" }}>
-                Recent Bakers Orders
+                {isStoreOwner ? "Recent Store Orders" : "Recent Bakers Orders"}
               </h2>
               <p style={{ margin: "2px 0 0", fontSize: "11.5px", color: "#6b7280" }}>
-                Latest transactions placed by customers
+                {isStoreOwner
+                  ? "Latest dispatched orders assigned to your branch"
+                  : "Latest transactions placed by customers"}
               </p>
             </div>
             <Link

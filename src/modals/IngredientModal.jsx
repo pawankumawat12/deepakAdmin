@@ -156,7 +156,6 @@ export default function IngredientModal({
     } catch (err) {
       const msg = err?.data?.message || "Failed to save ingredient";
       setErrorMsg(msg);
-      toast.error(msg);
     }
   };
 

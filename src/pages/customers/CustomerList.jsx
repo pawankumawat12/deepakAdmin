@@ -582,6 +582,57 @@ export default function CustomerList() {
         </div>
       </div>
 
+      {/* Top Metric Cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "16px",
+          marginBottom: "20px",
+        }}
+      >
+        <div
+          className="card"
+          onClick={() => setActiveTab("customers")}
+          style={{ padding: "16px 20px", borderLeft: "4px solid #6253e8", cursor: "pointer" }}
+        >
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#6253e8" }}>Total Customers</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#111827", marginTop: "4px" }}>
+            {customerPagination?.totalItems ?? rawCustomers.length}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #16a34a" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#16a34a" }}>Active Accounts</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>
+            {rawCustomers.filter((c) => c.is_active && !c.is_blocked).length}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #dc2626" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#dc2626" }}>Blocked Customers</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#dc2626", marginTop: "4px" }}>
+            {rawCustomers.filter((c) => c.is_blocked).length}
+          </div>
+        </div>
+
+        <div
+          className="card"
+          onClick={() => setActiveTab("requests")}
+          style={{
+            padding: "16px 20px",
+            borderLeft: "4px solid #d97706",
+            cursor: "pointer",
+            transition: "box-shadow 0.2s ease",
+          }}
+        >
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#d97706" }}>Pending Unblock Requests</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#d97706", marginTop: "4px" }}>
+            {pendingRequests.length}
+          </div>
+        </div>
+      </div>
+
       {/* TAB 1: CUSTOMERS DIRECTORY */}
       {activeTab === "customers" && (
         <div style={{ marginTop: "16px" }}>

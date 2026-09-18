@@ -117,13 +117,13 @@ export function useShopStatus() {
 
       if (showNotification) {
         if (nextValue) {
-          toast.success("Shop is OPEN", {
-            id: "shop-status-toast",
+          toast.success("Main Bakery Shop is now OPEN.", {
+            id: "main-shop-status-toast",
             duration: 3500,
           });
         } else {
-          toast.error("Shop is CLOSED", {
-            id: "shop-status-toast",
+          toast.error("Main Bakery Shop is now CLOSED.", {
+            id: "main-shop-status-toast",
             duration: 3500,
           });
         }

@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { emailSchema, otpSchema } from "../../schema/auth.schema";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../context/authSlice";
-import { ArrowLeft, LockKeyhole } from "lucide-react";
+import { ArrowLeft, LockKeyhole, Store, Send, CheckCircle2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -13,6 +13,7 @@ import {
   useVerifyOtpMutation,
   useLazyGetMeQuery,
 } from "../../services/authApi";
+import { useRequestStoreAccessMutation } from "../../services/storeApi";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 
@@ -28,6 +29,13 @@ export default function Login() {
   const [sendOtp, { isLoading: resendingOtp }] = useSendOtpMutation();
   const [verifyOtp, { isLoading: verifyingOtp }] = useVerifyOtpMutation();
   const [getMe] = useLazyGetMeQuery();
+  const [requestStoreAccess, { isLoading: requestingAccess }] = useRequestStoreAccessMutation();
+
+  const [mode, setMode] = useState("login"); // "login" | "store_request"
+  const [storeRequestEmail, setStoreRequestEmail] = useState("");
+  const [storeRequestSuccess, setStoreRequestSuccess] = useState(false);
+  const [storeRequestMessage, setStoreRequestMessage] = useState("");
+
   const [apiError, setApiError] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [resendCount, setResendCount] = useState(0);
@@ -79,10 +87,48 @@ export default function Login() {
       setResendTimer(RESEND_COOLDOWN_SECONDS);
       toast.success(res?.message || "Credentials verified! Verification OTP sent to your email.");
     } catch (error) {
-      const errorMsg =
-        error?.data?.message || "Unable to sign in. Please try again.";
-      setApiError(errorMsg);
-      toast.error(errorMsg);
+      if (error?.data?.isApprovedPendingPassword && error?.data?.setupUrl) {
+        toast.success(error.data.message || "Your access has been approved! Redirecting to set your password...");
+        navigate(error.data.setupUrl);
+        return;
+      } else if (error?.data?.isPendingStoreOwner) {
+        setStoreRequestEmail(data.email);
+        setMode("store_request");
+        setApiError(error.data.message);
+      } else {
+        const errorMsg =
+          error?.data?.message || "Unable to sign in. Please try again.";
+        setApiError(errorMsg);
+      }
+    }
+  };
+
+  const handleSendStoreAccessRequest = async (e) => {
+    e.preventDefault();
+    if (!storeRequestEmail || !storeRequestEmail.trim()) {
+      setApiError("Please enter your registered store owner email.");
+      return;
+    }
+    try {
+      setApiError("");
+      const res = await requestStoreAccess({ email: storeRequestEmail.trim() }).unwrap();
+      if (res?.status === "ready_to_login") {
+        toast.success(res.message);
+        emailForm.setValue("email", storeRequestEmail.trim());
+        setMode("login");
+      } else if (res?.status === "approved_set_password" && res?.setupUrl) {
+        toast.success(res.message || "Your access has been approved! Redirecting to set your password...");
+        navigate(res.setupUrl);
+      } else {
+        setStoreRequestSuccess(true);
+        setStoreRequestMessage(
+          res?.message || "Login request submitted! Admin has been notified. You will receive an email once approved."
+        );
+        toast.success("Request sent to Admin!");
+      }
+    } catch (err) {
+      const msg = err?.data?.message || "Failed to submit access request.";
+      setApiError(msg);
     }
   };
 
@@ -102,7 +148,6 @@ export default function Login() {
     } catch (error) {
       const errorMsg = error?.data?.message || "Invalid or expired OTP.";
       setApiError(errorMsg);
-      toast.error(errorMsg);
     }
   };
 
@@ -138,16 +183,91 @@ export default function Login() {
     <main className="login-page">
       <section className="login-card">
         <p className="eyebrow">SFC BAKERS</p>
-        <h1>{otpSent ? "Verify your login" : "Welcome back"}</h1>
+        <h1>
+          {mode === "store_request"
+            ? "Store Owner Access"
+            : otpSent
+            ? "Verify your login"
+            : "Welcome back"}
+        </h1>
 
         <p className="muted">
-          {otpSent
+          {mode === "store_request"
+            ? "Request login approval to access your branch store."
+            : otpSent
             ? `We sent a one-time code to ${pendingEmail}`
             : "Sign in to manage your storefront."}
         </p>
         {apiError && <small className="error">{apiError}</small>}
 
-        {!otpSent ? (
+        {mode === "store_request" ? (
+          <div className="login-form">
+            {storeRequestSuccess ? (
+              <div style={{ textAlign: "center", padding: "12px 0" }}>
+                <div style={{ display: "inline-flex", padding: "12px", borderRadius: "50%", background: "#ecfdf5", color: "#059669", marginBottom: "12px" }}>
+                  <CheckCircle2 size={32} />
+                </div>
+                <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>
+                  Request Submitted!
+                </h3>
+                <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 16px" }}>
+                  {storeRequestMessage}
+                </p>
+                <Button
+                  type="button"
+                  variant="plain"
+                  onClick={() => {
+                    setStoreRequestSuccess(false);
+                    setMode("login");
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  <ArrowLeft size={16} />
+                  Back to Sign In
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleSendStoreAccessRequest}>
+                <div style={{ marginBottom: "16px" }}>
+                  <label htmlFor="store-email">Registered Owner Email</label>
+                  <Input
+                    id="store-email"
+                    type="email"
+                    required
+                    placeholder="owner@store.com"
+                    value={storeRequestEmail}
+                    onChange={(e) => {
+                      setStoreRequestEmail(e.target.value);
+                      if (apiError) setApiError("");
+                    }}
+                    className="input-wrapper"
+                  />
+                  <small style={{ color: "#6b7280", fontSize: "11px", marginTop: "4px", display: "block" }}>
+                    The email registered by the administrator when creating your store.
+                  </small>
+                </div>
+
+                <Button type="submit" disabled={requestingAccess} style={{ width: "100%", background: "#059669" }}>
+                  <Send size={16} />
+                  {requestingAccess ? "Submitting Request..." : "Send Request to Admin"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="text"
+                  onClick={() => {
+                    setApiError("");
+                    setMode("login");
+                  }}
+                  style={{ width: "100%", marginTop: "10px" }}
+                >
+                  <ArrowLeft size={16} />
+                  Back to Regular Sign In
+                </Button>
+              </form>
+            )}
+          </div>
+        ) : !otpSent ? (
           <form
             onSubmit={emailForm.handleSubmit(handleRequestOtp)}
             className="login-form"
@@ -211,6 +331,30 @@ export default function Login() {
             >
               Forgot password?
             </Link>
+
+            <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid #e2e8f0", textAlign: "center" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setApiError("");
+                  setMode("store_request");
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#059669",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <Store size={14} />
+                Store Owner? Request Login Approval
+              </button>
+            </div>
           </form> 
         ) : (
           <form
@@ -274,7 +418,6 @@ export default function Login() {
                   if (error?.data?.retryAfter) setResendTimer(error.data.retryAfter);
                   const errorMsg = error?.data?.message || "Unable to resend OTP.";
                   setApiError(errorMsg);
-                  toast.error(errorMsg);
                 }
               }}
             >

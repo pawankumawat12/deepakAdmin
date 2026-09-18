@@ -35,6 +35,7 @@ import {
   UtensilsCrossed,
   Truck,
   History,
+  Store,
 } from "lucide-react";
 import { baseApi } from "../services/baseApi";
 import {
@@ -44,94 +45,146 @@ import {
   useMarkAllAdminNotificationsReadMutation,
   useRegisterAdminDeviceTokenMutation,
 } from "../services/notificationApi";
-import { getAdminSocket } from "../services/socket";
+import {
+  storeApi,
+  useGetMyStoreQuery,
+  useToggleStoreStatusMutation,
+} from "../services/storeApi";
+import { settingsApi } from "../services/settingsApi";
+import { getAdminSocket, disconnectAdminSocket } from "../services/socket";
 import { requestAdminPushToken, onForegroundFcmMessage } from "../services/fcm";
 import { toAssetUrl } from "../utils/assetUrl";
 import { useShopStatus } from "../utils/useShopStatus";
 
-const navigationItems = [
-  { type: "link", label: "Dashboard", to: "/", icon: LayoutDashboard },
-  {
-    type: "group",
-    id: "catalog",
-    label: "Menu & Catalog",
-    icon: Package,
-    children: [
-      { label: "Products", to: "/products", icon: Package },
-      { label: "Categories", to: "/categories", icon: Tags },
-    ],
-  },
-  {
-    type: "group",
-    id: "sales",
-    label: "Orders & Deals",
-    icon: ShoppingBag,
-    children: [
-      { label: "All Orders", to: "/orders", icon: ShoppingBag },
-      { label: "Offers & Deals", to: "/offers", icon: BadgePercent },
-    ],
-  },
-  {
-    type: "group",
-    id: "inventory",
-    label: "Raw Materials & BOM",
-    icon: Boxes,
-    children: [
-      { label: "Raw Materials", to: "/inventory/ingredients", icon: Boxes },
-      { label: "Product Recipes", to: "/inventory/recipes", icon: UtensilsCrossed },
-      { label: "Suppliers & Vendors", to: "/inventory/suppliers", icon: Truck },
-      { label: "Stock Movement Logs", to: "/inventory/logs", icon: History },
-    ],
-  },
-  {
-    type: "group",
-    id: "storefront",
-    label: "Storefront & Content",
-    icon: SlidersHorizontal,
-    children: [
-      { label: "Hero Sliders", to: "/hero-sliders", icon: SlidersHorizontal },
-      { label: "Why Choose Us", to: "/why-choose-us", icon: Sparkles },
-      { label: "Customer Love", to: "/testimonials", icon: Heart },
-      { label: "CMS Pages", to: "/cms-pages", icon: FileText },
-    ],
-  },
- 
-  {
-    type: "group",
-    id: "customers",
-    label: "Customers & CRM",
-    icon: Users,
-    children: [
-      { label: "Customer Accounts", to: "/customers", icon: Users },
-      { label: "Customer Reviews", to: "/reviews", icon: Star },
-      { label: "Contact Messages", to: "/messages", icon: MessageSquare },
-    ],
-  },
-  {
-    type: "group",
-    id: "email",
-    label: "Email Management",
-    icon: Mail,
-    children: [
-      { label: "Email Templates", to: "/email-templates", icon: FileText },
-      { label: "Email Activity Logs", to: "/email-logs", icon: Mail },
-    ],
-  },
-  {
-    type: "group",
-    id: "system",
-    label: "System & Settings",
-    icon: Settings,
-    children: [
-      { label: "General Settings", to: "/settings", icon: Settings },
-      { label: "Admin Profile", to: "/profile", icon: UserRound },
-      { label: "Favourites", to: "/favourites", icon: Heart },
-    ],
-  },
-];
+const getNavigationItems = (role) => {
+  if (role === "store_owner") {
+    return [
+      { type: "link", label: "Dashboard", to: "/", icon: LayoutDashboard },
+      {
+        type: "group",
+        id: "catalog",
+        label: "Store Catalog",
+        icon: Package,
+        children: [
+          { label: "My Products", to: "/products", icon: Package },
+        ],
+      },
+      {
+        type: "group",
+        id: "sales",
+        label: "Store Orders",
+        icon: ShoppingBag,
+        children: [
+          { label: "All Orders", to: "/orders", icon: ShoppingBag },
+        ],
+      },
+      {
+        type: "group",
+        id: "system",
+        label: "Account",
+        icon: Settings,
+        children: [
+          { label: "My Profile", to: "/profile", icon: UserRound },
+        ],
+      },
+    ];
+  }
+
+  // Administrator navigation
+  return [
+    { type: "link", label: "Dashboard", to: "/", icon: LayoutDashboard },
+    
+    {
+      type: "group",
+      id: "catalog",
+      label: "Menu & Catalog",
+      icon: Package,
+      children: [
+        { label: "Products", to: "/products", icon: Package },
+        { label: "Categories", to: "/categories", icon: Tags },
+      ],
+    },
+    {
+      type: "group",
+      id: "sales",
+      label: "Orders & Deals",
+      icon: ShoppingBag,
+      children: [
+        { label: "All Orders", to: "/orders", icon: ShoppingBag },
+        { label: "Offers & Deals", to: "/offers", icon: BadgePercent },
+      ],
+    },
+    {
+      type: "group",
+      id: "stores",
+      label: "Branches & Owners",
+      icon: Store,
+      children: [
+        { label: "Stores & Partners", to: "/stores", icon: Store },
+      ],
+    },
+    {
+      type: "group",
+      id: "inventory",
+      label: "Raw Materials & BOM",
+      icon: Boxes,
+      children: [
+        { label: "Raw Materials", to: "/inventory/ingredients", icon: Boxes },
+        { label: "Product Recipes", to: "/inventory/recipes", icon: UtensilsCrossed },
+        { label: "Suppliers & Vendors", to: "/inventory/suppliers", icon: Truck },
+        { label: "Stock Movement Logs", to: "/inventory/logs", icon: History },
+      ],
+    },
+    {
+      type: "group",
+      id: "storefront",
+      label: "Storefront & Content",
+      icon: SlidersHorizontal,
+      children: [
+        { label: "Hero Sliders", to: "/hero-sliders", icon: SlidersHorizontal },
+        { label: "Why Choose Us", to: "/why-choose-us", icon: Sparkles },
+        { label: "Customer Love", to: "/testimonials", icon: Heart },
+        { label: "CMS Pages", to: "/cms-pages", icon: FileText },
+      ],
+    },
+    {
+      type: "group",
+      id: "customers",
+      label: "Customers & CRM",
+      icon: Users,
+      children: [
+        { label: "Customer Accounts", to: "/customers", icon: Users },
+        { label: "Customer Reviews", to: "/reviews", icon: Star },
+        { label: "Contact Messages", to: "/messages", icon: MessageSquare },
+      ],
+    },
+    {
+      type: "group",
+      id: "email",
+      label: "Email Management",
+      icon: Mail,
+      children: [
+        { label: "Email Templates", to: "/email-templates", icon: FileText },
+        { label: "Email Activity Logs", to: "/email-logs", icon: Mail },
+      ],
+    },
+    {
+      type: "group",
+      id: "system",
+      label: "System & Settings",
+      icon: Settings,
+      children: [
+        { label: "General Settings", to: "/settings", icon: Settings },
+        { label: "Admin Profile", to: "/profile", icon: UserRound },
+        { label: "Favourites", to: "/favourites", icon: Heart },
+      ],
+    },
+  ];
+};
 
 const getPageTitle = (pathname) => {
   if (pathname === "/") return "Dashboard";
+  if (pathname.startsWith("/stores")) return "Store Branches & Owners";
   if (pathname.startsWith("/products/create")) return "Add Product";
   if (pathname.startsWith("/products") && pathname.includes("/edit")) return "Edit Product";
   if (pathname.startsWith("/products")) return "Products";
@@ -174,6 +227,7 @@ export default function AdminLayout() {
   const { isOpen: isShopOpen, toggleShopStatus } = useShopStatus();
 
   const user = useSelector((state) => state.auth.user);
+  const navigationItems = getNavigationItems(user?.role);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logoutRequest, { isLoading: isSigningOut }] = useLogoutMutation();
@@ -202,6 +256,33 @@ export default function AdminLayout() {
   };
 
   const title = getPageTitle(location.pathname);
+
+  // Store Owner Branch State & Control
+  const isStoreOwner = user?.role === "store_owner";
+  const { data: myStoreData } = useGetMyStoreQuery(undefined, { skip: !isStoreOwner });
+  const [toggleStoreStatus, { isLoading: isTogglingStore }] = useToggleStoreStatusMutation();
+  const myStore = myStoreData?.store;
+
+  const handleToggleMyStore = async () => {
+    if (!myStore) return;
+    const nextIsOpen = !myStore.is_open;
+    try {
+      await toggleStoreStatus({
+        id: myStore.id,
+        is_open: nextIsOpen,
+      }).unwrap();
+      toast(
+        `Branch "${myStore.name}" is now ${nextIsOpen ? "OPEN" : "CLOSED"}.`,
+        {
+          icon: nextIsOpen ? "🟢" : "🔴",
+          id: `branch-status-${myStore.id}`,
+          duration: 4000,
+        }
+      );
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to update store status");
+    }
+  };
 
   // Notifications API & Mutations
   const { data: notifData, refetch: refetchNotifs } = useGetAdminNotificationsQuery({
@@ -367,6 +448,17 @@ export default function AdminLayout() {
   useEffect(() => {
     const socket = getAdminSocket();
 
+    const handleSessionRevoked = (payload) => {
+      if (payload?.reason !== "store_deleted") return;
+
+      localStorage.removeItem("accessToken");
+      disconnectAdminSocket();
+      dispatch(signOut());
+      dispatch(baseApi.util.resetApiState());
+      toast.error(payload.message || "Your store access has been removed.");
+      navigate("/login", { replace: true });
+    };
+
     const handleNewNotification = (notif) => {
       console.log("[Socket.IO Admin] New notification received:", notif);
       refetchNotifs();
@@ -398,6 +490,8 @@ export default function AdminLayout() {
                 navigate("/reviews");
               } else if (notif.type === "customer_unblock_request") {
                 navigate("/customers");
+              } else if (notif.type === "store_login_request") {
+                navigate("/stores");
               }
             }}
           >
@@ -443,16 +537,122 @@ export default function AdminLayout() {
       refetchUnreadCount();
     };
 
+    const handleStoreAccessRequest = (payload) => {
+      console.log("[Socket.IO Admin] Store access request received:", payload);
+      refetchNotifs();
+      refetchUnreadCount();
+      toast.custom(
+        (t) => (
+          <div
+            style={{
+              background: "#1e293b",
+              color: "#ffffff",
+              padding: "12px 16px",
+              borderRadius: "12px",
+              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.4)",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              cursor: "pointer",
+              border: "1px solid #d97706",
+              maxWidth: "380px",
+            }}
+            onClick={() => {
+              toast.dismiss(t.id);
+              navigate("/stores");
+            }}
+          >
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                background: "#d97706",
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Store size={16} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: "12px", color: "#fef3c7" }}>
+                Store Access Request
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "#cbd5e1",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {payload.ownerName || "Store Owner"} ({payload.storeName || "Branch"}) requested login.
+              </div>
+            </div>
+          </div>
+        ),
+        { duration: 8000 }
+      );
+    };
+
+    const handleBranchStatusChanged = (payload) => {
+      console.log("[Socket.IO Admin] Branch status changed:", payload);
+      dispatch(storeApi.util.invalidateTags(["Stores"]));
+      if (payload?.store_name) {
+        toast(
+          `Branch "${payload.store_name}" is now ${payload.is_open ? "OPEN" : "CLOSED"}.`,
+          {
+            icon: payload.is_open ? "🟢" : "🔴",
+            id: `branch-status-${payload.storeId || payload.id}`,
+            duration: 4000,
+          }
+        );
+      }
+    };
+
+    const handleStoreStatusChanged = (payload) => {
+      console.log("[Socket.IO Admin] Main shop status changed:", payload);
+      dispatch(settingsApi.util.invalidateTags(["Settings"]));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("sfc_shop_status_change", {
+            detail: { isOpen: Boolean(payload?.is_open) },
+          })
+        );
+      }
+      if (payload?.is_open) {
+        toast.success("Main Bakery Shop is now OPEN.", {
+          id: "main-shop-status-toast",
+          duration: 3500,
+        });
+      } else {
+        toast.error("Main Bakery Shop is now CLOSED.", {
+          id: "main-shop-status-toast",
+          duration: 3500,
+        });
+      }
+    };
+
     socket.on("notification:new", handleNewNotification);
     socket.on("notification:unread_count", handleUnreadCount);
     socket.on("new_order", handleNewOrder);
+    socket.on("store:access_request", handleStoreAccessRequest);
+    socket.on("session:revoked", handleSessionRevoked);
+    socket.on("branch_status_changed", handleBranchStatusChanged);
+    socket.on("store_status_changed", handleStoreStatusChanged);
 
     return () => {
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:unread_count", handleUnreadCount);
       socket.off("new_order", handleNewOrder);
+      socket.off("store:access_request", handleStoreAccessRequest);
+      socket.off("session:revoked", handleSessionRevoked);
+      socket.off("branch_status_changed", handleBranchStatusChanged);
+      socket.off("store_status_changed", handleStoreStatusChanged);
     };
-  }, [refetchNotifs, refetchUnreadCount, navigate]);
+  }, [dispatch, navigate, refetchNotifs, refetchUnreadCount]);
 
   // Click outside to close notification panel & profile dropdown
   useEffect(() => {
@@ -661,87 +861,167 @@ export default function AdminLayout() {
             <Menu size={20} />
           </button>
           <div className="topbar-title-wrap">
-            <p className="eyebrow">ADMINISTRATION</p>
+            <p className="eyebrow">{isStoreOwner ? (myStore?.name || "STORE OWNER") : "ADMINISTRATION"}</p>
             <h2>{title}</h2>
           </div>
           <div className="top-actions">
             {/* Quick Shop Status Toggle in Topbar */}
-            <div
-              className="topbar-shop-status"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "4px 10px 4px 12px",
-                borderRadius: "10px",
-                background: isShopOpen ? "#f0fdf4" : "#fef2f2",
-                border: isShopOpen ? "1px solid #bbf7d0" : "1px solid #fecaca",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <span
+            {isStoreOwner && myStore ? (
+              <div
+                className="topbar-shop-status"
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: isShopOpen ? "#15803d" : "#b91c1c",
-                  whiteSpace: "nowrap",
-                  userSelect: "none",
-                }}
-              >
-                <span
-                  style={{
-                    width: "7px",
-                    height: "7px",
-                    borderRadius: "50%",
-                    background: isShopOpen ? "#22c55e" : "#ef4444",
-                    boxShadow: isShopOpen
-                      ? "0 0 0 2px rgba(34,197,94,0.3)"
-                      : "0 0 0 2px rgba(239,68,68,0.3)",
-                  }}
-                />
-                <span className="shop-status-label">{isShopOpen ? "Shop Open" : "Shop Closed"}</span>
-              </span>
-
-              {/* Toggle Switch */}
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isShopOpen}
-                onClick={toggleShopStatus}
-                title={isShopOpen ? "Click to set Shop Closed" : "Click to set Shop Open"}
-                style={{
-                  position: "relative",
-                  width: "38px",
-                  height: "20px",
-                  borderRadius: "9999px",
-                  background: isShopOpen ? "#16a34a" : "#dc2626",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "2px",
                   display: "flex",
                   alignItems: "center",
-                  transition: "background-color 0.2s ease",
-                  outline: "none",
-                  flexShrink: 0,
+                  gap: "8px",
+                  padding: "4px 10px 4px 12px",
+                  borderRadius: "10px",
+                  background: myStore.is_open ? "#f0fdf4" : "#fef2f2",
+                  border: myStore.is_open ? "1px solid #bbf7d0" : "1px solid #fecaca",
+                  transition: "all 0.2s ease",
                 }}
               >
                 <span
                   style={{
-                    width: "16px",
-                    height: "16px",
-                    borderRadius: "50%",
-                    background: "#ffffff",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                    transform: isShopOpen ? "translateX(18px)" : "translateX(0px)",
-                    transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    display: "block",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: myStore.is_open ? "#15803d" : "#b91c1c",
+                    whiteSpace: "nowrap",
+                    userSelect: "none",
                   }}
-                />
-              </button>
-            </div>
+                >
+                  <span
+                    style={{
+                      width: "7px",
+                      height: "7px",
+                      borderRadius: "50%",
+                      background: myStore.is_open ? "#22c55e" : "#ef4444",
+                      boxShadow: myStore.is_open
+                        ? "0 0 0 2px rgba(34,197,94,0.3)"
+                        : "0 0 0 2px rgba(239,68,68,0.3)",
+                    }}
+                  />
+                  <span className="shop-status-label">{myStore.is_open ? "Branch Open" : "Branch Closed"}</span>
+                </span>
+
+                {/* Toggle Switch */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={myStore.is_open}
+                  onClick={handleToggleMyStore}
+                  disabled={isTogglingStore}
+                  title={myStore.is_open ? "Click to set Store Closed" : "Click to set Store Open"}
+                  style={{
+                    position: "relative",
+                    width: "38px",
+                    height: "20px",
+                    borderRadius: "9999px",
+                    background: myStore.is_open ? "#16a34a" : "#dc2626",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "2px",
+                    display: "flex",
+                    alignItems: "center",
+                    transition: "background-color 0.2s ease",
+                    outline: "none",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "50%",
+                      background: "#ffffff",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                      transform: myStore.is_open ? "translateX(18px)" : "translateX(0px)",
+                      transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      display: "block",
+                    }}
+                  />
+                </button>
+              </div>
+            ) : !isStoreOwner ? (
+              <div
+                className="topbar-shop-status"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "4px 10px 4px 12px",
+                  borderRadius: "10px",
+                  background: isShopOpen ? "#f0fdf4" : "#fef2f2",
+                  border: isShopOpen ? "1px solid #bbf7d0" : "1px solid #fecaca",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: isShopOpen ? "#15803d" : "#b91c1c",
+                    whiteSpace: "nowrap",
+                    userSelect: "none",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "7px",
+                      height: "7px",
+                      borderRadius: "50%",
+                      background: isShopOpen ? "#22c55e" : "#ef4444",
+                      boxShadow: isShopOpen
+                        ? "0 0 0 2px rgba(34,197,94,0.3)"
+                        : "0 0 0 2px rgba(239,68,68,0.3)",
+                    }}
+                  />
+                  <span className="shop-status-label">{isShopOpen ? "Shop Open" : "Shop Closed"}</span>
+                </span>
+
+                {/* Toggle Switch */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isShopOpen}
+                  onClick={toggleShopStatus}
+                  title={isShopOpen ? "Click to set Shop Closed" : "Click to set Shop Open"}
+                  style={{
+                    position: "relative",
+                    width: "38px",
+                    height: "20px",
+                    borderRadius: "9999px",
+                    background: isShopOpen ? "#16a34a" : "#dc2626",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "2px",
+                    display: "flex",
+                    alignItems: "center",
+                    transition: "background-color 0.2s ease",
+                    outline: "none",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "50%",
+                      background: "#ffffff",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                      transform: isShopOpen ? "translateX(18px)" : "translateX(0px)",
+                      transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      display: "block",
+                    }}
+                  />
+                </button>
+              </div>
+            ) : null}
 
             {/* Notification Bell with Badge & Dropdown */}
             <div style={{ position: "relative" }} ref={notifRef}>

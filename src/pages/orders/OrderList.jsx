@@ -20,8 +20,10 @@ import {
   useUpdateOrderPaymentStatusMutation,
   useAcceptOrderMutation,
   useRejectOrderMutation,
+  useForwardOrderToStoreMutation,
   useGetAdminOrderByIdQuery,
 } from "../../services/orderApi";
+import { useGetStoresQuery } from "../../services/storeApi";
 import { useGetSettingPricingQuery } from "../../services/settingsApi";
 import { getAdminSocket } from "../../services/socket";
 import AdminOrderChatModal from "../../components/orders/AdminOrderChatModal";
@@ -54,6 +56,8 @@ import {
   Download,
   Lock,
   RotateCcw,
+  Store,
+  Send,
 } from "lucide-react";
 import OrderDetailsModal from "../../modals/OrderDetailsModal";
 import RefundModal from "../../modals/RefundModal";
@@ -61,6 +65,13 @@ import RefundModal from "../../modals/RefundModal";
 export default function OrderList() {
   const location = useLocation();
   const accessToken = useSelector((state) => state.auth?.accessToken);
+  const user = useSelector((state) => state.auth?.user);
+  const isStoreOwner = user?.role === "store_owner";
+
+  // Admin tab: "all" or "store"
+  const [orderTab, setOrderTab] = useState("all");
+  const [selectedStoreId, setSelectedStoreId] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -79,6 +90,10 @@ export default function OrderList() {
     () => location.state?.openChatOrderId || null
   );
 
+  // Admin: fetch stores for tab switcher
+  const { data: storesData } = useGetStoresQuery({ limit: 100 }, { skip: isStoreOwner });
+  const allStores = storesData?.stores || [];
+
   const {
     data: orderResponse,
     isLoading,
@@ -89,6 +104,10 @@ export default function OrderList() {
     limit: 10,
     status: statusFilter || undefined,
     search: debouncedSearch.trim() || undefined,
+    // For admin store tab: pass storeId filter
+    ...(!isStoreOwner && orderTab === "store" && selectedStoreId
+      ? { storeId: selectedStoreId }
+      : {}),
   });
   const { data: pricingSettingData } = useGetSettingPricingQuery();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
@@ -98,6 +117,17 @@ export default function OrderList() {
   const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
   const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
   const [markProduced, { isLoading: isMarking }] = useMarkItemProducedMutation();
+  const [forwardOrder, { isLoading: isForwarding }] = useForwardOrderToStoreMutation();
+
+  const handleForwardToStore = async (order) => {
+    try {
+      const res = await forwardOrder({ id: order.id, store_id: order.store_id }).unwrap();
+      toast.success(res?.message || `Order #${order.order_number || order.id} dispatched to store!`);
+      refetch();
+    } catch (err) {
+      toast.error(err?.data?.message || err?.message || "Failed to dispatch order to store.");
+    }
+  };
 
   // Selection & Bulk State
   const [selectedIds, setSelectedIds] = useState([]);
@@ -500,8 +530,12 @@ export default function OrderList() {
     <>
       <div className="section-head">
         <div>
-          <h1>Orders</h1>
-          <p>Track and manage customer orders, payments, pricing breakdowns, and kitchen fulfillment.</p>
+          <h1>{isStoreOwner ? "Store Orders" : "Orders"}</h1>
+          <p>
+            {isStoreOwner
+              ? "Track, prepare, and manage fulfillment for orders dispatched to your store."
+              : "Track and manage customer orders, store branch dispatch, pricing breakdowns, and kitchen fulfillment."}
+          </p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
           <Button
@@ -537,6 +571,210 @@ export default function OrderList() {
             <option value="Delivered">Delivered</option>
             <option value="Cancelled">Cancelled</option>
           </Select>
+        </div>
+      </div>
+
+      {/* Admin Tab Switcher: All Orders / Store-wise Orders */}
+      {!isStoreOwner && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "20px",
+            borderBottom: "1px solid #e5e7eb",
+            paddingBottom: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setOrderTab("all");
+              setSelectedStoreId("");
+              setPage(1);
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "7px",
+              padding: "8px 18px",
+              borderRadius: "10px",
+              border: orderTab === "all" ? "1.5px solid #6253e8" : "1px solid #e5e7eb",
+              background: orderTab === "all" ? "#ede9fe" : "#ffffff",
+              color: orderTab === "all" ? "#4f3ef5" : "#4b5563",
+              fontWeight: 700,
+              fontSize: "13.5px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <FileText size={16} />
+            All Orders
+            {pagination?.totalItems !== undefined && orderTab === "all" && (
+              <span
+                style={{
+                  background: "#4f3ef5",
+                  color: "#fff",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: "9999px",
+                }}
+              >
+                {pagination.totalItems}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOrderTab("store");
+              setPage(1);
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "7px",
+              padding: "8px 18px",
+              borderRadius: "10px",
+              border: orderTab === "store" ? "1.5px solid #166534" : "1px solid #e5e7eb",
+              background: orderTab === "store" ? "#f0fdf4" : "#ffffff",
+              color: orderTab === "store" ? "#166534" : "#4b5563",
+              fontWeight: 700,
+              fontSize: "13.5px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <Store size={16} />
+            Store-wise Orders
+          </button>
+
+          {/* Store dropdown — shown when store tab is active */}
+          {orderTab === "store" && (
+            <Select
+              value={selectedStoreId}
+              onChange={(e) => {
+                setSelectedStoreId(e.target.value);
+                setPage(1);
+              }}
+              style={{ minWidth: "200px", maxWidth: "280px" }}
+            >
+              <option value="">— Select a Store —</option>
+              {allStores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} {s.city ? `• ${s.city}` : ""}
+                </option>
+              ))}
+            </Select>
+          )}
+
+          {/* Selected store info banner */}
+          {orderTab === "store" && selectedStoreId && (() => {
+            const store = allStores.find((s) => String(s.id) === String(selectedStoreId));
+            return store ? (
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "8px",
+                  padding: "5px 12px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#166534",
+                }}
+              >
+                <Store size={13} />
+                {store.name}
+                {pagination?.totalItems !== undefined && (
+                  <span
+                    style={{
+                      background: "#166534",
+                      color: "#fff",
+                      borderRadius: "9999px",
+                      padding: "1px 7px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {pagination.totalItems} orders
+                  </span>
+                )}
+              </div>
+            ) : null;
+          })()}
+        </div>
+      )}
+
+      {/* Store tab empty state */}
+      {!isStoreOwner && orderTab === "store" && !selectedStoreId && (
+        <div
+          style={{
+            padding: "40px",
+            textAlign: "center",
+            background: "#f8fafc",
+            borderRadius: "14px",
+            border: "1px solid #e2e8f0",
+            marginBottom: "20px",
+          }}
+        >
+          <Store size={36} style={{ color: "#94a3b8", marginBottom: "12px" }} />
+          <div style={{ fontSize: "15px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+            Select a Store to View Orders
+          </div>
+          <p style={{ color: "#64748b", fontSize: "13px", margin: 0 }}>
+            Use the dropdown above to filter orders by a specific branch or store location.
+          </p>
+        </div>
+      )}
+
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+          gap: "16px",
+          marginBottom: "20px",
+        }}
+      >
+        <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #6253e8" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#6253e8" }}>Total Orders</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#111827", marginTop: "4px" }}>
+            {pagination?.totalItems ?? orders.length}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #d97706" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#d97706" }}>Preparing</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#d97706", marginTop: "4px" }}>
+            {orders.filter((o) => (o.status || "").toLowerCase() === "preparing").length}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #2563eb" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#2563eb" }}>Out for Delivery</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#2563eb", marginTop: "4px" }}>
+            {orders.filter((o) => (o.status || "").toLowerCase().includes("delivery")).length}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #16a34a" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#16a34a" }}>Delivered</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>
+            {orders.filter((o) => (o.status || "").toLowerCase() === "delivered").length}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #dc2626" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#dc2626" }}>Cancelled</span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "#dc2626", marginTop: "4px" }}>
+            {orders.filter((o) => (o.status || "").toLowerCase() === "cancelled").length}
+          </div>
         </div>
       </div>
 
@@ -818,6 +1056,96 @@ export default function OrderList() {
                   {Number(taxAmount || 0) > 0 && (
                     <div style={{ fontSize: "10px", color: "#6b7280" }}>
                       Tax: ₹{Number(taxAmount).toLocaleString("en-IN")}
+                    </div>
+                  )}
+                </div>
+              );
+            },
+          },
+          {
+            key: "store_name",
+            label: "BRANCH / DISPATCH",
+            render: (_val, item) => {
+              const hasStore = Boolean(item.store_id);
+              const isForwarded = Boolean(item.is_forwarded_to_store);
+              const storeTitle = item.store_name || "Direct Store";
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "140px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px", fontWeight: 700, fontSize: "12px", color: "#1f2937" }}>
+                    <Store size={13} style={{ color: hasStore ? "#4f46e5" : "#9ca3af", flexShrink: 0 }} />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={hasStore ? storeTitle : "Main SFC / Admin Direct"}>
+                      {hasStore ? storeTitle : "Main SFC Direct"}
+                    </span>
+                  </div>
+
+                  {hasStore && (
+                    <div>
+                      {isForwarded ? (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "3px",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            backgroundColor: "#dcfce7",
+                            color: "#166534",
+                            border: "1px solid #bbf7d0",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={`Dispatched to store on ${item.forwarded_at ? new Date(item.forwarded_at).toLocaleString() : "Order Placement"}`}
+                        >
+                          <CheckCircle2 size={10} /> Dispatched to Store
+                        </span>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "3px",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              backgroundColor: "#fef3c7",
+                              color: "#b45309",
+                              border: "1px solid #fde68a",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <Clock size={10} /> Pending Dispatch
+                          </span>
+                          {!isStoreOwner && (
+                            <button
+                              type="button"
+                              disabled={isForwarding}
+                              onClick={() => handleForwardToStore(item)}
+                              style={{
+                                padding: "4px 8px",
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                backgroundColor: "#4f46e5",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                whiteSpace: "nowrap",
+                                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.2)",
+                              }}
+                              title="Send / dispatch this order to the store owner"
+                            >
+                              <Send size={10} /> Forward to Store
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

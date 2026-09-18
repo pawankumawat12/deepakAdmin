@@ -61,6 +61,14 @@ export const orderApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Order", "Dashboard"],
     }),
+    forwardOrderToStore: build.mutation({
+      query: ({ id, store_id }) => ({
+        url: `/orders/${id}/forward-to-store`,
+        method: "POST",
+        body: { store_id },
+      }),
+      invalidatesTags: ["Order", "Dashboard"],
+    }),
     bulkUpdateOrderStatus: build.mutation({
       query: ({ ids, status, cancelReason }) => ({
         url: "/orders/bulk-status",
@@ -81,6 +89,7 @@ export const {
   useRefundOrderMutation,
   useAcceptOrderMutation,
   useRejectOrderMutation,
+  useForwardOrderToStoreMutation,
   useGetAdminOrderByIdQuery,
 } = orderApi;
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import {
   QrCode,
@@ -8,6 +9,8 @@ import {
   AlertCircle,
   Eye,
   Check,
+  ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 import Button from '../../components/ui/Button';
 import {
@@ -17,6 +20,9 @@ import {
 import { useThrottledCallback } from "../../utils/throttle";
 
 export default function DynamicQrSection() {
+  const user = useSelector((state) => state.auth?.user);
+  const isStoreOwner = user?.role === "store_owner";
+
   const { data: qrResponse, isLoading } = useGetDynamicQrQuery();
   const [updateDynamicQr, { isLoading: isSaving }] =
     useUpdateDynamicQrMutation();
@@ -129,7 +135,6 @@ export default function DynamicQrSection() {
       const msg =
         err?.data?.message || err?.message || "Failed to update QR settings";
       setStatusMessage({ text: msg, type: "error" });
-      toast.error(msg);
     }
   };
 
@@ -324,8 +329,26 @@ export default function DynamicQrSection() {
                   color: "#24243b",
                 }}
               >
-                Store QR Code
+                {isStoreOwner ? "Official Store QR Code" : "Store QR Code"}
               </h2>
+              {isStoreOwner && (
+                <span
+                  style={{
+                    background: "#f0fdf4",
+                    color: "#166534",
+                    border: "1px solid #bbf7d0",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: "9999px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <ShieldCheck size={12} /> Official Bakery QR
+                </span>
+              )}
             </div>
             <p
               style={{
@@ -334,7 +357,9 @@ export default function DynamicQrSection() {
                 margin: 0,
               }}
             >
-              Permanent QR code for your store. Print once for tables or stands.
+              {isStoreOwner
+                ? "Official dynamic QR code configured by Admin. Display or print this standee at your branch counter/tables for customer ordering & payments."
+                : "Permanent QR code for your store. Print once for tables or stands."}
             </p>
           </div>
         </div>
@@ -520,121 +545,285 @@ export default function DynamicQrSection() {
           </button>
         </div>
 
-        {/* Right Column: Destination Configuration */}
+        {/* Right Column: Destination Information or Configuration */}
         <div>
-          <form onSubmit={throttledSave}>
-            {/* Destination URL */}
-            <div style={{ marginBottom: "20px" }}>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
-                  color: "#374151",
-                  marginBottom: "6px",
-                }}
-              >
-                <span>Destination URL (Where customers are redirected) *</span>
-                <a
-                  href={
-                    destinationUrl.startsWith("/")
-                      ? destinationUrl
-                      : destinationUrl
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    fontSize: "11.5px",
-                    textTransform: "none",
-                    letterSpacing: "normal",
-                    color: "#2563eb",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontWeight: 600,
-                  }}
-                >
-                  <Eye size={12} />
-                  Test Destination
-                </a>
-              </label>
-
-              <input
-                type="text"
-                value={destinationUrl}
-                onChange={handleDestinationChange}
-                placeholder="e.g. /products or https://sfcbakers.com/offers"
-                style={{
-                  width: "100%",
-                  padding: "11px 14px",
-                  borderRadius: "10px",
-                  border: `1px solid ${urlError ? "#ef4444" : "#d1d5db"}`,
-                  fontSize: "14px",
-                  color: "#111827",
-                  outline: "none",
-                  transition: "border-color 0.2s",
-                }}
-              />
-              {urlError && (
+          {isStoreOwner ? (
+            <div
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "14px",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "18px",
+              }}
+            >
+              <div>
                 <div
                   style={{
-                    color: "#dc2626",
                     fontSize: "12px",
-                    marginTop: "4px",
-                    fontWeight: 500,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    color: "#0369a1",
+                    marginBottom: "4px",
                   }}
                 >
-                  {urlError}
+                  Store Branch QR Standee
                 </div>
-              )}
-              <p
+                <h3 style={{ margin: "0 0 6px", fontSize: "16px", color: "#0f172a" }}>
+                  Customer Menu &amp; Ordering QR
+                </h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.5 }}>
+                  This official QR code is generated by Bakery Administration. When customers scan this code at your branch, they are instantly redirected to the online store.
+                </p>
+              </div>
+
+              {/* Destination URL Display */}
+              <div
                 style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginTop: "6px",
-                  lineHeight: 1.4,
-                }}
-              >
-                Changing this Destination URL will immediately redirect all scans from your permanent QR code.
-              </p>
-            </div>
-
-
-
-            {/* Save Button */}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "15px" }}>
-              <Button
-                type="submit"
-                disabled={isSaving}
-                className="btn-primary"
-                style={{
-                  padding: "10px 24px",
-                  fontSize: "13.5px",
-                  fontWeight: 700,
+                  background: "#ffffff",
+                  padding: "14px",
                   borderRadius: "10px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
+                  border: "1px solid #e2e8f0",
                 }}
               >
-                {isSaving ? (
-                  <>
-                    <RefreshCw size={15} className="animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} />
-                    Save
-                  </>
-                )}
-              </Button>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    color: "#64748b",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Current Scan Destination
+                </div>
+                <div
+                  style={{
+                    fontSize: "13.5px",
+                    fontWeight: 600,
+                    color: "#0284c7",
+                    wordBreak: "break-all",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                  }}
+                >
+                  <span>{destinationUrl || "/"}</span>
+                  <a
+                    href={destinationUrl.startsWith("/") ? destinationUrl : destinationUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontSize: "12px",
+                      color: "#2563eb",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Eye size={13} /> Test Link
+                  </a>
+                </div>
+              </div>
+
+              {/* Branch Guidelines */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  fontSize: "12.5px",
+                  color: "#334155",
+                }}
+              >
+                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                  <span
+                    style={{
+                      background: "#e0f2fe",
+                      color: "#0284c7",
+                      borderRadius: "50%",
+                      width: "20px",
+                      height: "20px",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      flexShrink: 0,
+                      marginTop: "2px",
+                    }}
+                  >
+                    1
+                  </span>
+                  <span>
+                    <strong>Print Tabletop Standees:</strong> Click the green button to print ready-to-use A5 acrylic standee cards for customer tables.
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                  <span
+                    style={{
+                      background: "#e0f2fe",
+                      color: "#0284c7",
+                      borderRadius: "50%",
+                      width: "20px",
+                      height: "20px",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      flexShrink: 0,
+                      marginTop: "2px",
+                    }}
+                  >
+                    2
+                  </span>
+                  <span>
+                    <strong>Download High-Res PNG:</strong> Download a high-definition image with official branding to use on billing counters or banner prints.
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                  <span
+                    style={{
+                      background: "#e0f2fe",
+                      color: "#0284c7",
+                      borderRadius: "50%",
+                      width: "20px",
+                      height: "20px",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      flexShrink: 0,
+                      marginTop: "2px",
+                    }}
+                  >
+                    3
+                  </span>
+                  <span>
+                    <strong>Order Routing:</strong> Orders placed through the branch QR will appear in your <em>Orders</em> section for live preparation.
+                  </span>
+                </div>
+              </div>
             </div>
-          </form>
+          ) : (
+            <form onSubmit={throttledSave}>
+              {/* Destination URL */}
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <span>Destination URL (Where customers are redirected) *</span>
+                  <a
+                    href={
+                      destinationUrl.startsWith("/")
+                        ? destinationUrl
+                        : destinationUrl
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontSize: "11.5px",
+                      textTransform: "none",
+                      letterSpacing: "normal",
+                      color: "#2563eb",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Eye size={12} />
+                    Test Destination
+                  </a>
+                </label>
+
+                <input
+                  type="text"
+                  value={destinationUrl}
+                  onChange={handleDestinationChange}
+                  placeholder="e.g. /products or https://sfcbakers.com/offers"
+                  style={{
+                    width: "100%",
+                    padding: "11px 14px",
+                    borderRadius: "10px",
+                    border: `1px solid ${urlError ? "#ef4444" : "#d1d5db"}`,
+                    fontSize: "14px",
+                    color: "#111827",
+                    outline: "none",
+                    transition: "border-color 0.2s",
+                  }}
+                />
+                {urlError && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {urlError}
+                  </div>
+                )}
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "#6b7280",
+                    marginTop: "6px",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Changing this Destination URL will immediately redirect all scans from your permanent QR code.
+                </p>
+              </div>
+
+              {/* Save Button */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "15px" }}>
+                <Button
+                  type="submit"
+                  disabled={isSaving}
+                  className="btn-primary"
+                  style={{
+                    padding: "10px 24px",
+                    fontSize: "13.5px",
+                    fontWeight: 700,
+                    borderRadius: "10px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  {isSaving ? (
+                    <>
+                      <RefreshCw size={15} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Save
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </section>
