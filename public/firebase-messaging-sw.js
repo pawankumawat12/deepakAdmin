@@ -26,9 +26,15 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log("[firebase-messaging-sw.js] Background message received:", payload);
 
-  const title = payload.notification?.title || payload.data?.title || "SFC Cafe";
+  // If payload already has 'notification' object, browser/FCM automatically displays it.
+  // Calling showNotification again causes duplicate notifications on Chrome/Edge.
+  if (payload.notification) {
+    console.log("[firebase-messaging-sw.js] Browser handles notification payload automatically, skipping manual showNotification.");
+    return Promise.resolve();
+  }
+
+  const title = payload.data?.title || "SFC Cafe";
   const body =
-    payload.notification?.body ||
     payload.data?.body ||
     `New order received - Order #${payload.data?.orderNumber || ""}`;
 
@@ -37,7 +43,7 @@ messaging.onBackgroundMessage((payload) => {
     icon: "/favicon.svg",
     badge: "/favicon.svg",
     tag: payload.data?.orderId ? `order-${payload.data.orderId}` : "sfc-order",
-    renotify: true,
+    renotify: false,
     requireInteraction: true,
     data: {
       orderId: payload.data?.orderId,

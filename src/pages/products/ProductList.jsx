@@ -244,28 +244,28 @@ export default function ProductList() {
         <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid #6253e8" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#6253e8" }}>Total Products</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#111827", marginTop: "4px" }}>
-            {pagination?.totalItems ?? rows.length}
+            {productResponse?.summary?.total ?? pagination?.totalItems ?? rows.length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid #16a34a" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#16a34a" }}>Active Products</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>
-            {rows.filter((r) => r.is_active).length}
+            {productResponse?.summary?.active ?? rows.filter((r) => r.is_active).length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid #dc2626" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#dc2626" }}>Inactive / Hidden</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#dc2626", marginTop: "4px" }}>
-            {rows.filter((r) => !r.is_active).length}
+            {productResponse?.summary?.inactive ?? rows.filter((r) => !r.is_active).length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid #d97706" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#d97706" }}>Categories</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#d97706", marginTop: "4px" }}>
-            {(categoryResponse?.data || []).length}
+            {productResponse?.summary?.totalCategories ?? (categoryResponse?.data || []).length}
           </div>
         </div>
       </div>

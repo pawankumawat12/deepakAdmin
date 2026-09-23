@@ -8,7 +8,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { isValidIndianPhone } from "../utils/phoneValidation";
 
-export default function CreateStoreModal({ isOpen, onClose }) {
+export default function CreateStoreModal({ isOpen, onClose, onSuccess }) {
   const [createStore, { isLoading: isCreating }] = useCreateStoreMutation();
   const { data: categoriesData, isLoading: loadingCategories } = useGetCategoriesQuery({
     limit: 100,
@@ -17,6 +17,7 @@ export default function CreateStoreModal({ isOpen, onClose }) {
 
   const categories = categoriesData?.data || [];
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [apiError, setApiError] = useState("");
 
   const {
     register,
@@ -50,9 +51,15 @@ export default function CreateStoreModal({ isOpen, onClose }) {
     }
   };
 
+  const handleClose = () => {
+    setApiError("");
+    onClose();
+  };
+
   const onSubmit = async (data) => {
+    setApiError("");
     if (selectedCategoryIds.length === 0) {
-      toast.error("Please assign at least one category to this store.");
+      setApiError("Please assign at least one category to this store.");
       return;
     }
 
@@ -66,10 +73,14 @@ export default function CreateStoreModal({ isOpen, onClose }) {
       toast.success(res?.message || "Store created successfully!");
       reset();
       setSelectedCategoryIds([]);
+      setApiError("");
+      if (typeof onSuccess === "function") {
+        onSuccess();
+      }
       onClose();
     } catch (err) {
       const msg = err?.data?.message || "Failed to create store. Please try again.";
-      toast.error(msg);
+      setApiError(msg);
     }
   };
 
@@ -77,7 +88,7 @@ export default function CreateStoreModal({ isOpen, onClose }) {
     <div
       className="modal-backdrop"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget && !isCreating) onClose();
+        if (e.target === e.currentTarget && !isCreating) handleClose();
       }}
     >
       <section
@@ -89,7 +100,7 @@ export default function CreateStoreModal({ isOpen, onClose }) {
         <Button
           variant="plain"
           className="modal-close"
-          onClick={onClose}
+          onClick={handleClose}
           disabled={isCreating}
           aria-label="Close"
         >
@@ -104,6 +115,23 @@ export default function CreateStoreModal({ isOpen, onClose }) {
         <p>
           Register a branch location, assign an authorized Store Owner, and assign permitted product categories.
         </p>
+
+        {apiError && (
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "#fee2e2",
+              border: "1px solid #fecaca",
+              color: "#dc2626",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 500,
+              margin: "12px 0 16px",
+            }}
+          >
+            {apiError}
+          </div>
+        )}
 
         <form className="entity-form" onSubmit={handleSubmit(onSubmit)}>
           {/* Section 1: Store Details */}

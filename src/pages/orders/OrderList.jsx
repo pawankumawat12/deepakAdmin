@@ -745,35 +745,35 @@ export default function OrderList() {
         <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #6253e8" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#6253e8" }}>Total Orders</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#111827", marginTop: "4px" }}>
-            {pagination?.totalItems ?? orders.length}
+            {orderResponse?.stats?.totalOrders ?? pagination?.totalItems ?? orders.length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #d97706" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#d97706" }}>Preparing</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#d97706", marginTop: "4px" }}>
-            {orders.filter((o) => (o.status || "").toLowerCase() === "preparing").length}
+            {orderResponse?.stats?.preparingOrders ?? orders.filter((o) => (o.status || "").toLowerCase() === "preparing").length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #2563eb" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#2563eb" }}>Out for Delivery</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#2563eb", marginTop: "4px" }}>
-            {orders.filter((o) => (o.status || "").toLowerCase().includes("delivery")).length}
+            {orderResponse?.stats?.outForDeliveryOrders ?? orders.filter((o) => (o.status || "").toLowerCase().includes("delivery")).length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #16a34a" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#16a34a" }}>Delivered</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>
-            {orders.filter((o) => (o.status || "").toLowerCase() === "delivered").length}
+            {orderResponse?.stats?.deliveredOrders ?? orders.filter((o) => (o.status || "").toLowerCase() === "delivered").length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #dc2626" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#dc2626" }}>Cancelled</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#dc2626", marginTop: "4px" }}>
-            {orders.filter((o) => (o.status || "").toLowerCase() === "cancelled").length}
+            {orderResponse?.stats?.cancelledOrders ?? orders.filter((o) => (o.status || "").toLowerCase() === "cancelled").length}
           </div>
         </div>
       </div>

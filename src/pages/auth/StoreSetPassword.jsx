@@ -160,7 +160,7 @@ export default function StoreSetPassword() {
 
         {apiError && <small className="error">{apiError}</small>}
 
-        <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
+        <form className="login-form" noValidate onSubmit={handleSubmit(onSubmit)}>
           {/* Email (Readonly) */}
           <div style={{ marginBottom: "16px" }}>
             <label htmlFor="store-email">Store Owner Email</label>
@@ -193,8 +193,6 @@ export default function StoreSetPassword() {
                     message: "Password must be at least 6 characters",
                   },
                 })}
-                autoFocus
-                required
               />
               <button
                 type="button"
@@ -222,7 +220,6 @@ export default function StoreSetPassword() {
                   required: "Please confirm your password",
                   validate: (val) => val === passwordVal || "Passwords do not match",
                 })}
-                required
               />
               <button
                 type="button"

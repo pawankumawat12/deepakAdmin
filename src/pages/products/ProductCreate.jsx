@@ -20,14 +20,8 @@ export default function ProductCreate() {
       await createProduct(data).unwrap();
       toast.success("Product created successfully!");
       navigate("/products");
-    } catch (err) {
-      if (err?.status !== 401) {
-        const errorMsg =
-          err?.data?.message ||
-          (err?.data?.errors && Object.values(err.data.errors)[0]) ||
-          "Failed to create product. Please check form details.";
-        toast.error(errorMsg);
-      }
+    } catch {
+      // The API error is shown inline below
     }
   };
 

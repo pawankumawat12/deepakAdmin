@@ -845,7 +845,7 @@ const OrderDetailsModal = ({
                         {paymentDetails.refunds.map((rfnd, idx) => (
                           <tr key={rfnd.refund_id || idx}>
                             <td className="font-monospace text-muted">{rfnd.refund_id || "N/A"}</td>
-                            <td className="fw-bold text-danger">₹{Number(rfnd.amount || 0).toFixed(2)}</td>
+                            <td className="fw-bold text-danger">₹{Math.round(Number(rfnd.amount || 0)).toLocaleString("en-IN")}</td>
                             <td>
                               <span className="badge bg-purple text-white">
                                 {rfnd.status || "processed"}
@@ -920,6 +920,7 @@ const OrderDetailsModal = ({
                             <MapPin size={13} />
                             <span>
                               GPS Pin: {Number(address.latitude).toFixed(4)},{" "}
+                              Location Pin: {Number(address.latitude).toFixed(4)},{" "}
                               {Number(address.longitude).toFixed(4)}
                             </span>
                           </div>

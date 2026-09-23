@@ -354,8 +354,8 @@ export default function AdminLayout() {
                 body,
                 icon: "/favicon.svg",
                 badge: "/favicon.svg",
-                tag: payload.data?.orderId ? `order-${payload.data.orderId}` : `sfc-order-${Date.now()}`,
-                renotify: true,
+                tag: payload.data?.orderId ? `order-${payload.data.orderId}` : "sfc-order",
+                renotify: false,
                 requireInteraction: true,
                 data: {
                   url: "/orders",
@@ -537,66 +537,6 @@ export default function AdminLayout() {
       refetchUnreadCount();
     };
 
-    const handleStoreAccessRequest = (payload) => {
-      console.log("[Socket.IO Admin] Store access request received:", payload);
-      refetchNotifs();
-      refetchUnreadCount();
-      toast.custom(
-        (t) => (
-          <div
-            style={{
-              background: "#1e293b",
-              color: "#ffffff",
-              padding: "12px 16px",
-              borderRadius: "12px",
-              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.4)",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              cursor: "pointer",
-              border: "1px solid #d97706",
-              maxWidth: "380px",
-            }}
-            onClick={() => {
-              toast.dismiss(t.id);
-              navigate("/stores");
-            }}
-          >
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                background: "#d97706",
-                display: "grid",
-                placeItems: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Store size={16} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: "12px", color: "#fef3c7" }}>
-                Store Access Request
-              </div>
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "#cbd5e1",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {payload.ownerName || "Store Owner"} ({payload.storeName || "Branch"}) requested login.
-              </div>
-            </div>
-          </div>
-        ),
-        { duration: 8000 }
-      );
-    };
-
     const handleBranchStatusChanged = (payload) => {
       console.log("[Socket.IO Admin] Branch status changed:", payload);
       dispatch(storeApi.util.invalidateTags(["Stores"]));
@@ -638,7 +578,6 @@ export default function AdminLayout() {
     socket.on("notification:new", handleNewNotification);
     socket.on("notification:unread_count", handleUnreadCount);
     socket.on("new_order", handleNewOrder);
-    socket.on("store:access_request", handleStoreAccessRequest);
     socket.on("session:revoked", handleSessionRevoked);
     socket.on("branch_status_changed", handleBranchStatusChanged);
     socket.on("store_status_changed", handleStoreStatusChanged);
@@ -647,7 +586,6 @@ export default function AdminLayout() {
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:unread_count", handleUnreadCount);
       socket.off("new_order", handleNewOrder);
-      socket.off("store:access_request", handleStoreAccessRequest);
       socket.off("session:revoked", handleSessionRevoked);
       socket.off("branch_status_changed", handleBranchStatusChanged);
       socket.off("store_status_changed", handleStoreStatusChanged);

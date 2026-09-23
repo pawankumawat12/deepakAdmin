@@ -16,6 +16,7 @@ import {
   useTestEmailMutation,
 } from "../../services/settingsApi";
 import toast from "react-hot-toast";
+import StoreLocationPicker from "./StoreLocationPicker";
 import {
   Palette,
   Sun,
@@ -171,9 +172,7 @@ export default function Settings() {
   const [statusMessage, setStatusMessage] = useState({ text: "", type: "" });
   const [pricingStatus, setPricingStatus] = useState({ text: "", type: "" });
 
-  const [detectingStoreLocation, setDetectingStoreLocation] = useState(false);
-
-  const { register, handleSubmit, reset, setValue } = useForm({
+  const { register, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
       gst_percent: "",
       tax_inclusive: false,
@@ -191,49 +190,12 @@ export default function Settings() {
     },
   });
 
-  const handleDetectStoreLocation = () => {
-    if (typeof window === "undefined" || !("geolocation" in navigator)) {
-      toast.error("Geolocation is not supported by your browser");
-      return;
-    }
-    setDetectingStoreLocation(true);
+  const storeLat = watch("store_latitude");
+  const storeLng = watch("store_longitude");
 
-    const onLocationSuccess = (pos) => {
-      const lat = Math.round(pos.coords.latitude * 100000) / 100000;
-      const lng = Math.round(pos.coords.longitude * 100000) / 100000;
-      setValue("store_latitude", lat, { shouldDirty: true });
-      setValue("store_longitude", lng, { shouldDirty: true });
-      setDetectingStoreLocation(false);
-      toast.success(`Store location detected: ${lat}, ${lng}`);
-    };
-
-    const tryFallbackOrError = (err) => {
-      if (err.code === err.PERMISSION_DENIED) {
-        setDetectingStoreLocation(false);
-        toast.error("Location permission denied. Please allow location access in your browser.");
-        return;
-      }
-
-      // Fallback to standard accuracy (works on PC/Laptop without GPS hardware)
-      navigator.geolocation.getCurrentPosition(
-        onLocationSuccess,
-        (fallbackErr) => {
-          setDetectingStoreLocation(false);
-          let errorMsg = "Could not fetch location. Please check browser permissions.";
-          if (fallbackErr.code === fallbackErr.PERMISSION_DENIED) {
-            errorMsg = "Location permission denied. Please allow location access in your browser.";
-          }
-          toast.error(errorMsg);
-        },
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-      );
-    };
-
-    navigator.geolocation.getCurrentPosition(
-      onLocationSuccess,
-      tryFallbackOrError,
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-    );
+  const handleLocationPicked = (lat, lng) => {
+    setValue("store_latitude", lat, { shouldDirty: true });
+    setValue("store_longitude", lng, { shouldDirty: true });
   };
 
   const availableColorThemes =
@@ -1817,25 +1779,25 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Cafe Location */}
+          {/* Bakery Location */}
           <div className="border-top pt-4 mb-4">
-            <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-              <div>
-                <h3 className="fs-6 fw-bold text-dark mb-0">Bakery Location</h3>
-                <p className="text-muted small mb-0">Coordinates used to calculate delivery distance to customer</p>
-              </div>
-              <button
-                type="button"
-                onClick={handleDetectStoreLocation}
-                disabled={detectingStoreLocation}
-                className="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1.5 fw-semibold"
-              >
-                <Navigation size={13} />
-                <span>{detectingStoreLocation ? "Detecting GPS..." : "Auto-detect Store Location (GPS)"}</span>
-              </button>
+            <div className="mb-2">
+              <h3 className="fs-6 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                <MapPin size={16} className="text-danger" />
+                Bakery Store Location (Interactive Map)
+              </h3>
+              <p className="text-muted small mb-0">
+                Drag the red pin or click anywhere on the map to set the exact shop location. These coordinates are used for customer delivery charges and display on the Contact Us map.
+              </p>
             </div>
 
-            <div className="row g-4">
+            <StoreLocationPicker
+              latitude={storeLat}
+              longitude={storeLng}
+              onLocationChange={handleLocationPicked}
+            />
+
+            <div className="row g-4 mt-1">
               <div className="col-12 col-md-6">
                 <label className="form-label fw-semibold small text-dark d-flex align-items-center gap-2">
                   <MapPin size={14} />
@@ -1845,7 +1807,7 @@ export default function Settings() {
                 <input
                   type="number"
                   step="any"
-                  className="form-control"
+                  className="form-control font-monospace"
                   placeholder="26.9124"
                   {...register("store_latitude", {
                     valueAsNumber: true,
@@ -1862,7 +1824,7 @@ export default function Settings() {
                 <input
                   type="number"
                   step="any"
-                  className="form-control"
+                  className="form-control font-monospace"
                   placeholder="75.7873"
                   {...register("store_longitude", {
                     valueAsNumber: true,

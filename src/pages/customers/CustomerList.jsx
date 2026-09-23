@@ -598,21 +598,21 @@ export default function CustomerList() {
         >
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#6253e8" }}>Total Customers</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#111827", marginTop: "4px" }}>
-            {customerPagination?.totalItems ?? rawCustomers.length}
+            {customersData?.summary?.total ?? customerPagination?.totalItems ?? rawCustomers.length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #16a34a" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#16a34a" }}>Active Accounts</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>
-            {rawCustomers.filter((c) => c.is_active && !c.is_blocked).length}
+            {customersData?.summary?.active ?? rawCustomers.filter((c) => c.is_active && !c.is_blocked).length}
           </div>
         </div>
 
         <div className="card" style={{ padding: "16px 20px", borderLeft: "4px solid #dc2626" }}>
           <span style={{ fontSize: "12px", fontWeight: 600, color: "#dc2626" }}>Blocked Customers</span>
           <div style={{ fontSize: "24px", fontWeight: 800, color: "#dc2626", marginTop: "4px" }}>
-            {rawCustomers.filter((c) => c.is_blocked).length}
+            {customersData?.summary?.blocked ?? rawCustomers.filter((c) => c.is_blocked).length}
           </div>
         </div>
 

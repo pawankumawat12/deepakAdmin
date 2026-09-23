@@ -33,12 +33,12 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
     .filter((r) => r.status === "processed" || !r.status || r.status === "created")
     .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
-  const remainingBalance = Math.max(0, totalAmount - totalRefundedSoFar);
+  const remainingBalance = Math.max(0, Math.round(totalAmount - totalRefundedSoFar));
 
   useEffect(() => {
     if (isOpen) {
       setRefundType("full");
-      setCustomAmount(remainingBalance > 0 ? remainingBalance.toFixed(2) : "0");
+      setCustomAmount(remainingBalance > 0 ? String(Math.round(remainingBalance)) : "0");
       setReason("");
     }
   }, [isOpen, remainingBalance]);
@@ -47,19 +47,19 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
 
   const handleFullSelect = () => {
     setRefundType("full");
-    setCustomAmount(remainingBalance.toFixed(2));
+    setCustomAmount(String(Math.round(remainingBalance)));
   };
 
   const handlePartialSelect = () => {
     setRefundType("partial");
     if (Number(customAmount) >= remainingBalance) {
-      setCustomAmount((remainingBalance / 2).toFixed(2));
+      setCustomAmount(String(Math.round(remainingBalance / 2)));
     }
   };
 
   const handlePercentage = (percent) => {
     setRefundType("partial");
-    const amt = (remainingBalance * (percent / 100)).toFixed(2);
+    const amt = String(Math.round(remainingBalance * (percent / 100)));
     setCustomAmount(amt);
   };
 
@@ -233,7 +233,7 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
                     ORDER TOTAL
                   </span>
                   <div style={{ fontSize: "18px", fontWeight: 800, color: "#111827", marginTop: "2px" }}>
-                    ₹{totalAmount.toFixed(2)}
+                    ₹{Math.round(totalAmount).toLocaleString("en-IN")}
                   </div>
                 </div>
 
@@ -249,7 +249,7 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
                     REFUNDABLE BALANCE
                   </span>
                   <div style={{ fontSize: "18px", fontWeight: 800, color: "#166534", marginTop: "2px" }}>
-                    ₹{remainingBalance.toFixed(2)}
+                    ₹{Math.round(remainingBalance).toLocaleString("en-IN")}
                   </div>
                 </div>
               </div>
@@ -271,7 +271,7 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
                 >
                   <AlertTriangle size={16} shrink={0} />
                   <span>
-                    Previously Refunded: <strong>₹{totalRefundedSoFar.toFixed(2)}</strong> (Current status: Partially Refunded)
+                    Previously Refunded: <strong>₹{Math.round(totalRefundedSoFar).toLocaleString("en-IN")}</strong> (Current status: Partially Refunded)
                   </span>
                 </div>
               )}
@@ -330,7 +330,7 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
                       Full Remaining
                     </div>
                     <div style={{ fontSize: "11px", color: "#6b7280" }}>
-                      ₹{remainingBalance.toFixed(2)} (100%)
+                      ₹{Math.round(remainingBalance)} (100%)
                     </div>
                   </button>
 
@@ -502,7 +502,7 @@ export default function RefundModal({ isOpen, onClose, order, onRefundSuccess })
                   <span>
                     {isLoading
                       ? "Processing Refund..."
-                      : `Refund ₹${refundType === "full" ? remainingBalance.toFixed(2) : parseFloat(customAmount || "0").toFixed(2)}`}
+                      : `Refund ₹${refundType === "full" ? Math.round(remainingBalance) : Math.round(parseFloat(customAmount || "0"))}`}
                   </span>
                 </button>
               </div>
