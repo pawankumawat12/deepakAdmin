@@ -795,6 +795,26 @@ const OrderDetailsModal = ({
                     );
                   }
 
+                  if (!onPaymentStatusChange) {
+                    return (
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="small text-muted">Payment Status</span>
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            backgroundColor: "#f3f4f6",
+                            color: "#374151",
+                          }}
+                        >
+                          {order.payment_status || "Pending"}
+                        </span>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div className="d-flex justify-content-between align-items-center">
                       <span className="small text-muted">
@@ -816,7 +836,9 @@ const OrderDetailsModal = ({
                         <option value="Pending">Pending</option>
                         {(!isOnline || isPaid) && <option value="Paid">Paid</option>}
                         <option value="Failed">Failed</option>
-                        {!isOnline && isPaid && <option value="Refunded">Refunded</option>}
+                        {!isOnline && isPaid && Boolean(onOpenRefund) && (
+                          <option value="Refunded">Refunded</option>
+                        )}
                       </select>
                     </div>
                   );
@@ -824,8 +846,8 @@ const OrderDetailsModal = ({
 
               </div>
 
-              {/* Refund History Table */}
-              {Array.isArray(paymentDetails?.refunds) && paymentDetails.refunds.length > 0 && (
+              {/* Refund History Table - Hidden from Store Owners */}
+              {Boolean(onOpenRefund) && Array.isArray(paymentDetails?.refunds) && paymentDetails.refunds.length > 0 && (
                 <div className="mt-3 p-3 bg-light border rounded-3">
                   <div className="fw-bold small text-dark mb-2 d-flex align-items-center gap-1">
                     <RotateCcw size={13} />

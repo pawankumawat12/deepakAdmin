@@ -74,12 +74,29 @@ export default function StoreOrderList() {
   const [updateStatus, { isLoading: isUpdatingStatus }] =
     useUpdateOrderStatusMutation();
 
-  const orders = orderResponse?.data || [];
+  const rawOrders = orderResponse?.data || [];
+  // Never show orders delivered directly by Admin without being dispatched to the store
+  const orders = useMemo(() => {
+    return rawOrders.filter((o) => {
+      const isDirectAdminDelivered =
+        !o.is_forwarded_to_store &&
+        ["delivered", "completed"].includes(String(o.status || "").toLowerCase());
+      return !isDirectAdminDelivered;
+    });
+  }, [rawOrders]);
+
   const pagination = orderResponse?.pagination;
   const stats = orderResponse?.stats || {};
 
   const totalOrdersCount = stats.totalOrders ?? pagination?.total ?? orders.length;
-  const totalRevenueAmount = stats.totalAmount ?? 0;
+  const fallbackRevenue = orders
+    .filter((o) => {
+      const s = String(o.status || "").toLowerCase();
+      const p = String(o.payment_status || "").toLowerCase();
+      return !["cancelled", "rejected", "payment failed"].includes(s) && !["failed", "refunded"].includes(p);
+    })
+    .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+  const totalRevenueAmount = stats.totalAmount !== undefined ? stats.totalAmount : fallbackRevenue;
   const deliveredCount = stats.deliveredOrders ?? 0;
   const pendingCount = stats.pendingOrders ?? 0;
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import DataTable from "../../components/common/DataTable";
@@ -23,35 +23,24 @@ import {
   useForwardOrderToStoreMutation,
   useGetAdminOrderByIdQuery,
 } from "../../services/orderApi";
-import { useGetStoresQuery } from "../../services/storeApi";
+import { useGetStoresQuery, useGetMyStoreQuery } from "../../services/storeApi";
 import { useGetSettingPricingQuery } from "../../services/settingsApi";
 import { getAdminSocket } from "../../services/socket";
 import AdminOrderChatModal from "../../components/orders/AdminOrderChatModal";
 import {
   Clock,
   CheckCircle2,
-  Truck,
-  XCircle,
-  ChefHat,
-  Sparkles,
-  Receipt,
   MapPin,
   Navigation,
   X,
   Eye,
-  Percent,
-  Package,
-  CreditCard,
   Banknote,
   QrCode,
-  Check,
   MessageCircle,
   Bell,
   ThumbsUp,
   ThumbsDown,
   AlertTriangle,
-  Search,
-  Zap,
   FileText,
   Download,
   Lock,
@@ -93,6 +82,10 @@ export default function OrderList() {
   // Admin: fetch stores for tab switcher
   const { data: storesData } = useGetStoresQuery({ limit: 100 }, { skip: isStoreOwner });
   const allStores = storesData?.stores || [];
+
+  // Store Owner: fetch own store details to check direct dispatch permissions
+  const { data: myStoreData } = useGetMyStoreQuery(undefined, { skip: !isStoreOwner });
+  const myStore = myStoreData?.store;
 
   const {
     data: orderResponse,
@@ -151,7 +144,14 @@ export default function OrderList() {
     }
   }, [pendingChatOrderData, pendingChatOrderId]);
 
-  const orders = orderResponse?.data || [];
+  const rawOrders = orderResponse?.data || [];
+  const orders = useMemo(() => {
+    if (isStoreOwner) {
+      // Store owners must never see orders that were delivered or handled directly by Admin without being dispatched to the store
+      return rawOrders.filter((o) => Boolean(o.is_forwarded_to_store));
+    }
+    return rawOrders;
+  }, [rawOrders, isStoreOwner]);
   const pagination = orderResponse?.pagination;
 
   // Socket.IO real-time event listeners for Admin
@@ -792,10 +792,10 @@ export default function OrderList() {
                   ? "#ede9fe"
                   : "#eff6ff",
             border: `1px solid ${liveAlert.type === "order"
-                ? "#86efac"
-                : liveAlert.type === "payment"
-                  ? "#c4b5fd"
-                  : "#bfdbfe"
+              ? "#86efac"
+              : liveAlert.type === "payment"
+                ? "#c4b5fd"
+                : "#bfdbfe"
               }`,
             color:
               liveAlert.type === "order"
@@ -950,25 +950,25 @@ export default function OrderList() {
                 >
                   {item.customer_phone || item.customer_email}
                 </div>
-                  {item.deliveryAddress && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        fontSize: "11px",
-                        color: "#6b7280",
-                        maxWidth: "180px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                      title={item.deliveryAddress}
-                    >
-                      <MapPin size={11} className="shrink-0 text-gray-400" />
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{item.deliveryAddress}</span>
-                    </div>
-                  )}
+                {item.deliveryAddress && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "11px",
+                      color: "#6b7280",
+                      maxWidth: "180px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                    title={item.deliveryAddress}
+                  >
+                    <MapPin size={11} className="shrink-0 text-gray-400" />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{item.deliveryAddress}</span>
+                  </div>
+                )}
               </div>
             ),
           },
@@ -992,7 +992,7 @@ export default function OrderList() {
                       <span>
                         {it.quantity}x {it.product_name}
                       </span>
-                    
+
                     </div>
                   ))}
                 </div>
@@ -1069,6 +1069,8 @@ export default function OrderList() {
               const hasStore = Boolean(item.store_id);
               const isForwarded = Boolean(item.is_forwarded_to_store);
               const storeTitle = item.store_name || "Direct Store";
+              const isDelivered = (item.status || "").toLowerCase() === "delivered";
+              const isCancelled = (item.status || "").toLowerCase() === "cancelled";
 
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "140px" }}>
@@ -1100,6 +1102,25 @@ export default function OrderList() {
                         >
                           <CheckCircle2 size={10} /> Dispatched to Store
                         </span>
+                      ) : isDelivered ? (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "3px",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            backgroundColor: "#f3f4f6",
+                            color: "#4b5563",
+                            border: "1px solid #e5e7eb",
+                            whiteSpace: "nowrap",
+                          }}
+                          title="Delivered directly by Admin without forwarding to store"
+                        >
+                          <CheckCircle2 size={10} /> Delivered Directly
+                        </span>
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                           <span
@@ -1119,7 +1140,7 @@ export default function OrderList() {
                           >
                             <Clock size={10} /> Pending Dispatch
                           </span>
-                          {!isStoreOwner && (
+                          {!isStoreOwner && !isCancelled && (
                             <button
                               type="button"
                               disabled={isForwarding}
@@ -1229,8 +1250,23 @@ export default function OrderList() {
                     </div>
                   )}
 
-                  {/* RULE 1: If Refunded, permanently locked */}
-                  {isRefunded ? (
+                  {/* Store Owner: Completely remove Refund actions and select dropdown; show clean status badge */}
+                  {isStoreOwner ? (
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                        fontWeight: 700,
+                        backgroundColor: statusBg,
+                        color: statusColor,
+                        border: `1px solid ${statusBorder}`,
+                        width: "fit-content",
+                      }}
+                    >
+                      {currentStatus}
+                    </div>
+                  ) : isRefunded ? (
                     <div
                       style={{
                         fontSize: "11px",
@@ -1515,13 +1551,21 @@ export default function OrderList() {
                     </div>
                   )}
                   {(() => {
+                    // Chat option is only provided to store owners whose store has DIRECT ORDER DISPATCH permission (auto_forward_orders)
+                    const hasDirectDispatch = Boolean(
+                      myStore?.auto_forward_orders ?? item.store_auto_forward_orders
+                    );
+                    if (isStoreOwner && !hasDirectDispatch) {
+                      return null;
+                    }
+
                     const isChatExpired =
                       item.chatStatus?.isExpired ??
                       item.chat_status?.is_expired ??
                       ((item.status === "Delivered" || item.status === "Completed") &&
                         item.delivered_at &&
                         Date.now() >
-                          new Date(item.delivered_at).getTime() + 20 * 60 * 1000);
+                        new Date(item.delivered_at).getTime() + 20 * 60 * 1000);
 
                     return (
                       <button
@@ -1558,9 +1602,9 @@ export default function OrderList() {
                     );
                   })()}
                 </div>
-                );
-              },
+              );
             },
+          },
           { key: "createdAtFormatted", label: "TIME" },
           // {
           //   key: "actions",
@@ -1581,7 +1625,7 @@ export default function OrderList() {
           let parsedAddr = null;
           try {
             parsedAddr = typeof addr === "string" ? JSON.parse(addr || "{}") : addr;
-          } catch (_) {}
+          } catch (_) { }
 
           const hasCoords =
             parsedAddr?.latitude != null &&
@@ -1592,7 +1636,7 @@ export default function OrderList() {
           const destination = hasCoords
             ? `${parsedAddr.latitude},${parsedAddr.longitude}`
             : parsedAddr
-            ? encodeURIComponent(
+              ? encodeURIComponent(
                 [
                   parsedAddr.house_number,
                   parsedAddr.building_name,
@@ -1603,9 +1647,9 @@ export default function OrderList() {
                   .filter(Boolean)
                   .join(", ")
               )
-            : item.shipping_address
-            ? encodeURIComponent(item.shipping_address)
-            : null;
+              : item.shipping_address
+                ? encodeURIComponent(item.shipping_address)
+                : null;
 
           let pricing =
             item.parsedPricing ||
@@ -1614,7 +1658,7 @@ export default function OrderList() {
             item.pricing_breakdown;
           try {
             if (typeof pricing === "string") pricing = JSON.parse(pricing);
-          } catch (_) {}
+          } catch (_) { }
 
           const storeLat =
             pricing?.store_latitude ?? pricingSettingData?.data?.store_latitude;
@@ -1670,31 +1714,31 @@ export default function OrderList() {
 
 
 
-{selectedOrderDetails && (
-  <OrderDetailsModal
-    order={selectedOrderDetails}
-    onClose={() => setSelectedOrderDetails(null)}
-    onPaymentStatusChange={handlePaymentStatusChange}
-    onOpenRefund={(order) => setRefundModalOrder(order)}
-    isUpdatingPayment={isUpdatingPayment}
-  />
-)}
+      {selectedOrderDetails && (
+        <OrderDetailsModal
+          order={selectedOrderDetails}
+          onClose={() => setSelectedOrderDetails(null)}
+          onPaymentStatusChange={!isStoreOwner ? handlePaymentStatusChange : null}
+          onOpenRefund={!isStoreOwner ? (order) => setRefundModalOrder(order) : null}
+          isUpdatingPayment={isUpdatingPayment}
+        />
+      )}
 
-{refundModalOrder && (
-  <RefundModal
-    isOpen={Boolean(refundModalOrder)}
-    order={refundModalOrder}
-    onClose={() => setRefundModalOrder(null)}
-    onRefundSuccess={(updated) => {
-      if (selectedOrderDetails?.id === updated?.id) {
-        setSelectedOrderDetails(updated);
-      }
-    }}
-  />
-)}
-      
+      {!isStoreOwner && refundModalOrder && (
+        <RefundModal
+          isOpen={Boolean(refundModalOrder)}
+          order={refundModalOrder}
+          onClose={() => setRefundModalOrder(null)}
+          onRefundSuccess={(updated) => {
+            if (selectedOrderDetails?.id === updated?.id) {
+              setSelectedOrderDetails(updated);
+            }
+          }}
+        />
+      )}
 
-     {acceptModalOrder && (
+
+      {acceptModalOrder && (
         <div
           style={{
             position: "fixed",
@@ -1803,7 +1847,7 @@ export default function OrderList() {
             </div>
           </div>
         </div>
-      )} 
+      )}
 
 
       {/* REJECT ORDER MODAL */}
@@ -1901,7 +1945,7 @@ export default function OrderList() {
               </div>
             </div>
 
-         
+
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
               <button
@@ -1957,49 +2001,49 @@ export default function OrderList() {
 
       {/* BULK STATUS CONFIRMATION DIALOG */}
       {bulkConfirmOpen && (
-      <ConfirmDialog
-        isOpen={bulkConfirmOpen}
-        title={`Update Status of ${selectedIds.length} Order(s)`}
-        message={
-          <div>
-            <p>
-              Are you sure you want to change the status of <strong>{selectedIds.length}</strong> selected order(s) to <strong>"{bulkStatusTarget}"</strong>?
-            </p>
-            {bulkStatusTarget === "Cancelled" && (
-              <div style={{ marginTop: "12px" }}>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>
-                  Cancellation Reason (Optional):
-                </label>
-                <textarea
-                  value={bulkCancelReason}
-                  onChange={(e) => setBulkCancelReason(e.target.value)}
-                  placeholder="e.g. Batch cancelled due to kitchen closure or inventory unavailability"
-                  rows={3}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #d1d5db",
-                    fontSize: "13px",
-                  }}
-                />
-              </div>
-            )}
-            {["Preparing", "Out for Delivery", "Delivered"].includes(bulkStatusTarget) && (
-              <p style={{ marginTop: "8px", fontSize: "12px", color: "#b45309" }}>
-                ⚠️ Notice: Unpaid online-payment orders cannot be advanced to fulfillment states and will be automatically skipped to protect order integrity.
+        <ConfirmDialog
+          isOpen={bulkConfirmOpen}
+          title={`Update Status of ${selectedIds.length} Order(s)`}
+          message={
+            <div>
+              <p>
+                Are you sure you want to change the status of <strong>{selectedIds.length}</strong> selected order(s) to <strong>"{bulkStatusTarget}"</strong>?
               </p>
-            )}
-          </div>
-        }
-        confirmLabel={isBulkUpdating ? "Updating..." : "Confirm Update"}
-        onConfirm={throttledConfirmBulkStatusChange}
-        onCancel={() => {
-          setBulkConfirmOpen(false);
-          setBulkCancelReason("");
-        }}
-        isDestructive={bulkStatusTarget === "Cancelled"}
-      />
+              {bulkStatusTarget === "Cancelled" && (
+                <div style={{ marginTop: "12px" }}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>
+                    Cancellation Reason (Optional):
+                  </label>
+                  <textarea
+                    value={bulkCancelReason}
+                    onChange={(e) => setBulkCancelReason(e.target.value)}
+                    placeholder="e.g. Batch cancelled due to kitchen closure or inventory unavailability"
+                    rows={3}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "13px",
+                    }}
+                  />
+                </div>
+              )}
+              {["Preparing", "Out for Delivery", "Delivered"].includes(bulkStatusTarget) && (
+                <p style={{ marginTop: "8px", fontSize: "12px", color: "#b45309" }}>
+                  ⚠️ Notice: Unpaid online-payment orders cannot be advanced to fulfillment states and will be automatically skipped to protect order integrity.
+                </p>
+              )}
+            </div>
+          }
+          confirmLabel={isBulkUpdating ? "Updating..." : "Confirm Update"}
+          onConfirm={throttledConfirmBulkStatusChange}
+          onCancel={() => {
+            setBulkConfirmOpen(false);
+            setBulkCancelReason("");
+          }}
+          isDestructive={bulkStatusTarget === "Cancelled"}
+        />
       )}
     </>
   );

@@ -69,6 +69,18 @@ const getNavigationItems = (role) => {
           { label: "My Products", to: "/products", icon: Package },
         ],
       },
+      // {
+      //   type: "group",
+      //   id: "inventory",
+      //   label: "Raw Materials & BOM",
+      //   icon: Boxes,
+      //   children: [
+      //     { label: "Raw Materials", to: "/inventory/ingredients", icon: Boxes },
+      //     { label: "Product Recipes", to: "/inventory/recipes", icon: UtensilsCrossed },
+      //     { label: "Suppliers & Vendors", to: "/inventory/suppliers", icon: Truck },
+      //     { label: "Stock Movement Logs", to: "/inventory/logs", icon: History },
+      //   ],
+      // },
       {
         type: "group",
         id: "sales",
@@ -691,7 +703,9 @@ export default function AdminLayout() {
             <div className="sidebar-brand-text">
               <span className="brand-title">SFC Bakers</span>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span className="brand-badge">ADMIN PANEL</span>
+                <span className="brand-badge">
+                  {isStoreOwner ? "STORE OWNER" : "ADMIN PANEL"}
+                </span>
               </div>
             </div>
           </div>

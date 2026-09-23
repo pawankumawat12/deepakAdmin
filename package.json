@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "bash -c 'if [ -d \"$HOME/.nvm/versions/node/v20.20.2/bin\" ]; then export PATH=\"$HOME/.nvm/versions/node/v20.20.2/bin:$PATH\"; elif [ -d \"$HOME/.nvm/versions/node/v22.23.0/bin\" ]; then export PATH=\"$HOME/.nvm/versions/node/v22.23.0/bin:$PATH\"; fi; exec vite'",
+    "build": "bash -c 'if [ -d \"$HOME/.nvm/versions/node/v20.20.2/bin\" ]; then export PATH=\"$HOME/.nvm/versions/node/v20.20.2/bin:$PATH\"; elif [ -d \"$HOME/.nvm/versions/node/v22.23.0/bin\" ]; then export PATH=\"$HOME/.nvm/versions/node/v22.23.0/bin:$PATH\"; fi; exec vite build'",
     "lint": "eslint .",
     "preview": "vite preview"
   },
