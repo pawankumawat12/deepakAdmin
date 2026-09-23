@@ -36,6 +36,7 @@ import {
   Truck,
   History,
   Store,
+  MapPin,
 } from "lucide-react";
 import { baseApi } from "../services/baseApi";
 import {
@@ -88,6 +89,15 @@ const getNavigationItems = (role) => {
         icon: ShoppingBag,
         children: [
           { label: "All Orders", to: "/orders", icon: ShoppingBag },
+        ],
+      },
+      {
+        type: "group",
+        id: "store_mgmt",
+        label: "Store Settings",
+        icon: Store,
+        children: [
+          { label: "Store Location & Radius", to: "/store-location", icon: MapPin },
         ],
       },
       {

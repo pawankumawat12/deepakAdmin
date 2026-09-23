@@ -1784,16 +1784,17 @@ export default function Settings() {
             <div className="mb-2">
               <h3 className="fs-6 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
                 <MapPin size={16} className="text-danger" />
-                Bakery Store Location (Interactive Map)
+                Bakery Store Location
               </h3>
               <p className="text-muted small mb-0">
-                Drag the red pin or click anywhere on the map to set the exact shop location. These coordinates are used for customer delivery charges and display on the Contact Us map.
+                Drag the red pin or click anywhere on the map to set the exact shop location.
               </p>
             </div>
 
             <StoreLocationPicker
               latitude={storeLat}
               longitude={storeLng}
+              deliveryRadiusKm={watch("max_delivery_distance") || 10}
               onLocationChange={handleLocationPicked}
             />
 

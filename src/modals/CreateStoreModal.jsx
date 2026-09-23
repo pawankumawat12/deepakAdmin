@@ -196,9 +196,7 @@ export default function CreateStoreModal({ isOpen, onClose, onSuccess }) {
           <div style={{ margin: "20px 0 8px", fontWeight: 700, fontSize: "13px", color: "#166534", textTransform: "uppercase", letterSpacing: "0.5px" }}>
             2. Store Owner Details
           </div>
-          <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#6b7280" }}>
-            The owner will be sent an invitation email. They can request login approval to receive their password setup link.
-          </p>
+
 
           <div className="form-grid">
             <label className="full">

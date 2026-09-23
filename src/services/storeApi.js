@@ -129,6 +129,15 @@ export const storeApi = baseApi.injectEndpoints({
       }),
       providesTags: ["Stores"],
     }),
+
+    updateMyStoreLocation: builder.mutation({
+      query: (body) => ({
+        url: "/stores/my-store/location",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Stores"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -148,5 +157,6 @@ export const {
   useVerifySetupTokenQuery,
   useSetStorePasswordMutation,
   useGetMyStoreQuery,
+  useUpdateMyStoreLocationMutation,
 } = storeApi;
 

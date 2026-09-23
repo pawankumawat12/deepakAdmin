@@ -39,6 +39,7 @@ import StoreList from "../pages/stores/StoreList";
 import StoreProductList from "../pages/stores/StoreProductList";
 import StoreOrderList from "../pages/stores/StoreOrderList";
 import StoreSetPassword from "../pages/auth/StoreSetPassword";
+import StoreOwnerLocationSetup from "../pages/stores/StoreOwnerLocationSetup";
 
 export default function AppRoutes() {
   return (
@@ -86,6 +87,7 @@ export default function AppRoutes() {
           <Route path="inventory/logs" element={<InventoryLogList />} />
           <Route path="favourites" element={<FavouriteList />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="store-location" element={<StoreOwnerLocationSetup />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Route>

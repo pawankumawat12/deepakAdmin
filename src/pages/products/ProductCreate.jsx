@@ -1,5 +1,7 @@
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import ProductForm from "../../components/forms/ProductForm";
 import Button from "../../components/ui/Button";
@@ -7,13 +9,35 @@ import {
   useCreateProductMutation,
   useGetProductCategoriesQuery,
 } from "../../services/productApi";
+import { useGetMyStoreQuery } from "../../services/storeApi";
 
 export default function ProductCreate() {
   const navigate = useNavigate();
+  const user = useSelector((state) => state.auth?.user);
+  const isStoreOwner = user?.role === "store_owner";
+
+  const { data: storeResponse, isLoading: storeLoading } = useGetMyStoreQuery(
+    undefined,
+    { skip: !isStoreOwner }
+  );
+
   const { data: categoryResponse, isLoading: categoriesLoading } =
     useGetProductCategoriesQuery();
   const [createProduct, { isLoading, error }] = useCreateProductMutation();
-  const categories = categoryResponse?.data ||  [];
+  const categories = categoryResponse?.data || [];
+
+  // Store Owner Location Guard: Must set store location before adding products
+  useEffect(() => {
+    if (!storeLoading && isStoreOwner && storeResponse?.store) {
+      const store = storeResponse.store;
+      if (store.latitude == null || store.longitude == null) {
+        toast.error(
+          "⚠️ Please set your Bakery Store Location on the map first before adding products."
+        );
+        navigate("/store-location");
+      }
+    }
+  }, [storeLoading, isStoreOwner, storeResponse, navigate]);
   
   const save = async (data) => {
     try {

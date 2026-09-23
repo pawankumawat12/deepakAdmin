@@ -707,26 +707,7 @@ export default function EmailLogList() {
             <option value="asc">Oldest First</option>
           </select>
 
-          {/* Per Page Limit */}
-          <select
-            value={limit}
-            onChange={(e) => handleLimitChange(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "8px",
-              border: "1px solid #d1d5db",
-              fontSize: "13px",
-              background: "#ffffff",
-              color: "#374151",
-              cursor: "pointer",
-            }}
-            aria-label="Records per page"
-          >
-            <option value={10}>10 per page</option>
-            <option value={20}>20 per page</option>
-            <option value={50}>50 per page</option>
-            <option value={100}>100 per page</option>
-          </select>
+    
         </div>
       </div>
 

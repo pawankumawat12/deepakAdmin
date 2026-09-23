@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { Filter, Plus, Trash2, Pencil, X, Zap, Package, PackageX, Download, CheckCircle, Ban, Store, FileText } from "lucide-react";
+import { Filter, Plus, Trash2, Pencil, X, Zap, Package, PackageX, Download, CheckCircle, Ban, Store, FileText, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import DataTable from "../../components/common/DataTable";
@@ -19,6 +19,7 @@ import {
   useBulkUpdateProductStatusMutation,
   useBulkDeleteProductsMutation,
 } from "../../services/productApi";
+import { useGetMyStoreQuery } from "../../services/storeApi";
 
 const initialFilters = { categoryId: "", isActive: "", availabilityType: "" };
 
@@ -27,6 +28,15 @@ export default function ProductList() {
   const accessToken = useSelector((state) => state.auth?.accessToken);
   const user = useSelector((state) => state.auth?.user);
   const isStoreOwner = user?.role === "store_owner";
+
+  const { data: storeResponse } = useGetMyStoreQuery(undefined, {
+    skip: !isStoreOwner,
+  });
+
+  const isLocationMissing =
+    isStoreOwner &&
+    storeResponse?.store &&
+    (storeResponse.store.latitude == null || storeResponse.store.longitude == null);
 
   const [searchText, setSearchText] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -227,10 +237,41 @@ export default function ProductList() {
               : "Manage official master bakery products created by Admin."}
           </p>
         </div>
-        <Button onClick={() => navigate("/products/create")}>
+        <Button
+          onClick={() => {
+            if (isLocationMissing) {
+              toast.error(
+                "⚠️ Please set your Bakery Store Location first before adding products."
+              );
+              navigate("/store-location");
+              return;
+            }
+            navigate("/products/create");
+          }}
+        >
           <Plus size={18} /> Add product
         </Button>
       </div>
+
+      {/* Store Location Notice Banner */}
+      {isLocationMissing && (
+        <div className="alert alert-warning border-warning-subtle shadow-xs rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 py-2.5 px-3">
+          <div className="d-flex align-items-center gap-2">
+            <Store size={18} className="text-warning-emphasis flex-shrink-0" />
+            <span className="small text-dark fw-medium">
+              <strong>Location Setup Required:</strong> Please set your store location on the map to define your delivery area before creating products.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => navigate("/store-location")}
+            className="d-flex align-items-center gap-1.5 py-1 px-3"
+          >
+            <MapPin size={14} />
+            <span>Set Location Now</span>
+          </Button>
+        </div>
+      )}
 
       {/* Top Metric Cards */}
       <div
