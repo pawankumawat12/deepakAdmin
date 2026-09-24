@@ -715,20 +715,20 @@ export default function StoreLocationPicker({
             </div>
             <div className="flex-grow-1" style={{ fontSize: "12.5px", color: "#78350f" }}>
               <div className="fw-bold text-dark mb-1" style={{ fontSize: "13.5px" }}>
-                Laptop / Desktop पर लोकेशन सेट करने के निर्देश:
+                Setting Location on Laptop / Desktop:
               </div>
               <p className="mb-2 text-dark" style={{ lineHeight: "1.5" }}>
-                लैपटॉप और कंप्यूटर में मोबाइल फोन की तरह <strong>हार्डवेयर GPS चिप नहीं होती है</strong>। इंटरनेट प्रोवाइडर (IP एड्रेस) के कारण गलत या दूर की लोकेशन आने की संभावना रहती है, इसलिए इसमें ऑटोमैटिक करंट लोकेशन (Locate Me) का विकल्प बंद रखा गया है।
+                Laptops and desktop computers <strong>do not have built-in hardware GPS chips</strong>. Browsers estimate position using your Wi-Fi or ISP network, which can place you kilometers away from your actual physical store. For pinpoint accuracy, automatic GPS detection is disabled on desktop devices.
               </p>
               <div className="fw-semibold text-dark mb-1">
-                अपनी दुकान की सटीक लोकेशन सेट करने के 2 आसान तरीके:
+                2 Easy Ways to Pinpoint Your Store:
               </div>
               <ul className="mb-0 ps-3 text-secondary" style={{ lineHeight: "1.5" }}>
                 <li>
-                  <strong>तरीका 1 (सर्च करें):</strong> नीचे दिए गए सर्च बार में अपनी दुकान का क्षेत्र, सड़क, कॉलोनी या पिन कोड टाइप करके सर्च करें।
+                  <strong>Method 1 (Search):</strong> Type your area, street, landmark, or pincode in the search box below and select your location from the suggestions.
                 </li>
                 <li>
-                  <strong>तरीका 2 (पिन ड्रैग करें):</strong> सैटेलाइट मैप पर दिख रही लाल पिन को माउस से पकड़कर (Drag करके) सीधे अपनी दुकान पर सेट करें।
+                  <strong>Method 2 (Drag & Drop Pin):</strong> Click and drag the red marker on the satellite map directly to your shop's exact rooftop or storefront.
                 </li>
               </ul>
             </div>

@@ -187,7 +187,7 @@ const getNavigationItems = (role) => {
       icon: Mail,
       children: [
         { label: "Email Templates", to: "/email-templates", icon: FileText },
-        { label: "Email Activity Logs", to: "/email-logs", icon: Mail },
+        { label: "Email Logs", to: "/email-logs", icon: Mail },
       ],
     },
     {
