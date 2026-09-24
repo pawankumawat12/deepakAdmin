@@ -38,7 +38,11 @@ const rawBaseQuery = fetchBaseQuery({
     const url = typeof arg === "string" ? arg : arg?.url;
     const isRefresh =
       url === "/auth/refresh-token" || url?.includes("refresh-token");
-    const accessToken = getState()?.auth?.accessToken;
+    const accessToken =
+      getState()?.auth?.accessToken ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null);
 
     // Never attach Authorization header on refresh token requests
     // to prevent backend fallback from verifying expired access token as refresh token

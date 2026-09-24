@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setUser, signOut } from "../context/authSlice";
 import { useGetMeQuery } from "../services/authApi";
 import { baseApi } from "../services/baseApi";
-import { LoaderCircle } from "lucide-react";
+import BrandSplashScreen from "../components/common/BrandSplashScreen";
 
 export default function ProtectedRoute() {
   const dispatch = useDispatch();
@@ -35,21 +35,7 @@ export default function ProtectedRoute() {
   }, [isError, user, dispatch]);
 
   if ((isLoading || isFetching) && !isError && !user) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f9fafb",
-          color: "#6b7280",
-          gap: "8px",
-        }}
-      >
-        <LoaderCircle size={24} className="animate-spin text-blue-600" />
-      </div>
-    );
+    return <BrandSplashScreen message="Securing your admin workspace..." />;
   }
 
   // Allow admin and store_owner into the portal

@@ -15,6 +15,7 @@ import {
   Sparkles,
   ArrowRight,
   CornerDownLeft,
+  Laptop,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -132,6 +133,18 @@ export default function StoreLocationPicker({
   const [geocoding, setGeocoding] = useState(false);
   const [locating, setLocating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+  // Detect whether the device has a physical GPS chip (Mobile/Tablet vs Laptop/Desktop)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ua = navigator.userAgent || "";
+    const isMobileUa = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const isClientMobile = Boolean(navigator.userAgentData?.mobile);
+    const isSmallTouchDevice = Boolean(navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+
+    setIsMobileDevice(Boolean(isMobileUa || isClientMobile || isSmallTouchDevice));
+  }, []);
 
   // Check if current search query looks like direct coordinates
   const detectedCoords = parseCoordinates(searchQuery);
@@ -678,6 +691,51 @@ export default function StoreLocationPicker({
 
   return (
     <div className="store-location-picker mt-3 position-relative w-100">
+      {/* Notice for Laptop / Desktop Users (No GPS Hardware) */}
+      {!isMobileDevice && (
+        <div
+          className="mb-3 p-3 rounded-3"
+          style={{
+            background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+            border: "1.5px solid #fde68a",
+            boxShadow: "0 2px 6px rgba(217, 119, 6, 0.08)",
+          }}
+        >
+          <div className="d-flex align-items-start gap-2.5">
+            <div
+              className="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0 mt-0.5"
+              style={{
+                width: "30px",
+                height: "30px",
+                background: "#f59e0b",
+                color: "#ffffff",
+              }}
+            >
+              <Laptop size={17} />
+            </div>
+            <div className="flex-grow-1" style={{ fontSize: "12.5px", color: "#78350f" }}>
+              <div className="fw-bold text-dark mb-1" style={{ fontSize: "13.5px" }}>
+                Laptop / Desktop पर लोकेशन सेट करने के निर्देश:
+              </div>
+              <p className="mb-2 text-dark" style={{ lineHeight: "1.5" }}>
+                लैपटॉप और कंप्यूटर में मोबाइल फोन की तरह <strong>हार्डवेयर GPS चिप नहीं होती है</strong>। इंटरनेट प्रोवाइडर (IP एड्रेस) के कारण गलत या दूर की लोकेशन आने की संभावना रहती है, इसलिए इसमें ऑटोमैटिक करंट लोकेशन (Locate Me) का विकल्प बंद रखा गया है।
+              </p>
+              <div className="fw-semibold text-dark mb-1">
+                अपनी दुकान की सटीक लोकेशन सेट करने के 2 आसान तरीके:
+              </div>
+              <ul className="mb-0 ps-3 text-secondary" style={{ lineHeight: "1.5" }}>
+                <li>
+                  <strong>तरीका 1 (सर्च करें):</strong> नीचे दिए गए सर्च बार में अपनी दुकान का क्षेत्र, सड़क, कॉलोनी या पिन कोड टाइप करके सर्च करें।
+                </li>
+                <li>
+                  <strong>तरीका 2 (पिन ड्रैग करें):</strong> सैटेलाइट मैप पर दिख रही लाल पिन को माउस से पकड़कर (Drag करके) सीधे अपनी दुकान पर सेट करें।
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. Main Search Bar & GPS Locate Bar (Fully Responsive) */}
       <div ref={searchWrapperRef} className="position-relative mb-2 w-100">
         <div
@@ -747,30 +805,32 @@ export default function StoreLocationPicker({
 
           {/* Actions: Locate Me (GPS) & Search Buttons */}
           <div className="d-flex align-items-center gap-1 ms-1 flex-shrink-0">
-            {/* GPS Device Location Button */}
-            <button
-              type="button"
-              onClick={handleLocateMe}
-              disabled={locating}
-              className="btn btn-sm btn-light border d-flex align-items-center gap-1 text-secondary px-2 py-1.5"
-              style={{
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: "600",
-                background: "#f8fafc",
-                whiteSpace: "nowrap",
-              }}
-              title="Locate my shop using device GPS"
-            >
-              {locating ? (
-                <Loader2 size={13} className="animate-spin text-danger" />
-              ) : (
-                <Crosshair size={13} className="text-danger" />
-              )}
-              <span className="d-none d-sm-inline">
-                {locating ? "Locating..." : "Locate Me"}
-              </span>
-            </button>
+            {/* GPS Device Location Button (Visible ONLY on Mobile devices with hardware GPS) */}
+            {isMobileDevice && (
+              <button
+                type="button"
+                onClick={handleLocateMe}
+                disabled={locating}
+                className="btn btn-sm btn-light border d-flex align-items-center gap-1 text-secondary px-2 py-1.5"
+                style={{
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  background: "#f8fafc",
+                  whiteSpace: "nowrap",
+                }}
+                title="Locate my shop using device GPS"
+              >
+                {locating ? (
+                  <Loader2 size={13} className="animate-spin text-danger" />
+                ) : (
+                  <Crosshair size={13} className="text-danger" />
+                )}
+                <span className="d-none d-sm-inline">
+                  {locating ? "Locating..." : "Locate Me"}
+                </span>
+              </button>
+            )}
 
             {/* Primary Search Button */}
             <button
@@ -1238,7 +1298,7 @@ export default function StoreLocationPicker({
             className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 text-wrap text-start"
             style={{ fontSize: "11px", fontWeight: "500" }}
           >
-            💡 Drag red pin onto your shop rooftop or entrance
+            Drag red pin onto your shop rooftop or entrance
           </span>
         </div>
       </div>
