@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import OrderDetailsModal from "../../modals/OrderDetailsModal";
 import RefundModal from "../../modals/RefundModal";
+import { WhatsAppIcon, openWhatsAppOrderShare } from "../../utils/whatsappOrder";
 
 export default function OrderList() {
   const location = useLocation();
@@ -63,9 +64,17 @@ export default function OrderList() {
 
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => new URLSearchParams(location.search).get("search") || "");
   const [refundModalOrder, setRefundModalOrder] = useState(null);
   const debouncedSearch = useDebouncedValue(search, 600);
+
+  useEffect(() => {
+    const qSearch = new URLSearchParams(location.search).get("search");
+    if (qSearch != null && qSearch !== search) {
+      setSearch(qSearch);
+      setPage(1);
+    }
+  }, [location.search]);
 
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [activeChatOrder, setActiveChatOrder] = useState(null);
@@ -119,6 +128,16 @@ export default function OrderList() {
       refetch();
     } catch (err) {
       toast.error(err?.data?.message || err?.message || "Failed to dispatch order to store.");
+    }
+  };
+
+  const handleShareOrderToWhatsApp = (order) => {
+    try {
+      openWhatsAppOrderShare(order);
+      toast.success("Opening WhatsApp with order details...");
+    } catch (err) {
+      console.error("Failed to share to WhatsApp:", err);
+      toast.error("Failed to prepare WhatsApp message");
     }
   };
 
@@ -1084,24 +1103,50 @@ export default function OrderList() {
                   {hasStore && (
                     <div>
                       {isForwarded ? (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "3px",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            fontSize: "10px",
-                            fontWeight: 700,
-                            backgroundColor: "#dcfce7",
-                            color: "#166534",
-                            border: "1px solid #bbf7d0",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={`Dispatched to store on ${item.forwarded_at ? new Date(item.forwarded_at).toLocaleString() : "Order Placement"}`}
-                        >
-                          <CheckCircle2 size={10} /> Dispatched to Store
-                        </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "3px",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              backgroundColor: "#dcfce7",
+                              color: "#166534",
+                              border: "1px solid #bbf7d0",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={`Dispatched to store on ${item.forwarded_at ? new Date(item.forwarded_at).toLocaleString() : "Order Placement"}`}
+                          >
+                            <CheckCircle2 size={10} /> Dispatched to Store
+                          </span>
+                          {!isStoreOwner && (
+                            <button
+                              type="button"
+                              onClick={() => handleShareOrderToWhatsApp(item)}
+                              style={{
+                                padding: "3px 7px",
+                                fontSize: "10.5px",
+                                fontWeight: 700,
+                                backgroundColor: "#25D366",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "5px",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                whiteSpace: "nowrap",
+                                boxShadow: "0 1px 2px rgba(37, 211, 102, 0.25)",
+                              }}
+                              title="Re-send order details to store owner via WhatsApp"
+                            >
+                              <WhatsAppIcon size={12} /> WhatsApp Store
+                            </button>
+                          )}
+                        </div>
                       ) : isDelivered ? (
                         <span
                           style={{
@@ -1141,29 +1186,53 @@ export default function OrderList() {
                             <Clock size={10} /> Pending Dispatch
                           </span>
                           {!isStoreOwner && !isCancelled && (
-                            <button
-                              type="button"
-                              disabled={isForwarding}
-                              onClick={() => handleForwardToStore(item)}
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "11px",
-                                fontWeight: 700,
-                                backgroundColor: "#4f46e5",
-                                color: "#ffffff",
-                                border: "none",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                whiteSpace: "nowrap",
-                                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.2)",
-                              }}
-                              title="Send / dispatch this order to the store owner"
-                            >
-                              <Send size={10} /> Forward to Store
-                            </button>
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
+                              <button
+                                type="button"
+                                disabled={isForwarding}
+                                onClick={() => handleForwardToStore(item)}
+                                style={{
+                                  padding: "4px 8px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  backgroundColor: "#4f46e5",
+                                  color: "#ffffff",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  whiteSpace: "nowrap",
+                                  boxShadow: "0 1px 2px rgba(79, 70, 229, 0.2)",
+                                }}
+                                title="Send / dispatch this order to the store owner in system"
+                              >
+                                <Send size={10} /> Forward
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleShareOrderToWhatsApp(item)}
+                                style={{
+                                  padding: "4px 8px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  backgroundColor: "#25D366",
+                                  color: "#ffffff",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  whiteSpace: "nowrap",
+                                  boxShadow: "0 1px 2px rgba(37, 211, 102, 0.25)",
+                                }}
+                                title="Send order details to Store Owner via WhatsApp"
+                              >
+                                <WhatsAppIcon size={12} /> WhatsApp
+                              </button>
+                            </div>
                           )}
                         </div>
                       )}

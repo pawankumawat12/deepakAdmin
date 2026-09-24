@@ -20,8 +20,10 @@ import {
   Navigation,
   Phone,
   ExternalLink,
+  Store,
 } from "lucide-react";
 import Button from "../components/ui/Button";
+import { WhatsAppIcon, openWhatsAppOrderShare } from "../utils/whatsappOrder";
 
 const OrderDetailsModal = ({
   order,
@@ -370,6 +372,37 @@ const OrderDetailsModal = ({
               </div>
 
             </OrderSection>
+
+            {/* ================= STORE BRANCH ================= */}
+            {order.store_name && (
+              <OrderSection
+                icon={<Store size={15} />}
+                title="Assigned Store Branch"
+              >
+                <div className="row g-3">
+                  <Info
+                    label="Store Name"
+                    value={order.store_name}
+                  />
+                  <Info
+                    label="Store Phone"
+                    value={order.store_phone || order.store_owner_phone || "-"}
+                  />
+                  {order.store_owner_name && (
+                    <Info
+                      label="Store Owner"
+                      value={order.store_owner_name}
+                    />
+                  )}
+                  {order.store_address && (
+                    <div className="col-12">
+                      <div className="small text-muted">Store Address</div>
+                      <div className="small fw-semibold mt-1">{order.store_address}</div>
+                    </div>
+                  )}
+                </div>
+              </OrderSection>
+            )}
 
 
             {/* ================= ITEMS ================= */}
@@ -1031,17 +1064,45 @@ const OrderDetailsModal = ({
 
 
           {/* ================= FOOTER ================= */}
-          <div className="modal-footer d-flex justify-content-between">
-            <button
-              type="button"
-              onClick={handleDownloadInvoice}
-              disabled={isDownloading}
-              className="btn btn-outline-primary d-inline-flex align-items-center gap-2"
-              style={{ fontSize: "0.85rem", fontWeight: 600 }}
-            >
-              {isDownloading ? <LoaderCircle size={15} className="animate-spin" /> : <Download size={15} />}
-              {isDownloading ? "Generating Invoice..." : "Download Invoice"}
-            </button>
+          <div className="modal-footer d-flex justify-content-between align-items-center">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleDownloadInvoice}
+                disabled={isDownloading}
+                className="btn btn-outline-primary d-inline-flex align-items-center gap-2"
+                style={{ fontSize: "0.85rem", fontWeight: 600 }}
+              >
+                {isDownloading ? <LoaderCircle size={15} className="animate-spin" /> : <Download size={15} />}
+                {isDownloading ? "Generating Invoice..." : "Download Invoice"}
+              </button>
+
+              {order.store_id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      openWhatsAppOrderShare(order);
+                      toast.success("Opening WhatsApp with order details...");
+                    } catch (e) {
+                      toast.error("Failed to open WhatsApp");
+                    }
+                  }}
+                  className="btn d-inline-flex align-items-center gap-2"
+                  style={{
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    backgroundColor: "#25D366",
+                    color: "#ffffff",
+                    borderColor: "#25D366",
+                  }}
+                  title="Share order details to store owner via WhatsApp"
+                >
+                  <WhatsAppIcon size={16} /> WhatsApp Store
+                </button>
+              )}
+            </div>
+
             <Button
               variant="outline"
               onClick={onClose}
