@@ -7,6 +7,7 @@ import { useGetCategoriesQuery } from "../services/categoryApi";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { isValidIndianPhone } from "../utils/phoneValidation";
+import StoreLocationPicker from "../pages/settings/StoreLocationPicker";
 
 function SettingCheckbox({
   id,
@@ -105,6 +106,7 @@ export default function EditStoreModal({ isOpen, onClose, store }) {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -118,8 +120,15 @@ export default function EditStoreModal({ isOpen, onClose, store }) {
       is_open: true,
       is_active: true,
       auto_forward_orders: false,
+      max_delivery_distance: 10,
+      latitude: "",
+      longitude: "",
     },
   });
+
+  const watchedLatitude = watch("latitude");
+  const watchedLongitude = watch("longitude");
+  const watchedRadius = watch("max_delivery_distance");
 
   useEffect(() => {
     if (store) {
@@ -133,6 +142,9 @@ export default function EditStoreModal({ isOpen, onClose, store }) {
       setValue("is_open", store.is_open ?? true);
       setValue("is_active", store.is_active ?? true);
       setValue("auto_forward_orders", store.auto_forward_orders ?? false);
+      setValue("max_delivery_distance", store.max_delivery_distance ?? 10);
+      setValue("latitude", store.latitude ?? "");
+      setValue("longitude", store.longitude ?? "");
 
       const assigned = Array.isArray(store.assigned_categories)
         ? store.assigned_categories.map((c) => Number(c.id))
@@ -166,6 +178,9 @@ export default function EditStoreModal({ isOpen, onClose, store }) {
       const payload = {
         id: store.id,
         ...formData,
+        max_delivery_distance: Number(formData.max_delivery_distance) || 10,
+        latitude: formData.latitude !== "" && formData.latitude != null ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude !== "" && formData.longitude != null ? parseFloat(formData.longitude) : null,
         categoryIds: selectedCategoryIds,
       };
 
@@ -309,7 +324,7 @@ export default function EditStoreModal({ isOpen, onClose, store }) {
             </label>
           </div>
 
-          {/* Section 2: Operations & Order Routing */}
+          {/* Delivery Radius & Coverage Coordinates */}
           <div
             style={{
               margin: "20px 0 8px",
@@ -320,7 +335,87 @@ export default function EditStoreModal({ isOpen, onClose, store }) {
               letterSpacing: "0.5px",
             }}
           >
-            2. Operations &amp; Order Routing
+            2. Delivery Radius &amp; Coverage
+          </div>
+
+          <div
+            style={{
+              padding: "14px",
+              background: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              borderRadius: "10px",
+              marginBottom: "12px",
+            }}
+          >
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+              <label>
+                <span style={{ fontWeight: 700, color: "#166534" }}>Max Delivery Radius (KM) *</span>
+                <Input
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  max="100"
+                  placeholder="e.g. 10"
+                  {...register("max_delivery_distance", {
+                    required: "Delivery radius is required",
+                    min: { value: 0.5, message: "Minimum 0.5 km" },
+                  })}
+                  style={{ background: "#ffffff", fontWeight: 700 }}
+                />
+              </label>
+
+              <label>
+                <span style={{ fontWeight: 600, color: "#374151" }}>Store Latitude</span>
+                <Input
+                  type="number"
+                  step="any"
+                  placeholder="e.g. 27.5591"
+                  {...register("latitude")}
+                  style={{ background: "#ffffff" }}
+                />
+              </label>
+
+              <label>
+                <span style={{ fontWeight: 600, color: "#374151" }}>Store Longitude</span>
+                <Input
+                  type="number"
+                  step="any"
+                  placeholder="e.g. 75.2369"
+                  {...register("longitude")}
+                  style={{ background: "#ffffff" }}
+                />
+              </label>
+            </div>
+            <p style={{ margin: "8px 0 0", fontSize: "11.5px", color: "#166534" }}>
+              💡 Customers within this radius will be serviced by this branch and will see only products deliverable from this store.
+            </p>
+
+            {/* Interactive Leaflet Satellite / Street Map with Radius Circle */}
+            <div style={{ marginTop: "14px" }}>
+              <StoreLocationPicker
+                latitude={watchedLatitude}
+                longitude={watchedLongitude}
+                deliveryRadiusKm={watchedRadius}
+                onLocationChange={(newLat, newLng) => {
+                  setValue("latitude", newLat, { shouldDirty: true, shouldValidate: true });
+                  setValue("longitude", newLng, { shouldDirty: true, shouldValidate: true });
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Section 3: Operations & Order Routing */}
+          <div
+            style={{
+              margin: "20px 0 8px",
+              fontWeight: 700,
+              fontSize: "13px",
+              color: "#166534",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            3. Operations &amp; Order Routing
           </div>
 
           <div

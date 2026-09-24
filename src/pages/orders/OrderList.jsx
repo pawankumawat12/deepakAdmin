@@ -1661,9 +1661,13 @@ export default function OrderList() {
           } catch (_) { }
 
           const storeLat =
-            pricing?.store_latitude ?? pricingSettingData?.data?.store_latitude;
+            item.store_latitude ??
+            pricing?.store_latitude ??
+            pricingSettingData?.data?.store_latitude;
           const storeLng =
-            pricing?.store_longitude ?? pricingSettingData?.data?.store_longitude;
+            item.store_longitude ??
+            pricing?.store_longitude ??
+            pricingSettingData?.data?.store_longitude;
           const hasStoreCoords =
             storeLat != null &&
             storeLng != null &&

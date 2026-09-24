@@ -511,6 +511,43 @@ export default function StoreList() {
                   ),
                 },
                 {
+                  key: "delivery_radius",
+                  label: "DELIVERY RADIUS",
+                  render: (_, store) => (
+                    <div>
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          fontWeight: 700,
+                          fontSize: "12px",
+                          color: "#166534",
+                          background: "#f0fdf4",
+                          padding: "2px 8px",
+                          borderRadius: "6px",
+                          border: "1px solid #bbf7d0",
+                        }}
+                      >
+                        <MapPin size={12} />
+                        {Number(store.max_delivery_distance || 10)} km radius
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: store.latitude != null ? "#6b7280" : "#d97706",
+                          marginTop: "3px",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {store.latitude != null
+                          ? `${Number(store.latitude).toFixed(3)}, ${Number(store.longitude).toFixed(3)}`
+                          : "⚠️ Location not set"}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
                   key: "is_open",
                   label: "BRANCH STATUS",
                   render: (isOpen, store) => (

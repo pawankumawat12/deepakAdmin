@@ -71,7 +71,6 @@ export default function StoreOwnerLocationSetup() {
         address,
         city,
         pincode,
-        max_delivery_distance: Number(deliveryRadiusKm),
       }).unwrap();
 
       toast.success(res.message || "Store location saved successfully!");
@@ -186,37 +185,30 @@ export default function StoreOwnerLocationSetup() {
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label fw-semibold small text-dark d-flex align-items-center justify-content-between">
+            <label className="form-label fw-semibold small text-dark d-flex align-items-center justify-content-between mb-1">
               <span className="d-flex align-items-center gap-1.5">
-                <Sliders size={14} className="text-danger" />
+                <MapPin size={14} className="text-danger" />
                 Delivery Radius:
               </span>
-              <strong className="text-danger font-monospace">
-                {deliveryRadiusKm} KM
-              </strong>
+              <span className="badge bg-light text-muted border font-monospace" style={{ fontSize: "10.5px" }}>
+                🔒 Admin Controlled
+              </span>
             </label>
-            <div className="d-flex align-items-center gap-2">
-              <input
-                type="range"
-                className="form-range"
-                min="1"
-                max="50"
-                step="1"
-                value={deliveryRadiusKm}
-                onChange={(e) => setDeliveryRadiusKm(Number(e.target.value))}
-              />
-              <input
-                type="number"
-                className="form-control form-control-sm font-monospace text-center"
-                style={{ width: "65px" }}
-                min="1"
-                max="50"
-                value={deliveryRadiusKm}
-                onChange={(e) => setDeliveryRadiusKm(Math.max(1, Number(e.target.value)))}
-              />
+            <div className="p-2.5 rounded-3 bg-light border d-flex align-items-center justify-content-between">
+              <div>
+                <strong className="text-danger fs-6 font-monospace">
+                  {deliveryRadiusKm} KM
+                </strong>
+                <div className="text-muted" style={{ fontSize: "11px" }}>
+                  Assigned by Admin
+                </div>
+              </div>
+              <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
+                Active Coverage
+              </span>
             </div>
-            <span className="text-muted" style={{ fontSize: "11px" }}>
-              The red circle on the map will adjust to this delivery distance.
+            <span className="text-muted d-block mt-1" style={{ fontSize: "11px" }}>
+              Only Admin can change how far your store delivers. Contact admin to adjust this radius.
             </span>
           </div>
         </div>

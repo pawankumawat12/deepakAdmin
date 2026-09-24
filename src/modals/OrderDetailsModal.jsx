@@ -168,8 +168,8 @@ const OrderDetailsModal = ({
     p.minimum_order_shortfall ?? 0
   );
 
-  const storeLatitude = p.store_latitude;
-  const storeLongitude = p.store_longitude;
+  const storeLatitude = order.store_latitude ?? p.store_latitude;
+  const storeLongitude = order.store_longitude ?? p.store_longitude;
 
   const isFreeDelivery = Boolean(p.is_free_delivery);
   const isOutOfRange = Boolean(p.is_out_of_range);

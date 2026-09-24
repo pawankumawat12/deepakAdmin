@@ -241,7 +241,7 @@ export default function ProductList() {
           onClick={() => {
             if (isLocationMissing) {
               toast.error(
-                "⚠️ Please set your Bakery Store Location first before adding products."
+                "Please set your Bakery Store Location first before adding products."
               );
               navigate("/store-location");
               return;

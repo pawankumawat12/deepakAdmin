@@ -32,6 +32,7 @@ export default function CreateStoreModal({ isOpen, onClose, onSuccess }) {
       ownerName: "",
       ownerEmail: "",
       ownerPhone: "",
+      maxDeliveryDistance: 10,
     },
   });
 
@@ -66,6 +67,7 @@ export default function CreateStoreModal({ isOpen, onClose, onSuccess }) {
     try {
       const payload = {
         ...data,
+        max_delivery_distance: Number(data.maxDeliveryDistance) || 10,
         categoryIds: selectedCategoryIds,
       };
 
@@ -188,6 +190,25 @@ export default function CreateStoreModal({ isOpen, onClose, onSuccess }) {
               />
               {errors.phone && (
                 <small className="error">{errors.phone.message}</small>
+              )}
+            </label>
+
+            <label>
+              Max Delivery Radius (KM) *
+              <Input
+                type="number"
+                step="0.5"
+                min="0.5"
+                max="100"
+                placeholder="e.g. 10"
+                {...register("maxDeliveryDistance", {
+                  required: "Delivery radius is required",
+                  min: { value: 0.5, message: "Minimum 0.5 km" },
+                })}
+                required
+              />
+              {errors.maxDeliveryDistance && (
+                <small className="error">{errors.maxDeliveryDistance.message}</small>
               )}
             </label>
           </div>
