@@ -226,6 +226,7 @@ export const baseApi = createApi({
     "InventoryLogs",
     "Stores",
     "StoreRequests",
+    "WhatsApp",
   ],
   endpoints: () => ({}),
 });

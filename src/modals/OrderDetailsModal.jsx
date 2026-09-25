@@ -21,6 +21,10 @@ import {
   Phone,
   ExternalLink,
   Store,
+  CheckCircle2,
+  Clock3,
+  ChefHat,
+  Package,
 } from "lucide-react";
 import Button from "../components/ui/Button";
 import { WhatsAppIcon, openWhatsAppOrderShare } from "../utils/whatsappOrder";
@@ -189,6 +193,27 @@ const OrderDetailsModal = ({
     ? new Date(order.updated_at).toLocaleString("en-IN")
     : "-";
 
+  const timelineSteps = [
+    { key: "Pending", label: "Order Placed", stepNumber: 1, icon: Receipt },
+    { key: "Accepted", label: "Accepted", stepNumber: 2, icon: CheckCircle2 },
+    { key: "Preparing", label: "In Kitchen", stepNumber: 3, icon: ChefHat },
+    { key: "Out for Delivery", label: "Out for Delivery", stepNumber: 4, icon: Truck },
+    { key: "Delivered", label: "Delivered", stepNumber: 5, icon: Package },
+  ];
+
+  const getActiveStepIndex = () => {
+    const s = String(order.status || "").toLowerCase().trim();
+    if (s === "delivered" || s === "completed") return 5;
+    if (s === "out for delivery" || s === "out_for_delivery") return 4;
+    if (s === "preparing" || s === "in kitchen" || s === "cooking") return 3;
+    if (s === "accepted" || s === "confirmed") return 2;
+    return 1;
+  };
+
+  const currentStep = getActiveStepIndex();
+  const isAccepted = currentStep >= 2;
+  const isCancelled = String(order.status || "").toLowerCase() === "cancelled";
+
   const getDirectionsUrl = () => {
     if (!address) {
       if (!order.shipping_address) return null;
@@ -242,12 +267,16 @@ const OrderDetailsModal = ({
     >
       <div
         className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
-        style={{ maxWidth: "700px" }}
+        style={{
+          maxWidth: "700px",
+          width: "calc(100% - 16px)",
+          margin: "0.5rem auto",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-content border-0 rounded-4 shadow">
 
-          <div className="modal-header justify-content-between px-4 py-3">
+          <div className="modal-header justify-content-between px-3 px-sm-4 py-3">
 
             <div>
               <h5 className="modal-title fw-bold mb-1">
@@ -271,7 +300,7 @@ const OrderDetailsModal = ({
 
           </div>
 
-          <div className="modal-body px-4">
+          <div className="modal-body px-3 px-sm-4 py-3">
 
             {/* Online Payment Pending Warning */}
             {order.payment_method === "Online Payment" && order.payment_status !== "Paid" && (
@@ -307,6 +336,202 @@ const OrderDetailsModal = ({
                 </div>
               </div>
             )}
+
+            {/* Live Fulfillment & Order Progression Bar */}
+            <div
+              className="mb-4 p-3 rounded-4 border"
+              style={{
+                backgroundColor: isCancelled ? "#fef2f2" : "#f8fafc",
+                borderColor: isCancelled ? "#fecaca" : "#e2e8f0",
+              }}
+            >
+              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <div className="d-flex align-items-center gap-2">
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "8px",
+                      backgroundColor: isCancelled ? "#fee2e2" : isAccepted ? "#dcfce7" : "#fef3c7",
+                      color: isCancelled ? "#b91c1c" : isAccepted ? "#15803d" : "#b45309",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Store size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                      Fulfillment Branch
+                    </div>
+                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
+                      {order.store_name || "Main SFC Central Kitchen"}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  {isCancelled ? (
+                    <span className="badge bg-danger">Cancelled</span>
+                  ) : isAccepted ? (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        padding: "4px 8px",
+                        borderRadius: "20px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        backgroundColor: "#dcfce7",
+                        color: "#166534",
+                        border: "1px solid #bbf7d0",
+                      }}
+                    >
+                      <CheckCircle2 size={12} /> Accepted & Confirmed
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        padding: "4px 8px",
+                        borderRadius: "20px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        backgroundColor: "#fef3c7",
+                        color: "#b45309",
+                        border: "1px solid #fde68a",
+                      }}
+                    >
+                      <Clock3 size={12} /> Awaiting Confirmation
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {!isCancelled && (
+                <div>
+                  {/* Progress Line */}
+                  <div
+                    style={{
+                      overflowX: "auto",
+                      WebkitOverflowScrolling: "touch",
+                      paddingBottom: "8px",
+                      marginTop: "14px",
+                      scrollbarWidth: "none",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "relative",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        minWidth: "310px",
+                        padding: "6px 6px",
+                      }}
+                    >
+                      {/* Connecting Bar */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "18px",
+                          left: "20px",
+                          right: "20px",
+                          height: "4px",
+                          backgroundColor: "#e2e8f0",
+                          zIndex: 1,
+                          borderRadius: "2px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: "100%",
+                            width: `${((Math.min(currentStep, 5) - 1) / 4) * 100}%`,
+                            backgroundColor: "#16a34a",
+                            borderRadius: "2px",
+                            transition: "width 0.4s ease",
+                          }}
+                        />
+                      </div>
+
+                      {/* Step Nodes */}
+                      {timelineSteps.map((step) => {
+                        const StepIcon = step.icon;
+                        const isComplete = currentStep > step.stepNumber;
+                        const isCurrent = currentStep === step.stepNumber;
+
+                        let nodeBg = "#ffffff";
+                        let nodeBorder = "#cbd5e1";
+                        let nodeColor = "#94a3b8";
+
+                        if (isComplete) {
+                          nodeBg = "#16a34a";
+                          nodeBorder = "#16a34a";
+                          nodeColor = "#ffffff";
+                        } else if (isCurrent) {
+                          nodeBg = "#ffffff";
+                          nodeBorder = "#16a34a";
+                          nodeColor = "#16a34a";
+                        }
+
+                        return (
+                          <div
+                            key={step.key}
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              zIndex: 2,
+                              position: "relative",
+                              width: "56px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "28px",
+                                height: "28px",
+                                borderRadius: "50%",
+                                backgroundColor: nodeBg,
+                                border: `2.5px solid ${nodeBorder}`,
+                                color: nodeColor,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: isCurrent ? "0 0 0 4px rgba(22, 163, 74, 0.18)" : "none",
+                                transition: "all 0.3s ease",
+                              }}
+                            >
+                              <StepIcon size={13} />
+                            </div>
+                            <span
+                              style={{
+                                fontSize: "10px",
+                                fontWeight: isCurrent ? 800 : isComplete ? 700 : 500,
+                                color: isCurrent ? "#16a34a" : isComplete ? "#0f172a" : "#94a3b8",
+                                marginTop: "5px",
+                                textAlign: "center",
+                                lineHeight: 1.15,
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                                display: "block",
+                                width: "100%",
+                              }}
+                            >
+                              {step.label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* ================= ORDER OVERVIEW ================= */}
             <OrderSection
@@ -1064,17 +1289,17 @@ const OrderDetailsModal = ({
 
 
           {/* ================= FOOTER ================= */}
-          <div className="modal-footer d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center gap-2 flex-wrap">
+          <div className="modal-footer d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 px-sm-4 py-2">
+            <div className="d-flex align-items-center gap-2 flex-wrap flex-grow-1">
               <button
                 type="button"
                 onClick={handleDownloadInvoice}
                 disabled={isDownloading}
-                className="btn btn-outline-primary d-inline-flex align-items-center gap-2"
-                style={{ fontSize: "0.85rem", fontWeight: 600 }}
+                className="btn btn-outline-primary d-inline-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-sm-grow-0"
+                style={{ fontSize: "0.82rem", fontWeight: 600, padding: "6px 12px" }}
               >
                 {isDownloading ? <LoaderCircle size={15} className="animate-spin" /> : <Download size={15} />}
-                {isDownloading ? "Generating Invoice..." : "Download Invoice"}
+                {isDownloading ? "Generating..." : "Download Invoice"}
               </button>
 
               {order.store_id && (
@@ -1088,13 +1313,14 @@ const OrderDetailsModal = ({
                       toast.error("Failed to open WhatsApp");
                     }
                   }}
-                  className="btn d-inline-flex align-items-center gap-2"
+                  className="btn d-inline-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-sm-grow-0"
                   style={{
-                    fontSize: "0.85rem",
+                    fontSize: "0.82rem",
                     fontWeight: 600,
                     backgroundColor: "#25D366",
                     color: "#ffffff",
                     borderColor: "#25D366",
+                    padding: "6px 12px",
                   }}
                   title="Share order details to store owner via WhatsApp"
                 >
@@ -1106,6 +1332,8 @@ const OrderDetailsModal = ({
             <Button
               variant="outline"
               onClick={onClose}
+              className="w-100 w-sm-auto"
+              style={{ padding: "6px 16px", fontSize: "0.82rem" }}
             >
               Close
             </Button>
@@ -1172,7 +1400,7 @@ const Info = ({
 }) => {
   const getBadgeClass = (val) => {
     const s = String(val || "").toLowerCase();
-    if (s.includes("delivered") || s === "paid") return "badge bg-success";
+    if (s.includes("delivered") || s === "paid" || s.includes("accepted")) return "badge bg-success";
     if (s === "refunded" || s.includes("refunded")) return "badge bg-secondary";
     if (s.includes("partially")) return "badge bg-purple text-white";
     if (s.includes("preparing")) return "badge bg-primary";
@@ -1182,7 +1410,7 @@ const Info = ({
   };
 
   return (
-    <div className="col-6">
+    <div className="col-12 col-sm-6">
       <div className="small text-muted">
         {label}
       </div>

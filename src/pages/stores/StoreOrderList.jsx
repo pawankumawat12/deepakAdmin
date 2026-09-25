@@ -275,12 +275,13 @@ export default function StoreOrderList() {
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div className="d-flex align-items-center gap-2 flex-wrap w-100 w-sm-auto mt-2 mt-sm-0">
               <Button
                 variant="outline"
                 onClick={() => refetchOrders()}
                 disabled={isOrdersFetching}
                 title="Refresh Orders"
+                className="flex-grow-1 flex-sm-grow-0"
               >
                 <RefreshCw size={15} className={isOrdersFetching ? "animate-spin" : ""} /> Refresh
               </Button>
@@ -288,6 +289,7 @@ export default function StoreOrderList() {
                 variant="outline"
                 onClick={() => navigate(`/stores/${storeId}/products`)}
                 title="View Store Products"
+                className="flex-grow-1 flex-sm-grow-0"
               >
                 <Package size={15} /> Store Products
               </Button>
@@ -300,60 +302,60 @@ export default function StoreOrderList() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px",
-          marginBottom: "20px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+          gap: "10px",
+          marginBottom: "16px",
         }}
       >
         {/* Card 1: Total Orders */}
-        <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid #059669" }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "#059669", textTransform: "uppercase" }}>
+        <div className="card" style={{ padding: "12px 14px", borderLeft: "4px solid #059669" }}>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#059669", textTransform: "uppercase" }}>
             Total Orders
           </span>
-          <div style={{ fontSize: "26px", fontWeight: 800, color: "#111827", marginTop: "4px" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#111827", marginTop: "2px" }}>
             {totalOrdersCount}
           </div>
-          <span style={{ fontSize: "11.5px", color: "#6b7280" }}>
-            Orders assigned / routed to this branch
+          <span style={{ fontSize: "10.5px", color: "#6b7280" }}>
+            Assigned to branch
           </span>
         </div>
 
         {/* Card 2: Total Revenue / Amount */}
-        <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid #4f46e5" }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "#4f46e5", textTransform: "uppercase" }}>
-            Total Store Amount
+        <div className="card" style={{ padding: "12px 14px", borderLeft: "4px solid #4f46e5" }}>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#4f46e5", textTransform: "uppercase" }}>
+            Store Revenue
           </span>
-          <div style={{ fontSize: "26px", fontWeight: 800, color: "#111827", marginTop: "4px" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#111827", marginTop: "2px" }}>
             ₹{Number(totalRevenueAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
           </div>
-          <span style={{ fontSize: "11.5px", color: "#6b7280" }}>
-            Total order value generated for this store
+          <span style={{ fontSize: "10.5px", color: "#6b7280" }}>
+            Total value
           </span>
         </div>
 
         {/* Card 3: Delivered Orders */}
-        <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid #16a34a" }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "#16a34a", textTransform: "uppercase" }}>
-            Delivered Orders
+        <div className="card" style={{ padding: "12px 14px", borderLeft: "4px solid #16a34a" }}>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#16a34a", textTransform: "uppercase" }}>
+            Delivered
           </span>
-          <div style={{ fontSize: "26px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#16a34a", marginTop: "2px" }}>
             {deliveredCount}
           </div>
-          <span style={{ fontSize: "11.5px", color: "#6b7280" }}>
-            Successfully completed deliveries
+          <span style={{ fontSize: "10.5px", color: "#6b7280" }}>
+            Completed
           </span>
         </div>
 
         {/* Card 4: Pending / In Progress */}
-        <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid #d97706" }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
-            Pending / In-Progress
+        <div className="card" style={{ padding: "12px 14px", borderLeft: "4px solid #d97706" }}>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
+            In-Progress
           </span>
-          <div style={{ fontSize: "26px", fontWeight: 800, color: "#d97706", marginTop: "4px" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#d97706", marginTop: "2px" }}>
             {pendingCount}
           </div>
-          <span style={{ fontSize: "11.5px", color: "#6b7280" }}>
-            Preparing or out for delivery
+          <span style={{ fontSize: "10.5px", color: "#6b7280" }}>
+            Preparing / Transit
           </span>
         </div>
       </div>
@@ -387,7 +389,195 @@ export default function StoreOrderList() {
           </div>
         </div>
 
-        <DataTable
+        {/* Mobile View: Clean Responsive Order Cards (hidden on md and up) */}
+        <div className="d-block d-md-none p-2 p-sm-3">
+          {isOrdersLoading ? (
+            <div className="py-4 text-center text-muted">
+              <RefreshCw size={24} className="animate-spin mx-auto mb-2" />
+              <div>Loading branch orders...</div>
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center text-muted py-5">
+              No orders have been routed to this store yet.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {orders.map((order) => {
+                const badge = getStatusBadge(order.status);
+                const itemsCount = Array.isArray(order.items) ? order.items.length : 0;
+                return (
+                  <div
+                    key={order.id}
+                    style={{
+                      backgroundColor: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "12px",
+                      padding: "12px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                    }}
+                  >
+                    {/* Top Row: Order Number & Status Selector */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrderDetails(order)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#4f46e5",
+                            fontWeight: 800,
+                            fontSize: "14px",
+                            cursor: "pointer",
+                            padding: 0,
+                            textAlign: "left",
+                          }}
+                        >
+                          #{order.order_number || order.id}
+                        </button>
+                        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "1px" }}>
+                          {order.created_at ? new Date(order.created_at).toLocaleString("en-IN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }) : ""}
+                        </div>
+                      </div>
+
+                      <Select
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        disabled={isUpdatingStatus || order.status === "Delivered" || order.status === "Cancelled"}
+                        style={{
+                          padding: "3px 6px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          background: badge.bg,
+                          color: badge.color,
+                          borderColor: badge.border,
+                          borderRadius: "8px",
+                          width: "125px",
+                          cursor: (order.status === "Delivered" || order.status === "Cancelled") ? "default" : "pointer",
+                        }}
+                      >
+                        <option value="Preparing">Preparing</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </Select>
+                    </div>
+
+                    {/* Middle Row: Customer Info & Amount */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        padding: "8px 0",
+                        borderTop: "1px solid #f1f5f9",
+                        borderBottom: "1px solid #f1f5f9",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "12.5px" }}>
+                          {order.customer_name || "Guest Customer"}
+                        </div>
+                        {order.customer_phone && (
+                          <div style={{ fontSize: "11px", color: "#64748b", marginTop: "1px" }}>
+                            {order.customer_phone}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 800, fontSize: "14px", color: "#111827" }}>
+                          ₹{Number(order.total_amount || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        </div>
+                        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "1px" }}>
+                          {itemsCount} {itemsCount === 1 ? "item" : "items"} •{" "}
+                          <span
+                            style={{
+                              fontWeight: 700,
+                              color: order.payment_status === "Paid" ? "#15803d" : "#b45309",
+                            }}
+                          >
+                            {order.payment_status || "Pending"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Row: Store Dispatch Pill + Action Buttons */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", flexWrap: "wrap" }}>
+                      <div>
+                        {order.is_forwarded_to_store ? (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "2px 8px",
+                              borderRadius: "9999px",
+                              fontSize: "10.5px",
+                              fontWeight: 700,
+                              background: "#f0fdf4",
+                              color: "#15803d",
+                              border: "1px solid #bbf7d0",
+                            }}
+                          >
+                            <CheckCircle2 size={11} /> Dispatched
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "2px 8px",
+                              borderRadius: "9999px",
+                              fontSize: "10.5px",
+                              fontWeight: 700,
+                              background: "#fef3c7",
+                              color: "#92400e",
+                              border: "1px solid #fde68a",
+                            }}
+                          >
+                            <Clock size={11} /> Pending Forward
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="View Full Order Details"
+                          onClick={() => setSelectedOrderDetails(order)}
+                          style={{ padding: "4px 8px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        >
+                          <Eye size={12} /> View
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="Chat with Customer"
+                          onClick={() => setActiveChatOrder(order)}
+                          style={{ padding: "4px 8px", fontSize: "11px", color: "#4f46e5", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        >
+                          <MessageCircle size={12} /> Chat
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View: Full DataTable (hidden on mobile, visible on md and up) */}
+        <div className="d-none d-md-block">
+          <DataTable
           loading={isOrdersLoading}
           error={ordersError?.data?.message || (ordersError ? "Failed to load orders" : null)}
           columns={[
@@ -584,30 +774,28 @@ export default function StoreOrderList() {
           emptyMessage="No orders have been routed to this store yet."
           renderActions={(order) => (
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              {/* View Order Details */}
-              <Button
-                variant="outline"
-                size="sm"
-                title="View Full Order Details"
-                onClick={() => setSelectedOrderDetails(order)}
-                style={{ padding: "5px 8px" }}
-              >
-                <Eye size={14} />
-              </Button>
-
-              {/* Customer Chat */}
-              <Button
-                variant="outline"
-                size="sm"
-                title="Chat with Customer"
-                onClick={() => setActiveChatOrder(order)}
-                style={{ padding: "5px 8px", color: "#4f46e5" }}
-              >
-                <MessageCircle size={14} />
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              title="View Full Order Details"
+              onClick={() => setSelectedOrderDetails(order)}
+              style={{ padding: "4px 8px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+            >
+              View
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              title="Chat with Customer"
+              onClick={() => setActiveChatOrder(order)}
+              style={{ padding: "4px 8px", fontSize: "11px", color: "#4f46e5", display: "inline-flex", alignItems: "center", gap: "4px" }}
+            >
+               Chat
+            </Button>
+          </div>
           )}
         />
+        </div>
 
         <Pagination
           page={page}

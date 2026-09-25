@@ -355,6 +355,10 @@
   gap: 17px;
 }
 
+.topbar-whatsapp-btn {
+  padding: 7px 12px;
+}
+
 .search {
   height: 38px;
   border: 1px solid #e6e5ed;
@@ -2066,7 +2070,8 @@ td>b {
 
   .topbar-title-wrap {
     min-width: 0;
-    flex: 1;
+    flex: 1 1 auto;
+    overflow: hidden;
   }
 
   .topbar h2 {
@@ -2074,7 +2079,31 @@ td>b {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 160px;
+    max-width: 100%;
+  }
+
+  .top-actions {
+    gap: 10px;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .table-toolbar .search {
+    width: 100% !important;
+  }
+
+  .table-toolbar .table-actions {
+    width: 100% !important;
+  }
+
+  .table-toolbar .table-actions select,
+  .table-toolbar .table-actions .ui-select {
+    width: 100% !important;
+    min-width: 100% !important;
   }
 
   .section-head {
@@ -2174,16 +2203,44 @@ td>b {
 
   .topbar {
     height: var(--topbar-height);
-    padding: 0 10px;
+    padding: 0 8px;
   }
 
   .topbar h2 {
-    font-size: 15px;
-    max-width: 130px;
+    font-size: 14.5px;
+    max-width: 100%;
   }
 
   .top-actions {
     gap: 6px;
+  }
+
+  .topbar-shop-status {
+    padding: 3px 6px !important;
+    gap: 4px !important;
+  }
+
+  .topbar-shop-status .shop-status-label {
+    display: none !important;
+  }
+
+  .topbar-whatsapp-btn {
+    padding: 5px 8px !important;
+    gap: 4px !important;
+  }
+
+  .notif-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+  }
+
+  .profile {
+    padding: 2px !important;
+  }
+
+  .profile-chevron {
+    display: none !important;
   }
 
   .notification-dropdown {
@@ -2360,9 +2417,21 @@ td>b {
 }
 
 @media (max-width: 420px) {
+  .topbar {
+    padding: 0 6px !important;
+  }
+
   .topbar h2 {
-    max-width: 100px;
-    font-size: 14px;
+    max-width: 100%;
+    font-size: 13.5px;
+  }
+
+  .top-actions {
+    gap: 4px !important;
+  }
+
+  .topbar-whatsapp-btn {
+    padding: 4px 6px !important;
   }
 
   .otp-inputs {

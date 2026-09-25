@@ -56,6 +56,9 @@ import { getAdminSocket, disconnectAdminSocket } from "../services/socket";
 import { requestAdminPushToken, onForegroundFcmMessage } from "../services/fcm";
 import { toAssetUrl } from "../utils/assetUrl";
 import { useShopStatus } from "../utils/useShopStatus";
+import WhatsAppModal from "../modals/WhatsAppModal";
+import { WhatsAppIcon } from "../utils/whatsappOrder";
+import { useGetWhatsAppStatusQuery } from "../services/whatsappApi";
 
 const getNavigationItems = (role) => {
   if (role === "store_owner") {
@@ -247,8 +250,15 @@ export default function AdminLayout() {
   const notifRef = useRef(null);
   const profileRef = useRef(null);
   const { isOpen: isShopOpen, toggleShopStatus } = useShopStatus();
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
   const user = useSelector((state) => state.auth.user);
+  const isAdmin = user?.role === "admin";
+  const { data: whatsappStatusData } = useGetWhatsAppStatusQuery(undefined, {
+    skip: !isAdmin,
+    pollingInterval: 30000,
+  });
+  const isWhatsAppConnected = Boolean(whatsappStatusData?.data?.isConnected);
   const navigationItems = getNavigationItems(user?.role);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -985,6 +995,44 @@ export default function AdminLayout() {
               </div>
             ) : null}
 
+            {/* WhatsApp Order Alerts Status Button (Admin only) */}
+            {isAdmin && (
+              <button
+                type="button"
+                className="topbar-whatsapp-btn"
+                onClick={() => setWhatsappModalOpen(true)}
+                title={isWhatsAppConnected ? "WhatsApp Alerts Connected & Active" : "Link WhatsApp for Instant Order Alerts"}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  borderRadius: "10px",
+                  border: isWhatsAppConnected ? "1px solid #bbf7d0" : "1px solid #fef08a",
+                  background: isWhatsAppConnected ? "#f0fdf4" : "#fffbeb",
+                  color: isWhatsAppConnected ? "#15803d" : "#b45309",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  outline: "none",
+                }}
+              >
+                <WhatsAppIcon size={16} />
+                <span className="d-none d-sm-inline">
+                  {isWhatsAppConnected ? "WhatsApp Alerts" : "Link WhatsApp"}
+                </span>
+                <span
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    background: isWhatsAppConnected ? "#22c55e" : "#eab308",
+                    display: "inline-block",
+                  }}
+                />
+              </button>
+            )}
+
             {/* Notification Bell with Badge & Dropdown */}
             <div style={{ position: "relative" }} ref={notifRef}>
               <Button
@@ -1242,7 +1290,7 @@ export default function AdminLayout() {
                   <small>{user?.role}</small>
             
                 </div> */}
-                <ChevronDown size={16} />
+                <ChevronDown size={16} className="profile-chevron" />
               </div>
 
               {profileOpen && (
@@ -1287,6 +1335,13 @@ export default function AdminLayout() {
           onClose={() => setShowSignOut(false)}
           isLoading={isSigningOut}
           error={signOutError}
+        />
+      )}
+
+      {whatsappModalOpen && (
+        <WhatsAppModal
+          isOpen={whatsappModalOpen}
+          onClose={() => setWhatsappModalOpen(false)}
         />
       )}
     </div>

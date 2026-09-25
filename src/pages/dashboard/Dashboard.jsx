@@ -25,6 +25,7 @@ import { useGetMyStoreQuery } from "../../services/storeApi";
 import DataTable from "../../components/common/DataTable";
 import { useShopStatus } from "../../utils/useShopStatus";
 import { useThrottledCallback } from "../../utils/throttle";
+import { getAdminSocket } from "../../services/socket";
 
 function formatRupee(num) {
   if (num == null) return "0";
@@ -50,6 +51,26 @@ export default function Dashboard() {
   } = useGetDashboardOverviewQuery({ timeframe });
 
   const throttledRefetch = useThrottledCallback(() => refetch(), 1500);
+
+  // Silent real-time updates for dashboard KPIs and recent orders
+  useEffect(() => {
+    const socket = getAdminSocket();
+    if (!socket) return;
+    const handleUpdate = () => {
+      throttledRefetch();
+    };
+    socket.on("admin_order_updated", handleUpdate);
+    socket.on("admin_order_status_updated", handleUpdate);
+    socket.on("admin_new_order", handleUpdate);
+    socket.on("admin_order_cancelled", handleUpdate);
+
+    return () => {
+      socket.off("admin_order_updated", handleUpdate);
+      socket.off("admin_order_status_updated", handleUpdate);
+      socket.off("admin_new_order", handleUpdate);
+      socket.off("admin_order_cancelled", handleUpdate);
+    };
+  }, [throttledRefetch]);
 
   const overview = dashboardData?.data || {};
   const kpis = overview.kpis || {
@@ -83,7 +104,7 @@ export default function Dashboard() {
       const x = trends.length > 1 ? (idx / (trends.length - 1)) * 520 + 40 : 300;
       const yRevenue = 200 - (t.revenue / maxRevenue) * 150;
       const yOrders = 200 - (t.orders / maxOrders) * 150;
-      return {
+      return {                              
         ...t,
         x,
         yRevenue,
@@ -151,7 +172,7 @@ export default function Dashboard() {
           closest = chartPoints[i];
         }
       }
-      setHoveredPoint(closest);
+      setHoveredPoint(closest); 
     },
     [chartPoints]
   );

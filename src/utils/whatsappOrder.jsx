@@ -103,7 +103,7 @@ export const buildWhatsAppOrderMessage = (order) => {
     order.order_number || order.id || ""
   )}`;
 
-  let msg = `🔔 *NEW ORDER FORWARDED* 🔔\n\n`;
+  let msg = `🔔 *NEW ORDER FORWARDED* \n\n`;
   msg += `*Order:* ${orderNum}\n`;
   msg += `*Store:* ${storeName}\n`;
   msg += `*Date:* ${dateStr}\n\n`;

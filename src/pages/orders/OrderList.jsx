@@ -171,6 +171,13 @@ export default function OrderList() {
     }
     return rawOrders;
   }, [rawOrders, isStoreOwner]);
+
+  const activeOrderDetails = useMemo(() => {
+    if (!selectedOrderDetails) return null;
+    const found = orders?.find((o) => o.id === selectedOrderDetails.id);
+    return found ? { ...selectedOrderDetails, ...found } : selectedOrderDetails;
+  }, [orders, selectedOrderDetails]);
+
   const pagination = orderResponse?.pagination;
 
   // Socket.IO real-time event listeners for Admin
@@ -196,19 +203,28 @@ export default function OrderList() {
       });
     };
 
-    const handleOrderUpdated = () => {
+    const handleOrderUpdated = (data) => {
+      // Live silent update - refetch latest orders without noisy alert
       refetch();
+      if (data?.order?.id) {
+        setSelectedOrderDetails((prev) => {
+          if (!prev || Number(prev.id) !== Number(data.order.id)) return prev;
+          return { ...prev, ...data.order };
+        });
+      }
     };
 
     socket.on("admin_new_order", handleNewOrder);
     socket.on("admin_new_message", handleNewMessage);
     socket.on("admin_order_updated", handleOrderUpdated);
+    socket.on("admin_order_status_updated", handleOrderUpdated);
     socket.on("admin_order_cancelled", handleOrderUpdated);
 
     return () => {
       socket.off("admin_new_order", handleNewOrder);
       socket.off("admin_new_message", handleNewMessage);
       socket.off("admin_order_updated", handleOrderUpdated);
+      socket.off("admin_order_status_updated", handleOrderUpdated);
       socket.off("admin_order_cancelled", handleOrderUpdated);
     };
   }, [refetch]);
@@ -585,6 +601,7 @@ export default function OrderList() {
           >
             <option value="">All Statuses</option>
             <option value="Pending">Pending</option>
+            <option value="Accepted">Accepted</option>
             <option value="Preparing">Preparing</option>
             <option value="Out for Delivery">Out for Delivery</option>
             <option value="Delivered">Delivered</option>
@@ -1500,30 +1517,37 @@ export default function OrderList() {
                       backgroundColor:
                         value === "Pending" || value === "Order Placed" || value === "Pending Payment"
                           ? "#fef3c7"
-                          : value === "Preparing"
-                            ? "#dbeafe"
-                            : value === "Out for Delivery"
-                              ? "#ffedd5"
-                              : value === "Delivered"
-                                ? "#dcfce7"
-                                : value === "Cancelled"
-                                  ? "#fee2e2"
-                                  : "#ffffff",
+                          : value === "Accepted"
+                            ? "#ecfdf5"
+                            : value === "Preparing"
+                              ? "#dbeafe"
+                              : value === "Out for Delivery"
+                                ? "#ffedd5"
+                                : value === "Delivered"
+                                  ? "#dcfce7"
+                                  : value === "Cancelled"
+                                    ? "#fee2e2"
+                                    : "#ffffff",
                       color:
                         value === "Pending" || value === "Order Placed" || value === "Pending Payment"
                           ? "#b45309"
-                          : value === "Preparing"
-                            ? "#1e40af"
-                            : value === "Out for Delivery"
-                              ? "#c2410c"
-                              : value === "Delivered"
-                                ? "#15803d"
-                                : value === "Cancelled"
-                                  ? "#b91c1c"
-                                  : "#374151",
+                          : value === "Accepted"
+                            ? "#065f46"
+                            : value === "Preparing"
+                              ? "#1e40af"
+                              : value === "Out for Delivery"
+                                ? "#c2410c"
+                                : value === "Delivered"
+                                  ? "#15803d"
+                                  : value === "Cancelled"
+                                    ? "#b91c1c"
+                                    : "#374151",
                     }}
                   >
                     <option value="Pending">Pending</option>
+                    <option value="Accepted" disabled={isUnpaidOnline}>
+                      Accepted {isUnpaidOnline ? "(Requires Payment)" : ""}
+                    </option>
                     <option value="Preparing" disabled={isUnpaidOnline}>
                       Preparing {isUnpaidOnline ? "(Requires Payment)" : ""}
                     </option>
@@ -1789,7 +1813,7 @@ export default function OrderList() {
 
       {selectedOrderDetails && (
         <OrderDetailsModal
-          order={selectedOrderDetails}
+          order={activeOrderDetails}
           onClose={() => setSelectedOrderDetails(null)}
           onPaymentStatusChange={!isStoreOwner ? handlePaymentStatusChange : null}
           onOpenRefund={!isStoreOwner ? (order) => setRefundModalOrder(order) : null}
