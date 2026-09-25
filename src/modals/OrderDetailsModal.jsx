@@ -46,7 +46,7 @@ const OrderDetailsModal = ({
       const backendUrl = (
         import.meta.env?.VITE_BACKEND_URL ||
         import.meta.env?.VITE_API_BASE_URL?.replace(/\/api\/v1\/?$/, "") ||
-        "http://localhost:5000"
+        "http://localhost:3000"
       ).replace(/\/+$/, "");
       const apiUrl = backendUrl.endsWith("/api/v1") ? backendUrl : `${backendUrl}/api/v1`;
 
